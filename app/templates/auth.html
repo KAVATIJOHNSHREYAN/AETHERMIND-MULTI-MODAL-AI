@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AetherMind Multimodal AI — Enterprise Authentication</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <!-- Official Clerk JS SDK CDN -->
+    <script async crossorigin="anonymous" data-clerk-publishable-key="{{ clerk_publishable_key }}" src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js" type="text/javascript"></script>
+    <style>
+        .auth-view { transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
+        .auth-view.hidden { display: none !important; opacity: 0; transform: scale(0.97); }
+        .glass-auth-panel {
+            background: rgba(10, 15, 30, 0.75);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7);
+        }
+        .otp-input {
+            width: 44px;
+            height: 52px;
+            text-align: center;
+            font-size: 1.25rem;
+            font-weight: 700;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 14px;
+            color: #FFFFFF;
+            transition: all 0.2s ease;
+        }
+        .otp-input:focus {
+            border-color: #38BDF8;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
+            outline: none;
+        }
+    </style>
+</head>
+<body class="bg-[#030712] text-white font-sans overflow-hidden min-h-screen w-screen relative flex items-center justify-center p-4">
+
+    <!-- Wallpaper Layer -->
+    <div class="app-background-layer"></div>
+    <div class="app-background-overlay"></div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col space-y-3 pointer-events-none max-w-sm"></div>
+
+    <main class="relative z-10 w-full max-w-5xl">
+
+        <!-- ===================================================================
+             1. SPLASH SCREEN
+             =================================================================== -->
+        <div id="view-splash" class="auth-view glass-auth-panel rounded-3xl p-10 max-w-md mx-auto text-center space-y-6">
+            <div class="relative w-24 h-24 mx-auto flex items-center justify-center">
+                <div class="absolute inset-0 rounded-3xl bg-gradient-to-tr from-[#38BDF8] via-[#8B5CF6] to-[#EC4899] animate-spin opacity-40 blur-xl"></div>
+                <div class="w-20 h-20 rounded-2xl bg-gradient-to-tr from-[#38BDF8] to-[#8B5CF6] flex items-center justify-center shadow-2xl relative z-10">
+                    <span class="text-white font-heading font-extrabold text-4xl">Æ</span>
+                </div>
+            </div>
+            <div>
+                <h1 class="text-3xl font-heading font-extrabold text-white tracking-tight">AetherMind</h1>
+                <p class="text-xs font-semibold uppercase tracking-widest text-[#38BDF8] mt-1">Enterprise Multimodal AI OS</p>
+            </div>
+            <div class="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
+                <div id="splash-progress" class="bg-gradient-to-r from-[#38BDF8] to-[#EC4899] h-full w-0 transition-all duration-1000 ease-out"></div>
+            </div>
+            <p id="splash-status-text" class="text-xs text-slate-400 font-mono">Initializing Clerk Security Engine...</p>
+        </div>
+
+        <!-- ===================================================================
+             2. LOGIN PAGE (2-COLUMN CARDS)
+             =================================================================== -->
+        <div id="view-login" class="auth-view glass-auth-panel rounded-3xl overflow-hidden grid grid-cols-1 md:grid-cols-12 hidden">
+            
+            <!-- Left Side: Login Form -->
+            <div class="md:col-span-7 p-8 md:p-10 space-y-6">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#38BDF8] to-[#8B5CF6] flex items-center justify-center font-heading font-bold text-xl text-white">Æ</div>
+                    <div>
+                        <h2 class="text-2xl font-heading font-bold text-white">Welcome Back</h2>
+                        <p class="text-xs text-slate-400">Sign in to access your AetherMind AI Workspace</p>
+                    </div>
+                </div>
+
+                <!-- Clerk Error Alert -->
+                <div id="login-error-box" class="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs hidden"></div>
+
+                <form id="form-login" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Email Address</label>
+                        <input type="email" id="login-email" required placeholder="user@aethermind.ai" class="w-full glass-card px-4 py-2.5 text-sm text-white focus:border-[#38BDF8] focus:outline-none transition">
+                    </div>
+
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="text-xs font-semibold text-slate-300">Password</label>
+                            <button type="button" id="btn-goto-forgot" class="text-xs text-[#38BDF8] hover:underline">Forgot Password?</button>
+                        </div>
+                        <div class="relative">
+                            <input type="password" id="login-password" required placeholder="••••••••••••" class="w-full glass-card px-4 py-2.5 text-sm text-white focus:border-[#38BDF8] focus:outline-none transition">
+                            <button type="button" id="toggle-login-password" class="absolute right-3 top-2.5 text-xs text-slate-400 hover:text-white">Show</button>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between">
+                        <label class="flex items-center space-x-2 text-xs text-slate-300 cursor-pointer">
+                            <input type="checkbox" id="login-remember" checked class="rounded bg-slate-900 border-white/20 text-[#38BDF8] focus:ring-0">
+                            <span>Remember Me</span>
+                        </label>
+                    </div>
+
+                    <button type="submit" id="btn-login-submit" class="w-full py-3 btn-primary font-bold text-xs uppercase tracking-wider rounded-xl transition shadow-lg shadow-[#38BDF8]/20">
+                        Sign In with Clerk
+                    </button>
+                </form>
+
+                <div class="relative flex items-center justify-center my-4">
+                    <div class="border-t border-white/10 w-full"></div>
+                    <span class="bg-[#0A0F1E] px-3 text-[10px] uppercase font-mono text-slate-400 absolute">Or continue with</span>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <button type="button" id="btn-oauth-google" class="py-2.5 px-4 glass-card hover:bg-white/10 flex items-center justify-center space-x-2 text-xs font-medium text-white transition">
+                        <span>Google</span>
+                    </button>
+                    <button type="button" id="btn-oauth-github" class="py-2.5 px-4 glass-card hover:bg-white/10 flex items-center justify-center space-x-2 text-xs font-medium text-white transition">
+                        <span>GitHub</span>
+                    </button>
+                </div>
+
+                <p class="text-center text-xs text-slate-400 pt-2">
+                    Don't have an account? <button type="button" id="btn-goto-register" class="text-[#38BDF8] font-semibold hover:underline">Create Account</button>
+                </p>
+            </div>
+
+            <!-- Right Side: AI Visual Card -->
+            <div class="md:col-span-5 bg-gradient-to-br from-[#0F172A] to-[#1E1B4B] p-8 md:p-10 flex flex-col justify-between border-l border-white/10 relative overflow-hidden hidden md:flex">
+                <div class="space-y-4 relative z-10">
+                    <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#EC4899]/20 text-[#EC4899] border border-[#EC4899]/40">CLERK AUTH 3.0</span>
+                    <h3 class="text-2xl font-heading font-extrabold text-white leading-tight">Next-Gen Multimodal AI Platform</h3>
+                    <p class="text-xs text-slate-300 leading-relaxed">Experience unified conversations, document intelligence, DALL-E image generation, and voice synthesis in one seamless workspace.</p>
+                </div>
+
+                <div class="glass-card p-4 rounded-2xl border border-white/15 space-y-2 relative z-10">
+                    <div class="flex items-center space-x-2 text-xs font-bold text-cyan-300">
+                        <span>🛡️ Enterprise Security</span>
+                    </div>
+                    <p class="text-[11px] text-slate-300">Protected by Clerk JWT tokens, multi-factor authentication, and encrypted local memory state.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===================================================================
+             3. REGISTER PAGE
+             =================================================================== -->
+        <div id="view-register" class="auth-view glass-auth-panel rounded-3xl p-8 md:p-10 max-w-lg mx-auto space-y-6 hidden">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#8B5CF6] to-[#EC4899] flex items-center justify-center font-heading font-bold text-xl text-white">Æ</div>
+                <div>
+                    <h2 class="text-2xl font-heading font-bold text-white">Create Account</h2>
+                    <p class="text-xs text-slate-400">Join AetherMind AI Operating System</p>
+                </div>
+            </div>
+
+            <div id="register-error-box" class="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs hidden"></div>
+
+            <form id="form-register" class="space-y-4">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">First Name</label>
+                        <input type="text" id="reg-fname" required placeholder="John" class="w-full glass-card px-3.5 py-2 text-sm text-white focus:border-[#38BDF8] focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Last Name</label>
+                        <input type="text" id="reg-lname" required placeholder="Shreyan" class="w-full glass-card px-3.5 py-2 text-sm text-white focus:border-[#38BDF8] focus:outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Email Address</label>
+                    <input type="email" id="reg-email" required placeholder="user@domain.com" class="w-full glass-card px-3.5 py-2 text-sm text-white focus:border-[#38BDF8] focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Password</label>
+                    <input type="password" id="reg-password" required placeholder="••••••••••••" class="w-full glass-card px-3.5 py-2 text-sm text-white focus:border-[#38BDF8] focus:outline-none">
+                    <!-- Password Strength Meter -->
+                    <div class="mt-2 space-y-1">
+                        <div class="flex justify-between text-[10px] text-slate-400">
+                            <span>Password Strength</span>
+                            <span id="pass-strength-label" class="font-bold text-slate-300">Weak</span>
+                        </div>
+                        <div class="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden">
+                            <div id="pass-strength-bar" class="bg-red-500 h-full w-1/4 transition-all duration-300"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Confirm Password</label>
+                    <input type="password" id="reg-password-confirm" required placeholder="••••••••••••" class="w-full glass-card px-3.5 py-2 text-sm text-white focus:border-[#38BDF8] focus:outline-none">
+                </div>
+
+                <label class="flex items-center space-x-2 text-xs text-slate-300 cursor-pointer">
+                    <input type="checkbox" required class="rounded bg-slate-900 border-white/20 text-[#38BDF8]">
+                    <span>I accept the Terms of Service & Privacy Policy</span>
+                </label>
+
+                <button type="submit" id="btn-register-submit" class="w-full py-3 btn-primary font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-[#38BDF8]/20">
+                    Create Clerk Account
+                </button>
+            </form>
+
+            <p class="text-center text-xs text-slate-400 pt-2">
+                Already have an account? <button type="button" id="btn-goto-login" class="text-[#38BDF8] font-semibold hover:underline">Sign In</button>
+            </p>
+        </div>
+
+        <!-- ===================================================================
+             4. FORGOT PASSWORD PAGE
+             =================================================================== -->
+        <div id="view-forgot-password" class="auth-view glass-auth-panel rounded-3xl p-8 md:p-10 max-w-md mx-auto space-y-6 hidden">
+            <div>
+                <h2 class="text-2xl font-heading font-bold text-white">Reset Password</h2>
+                <p class="text-xs text-slate-400 mt-1">Enter your email address to receive a Clerk password reset link.</p>
+            </div>
+
+            <div id="forgot-error-box" class="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs hidden"></div>
+
+            <form id="form-forgot" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Email Address</label>
+                    <input type="email" id="forgot-email" required placeholder="user@aethermind.ai" class="w-full glass-card px-4 py-2.5 text-sm text-white focus:border-[#38BDF8] focus:outline-none">
+                </div>
+
+                <button type="submit" id="btn-forgot-submit" class="w-full py-3 btn-primary font-bold text-xs uppercase tracking-wider rounded-xl">
+                    Send Reset Link
+                </button>
+            </form>
+
+            <button type="button" id="btn-forgot-back" class="w-full text-center text-xs text-slate-400 hover:text-white">← Back to Login</button>
+        </div>
+
+        <!-- ===================================================================
+             5. 2FA OTP SCREEN
+             =================================================================== -->
+        <div id="view-otp-2fa" class="auth-view glass-auth-panel rounded-3xl p-8 md:p-10 max-w-md mx-auto space-y-6 hidden text-center">
+            <div class="w-14 h-14 rounded-2xl bg-cyan-500/20 border border-cyan-500/40 text-cyan-400 flex items-center justify-center text-2xl mx-auto">
+                🔐
+            </div>
+            <div>
+                <h2 class="text-2xl font-heading font-bold text-white">Two-Factor Authentication</h2>
+                <p class="text-xs text-slate-400 mt-1">Enter the 6-digit code sent to your email / authenticator app.</p>
+            </div>
+
+            <div id="otp-inputs" class="flex justify-center gap-2 my-4">
+                <input type="text" maxlength="1" class="otp-input" autofocus>
+                <input type="text" maxlength="1" class="otp-input">
+                <input type="text" maxlength="1" class="otp-input">
+                <input type="text" maxlength="1" class="otp-input">
+                <input type="text" maxlength="1" class="otp-input">
+                <input type="text" maxlength="1" class="otp-input">
+            </div>
+
+            <div class="text-xs text-slate-400">
+                Resend code in <span id="otp-timer" class="font-mono font-bold text-cyan-400">00:59</span>
+            </div>
+
+            <button type="button" id="btn-verify-otp" class="w-full py-3 btn-primary font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-[#38BDF8]/20">
+                Verify & Enter Workspace
+            </button>
+        </div>
+
+        <!-- ===================================================================
+             6. WORKSPACE INITIALIZATION LOADING SCREEN
+             =================================================================== -->
+        <div id="view-loading-screen" class="auth-view glass-auth-panel rounded-3xl p-10 max-w-md mx-auto text-center space-y-6 hidden">
+            <div class="w-20 h-20 rounded-full bg-gradient-to-tr from-[#38BDF8] via-[#8B5CF6] to-[#EC4899] animate-pulse mx-auto flex items-center justify-center text-3xl shadow-2xl">
+                ⚡
+            </div>
+            <div>
+                <h2 class="text-2xl font-heading font-bold text-white">Initializing Workspace</h2>
+                <p id="loading-stage-text" class="text-xs text-cyan-400 font-mono mt-1">Connecting to Qdrant Vector Engine...</p>
+            </div>
+            <div class="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-white/10">
+                <div id="workspace-load-bar" class="bg-gradient-to-r from-[#38BDF8] via-[#8B5CF6] to-[#EC4899] h-full w-0 transition-all duration-500 ease-out"></div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Clerk Authentication Client JavaScript -->
+    <script src="/static/js/auth.js"></script>
+</body>
+</html>

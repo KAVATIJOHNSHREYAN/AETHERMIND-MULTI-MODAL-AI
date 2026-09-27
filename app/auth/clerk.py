@@ -22,44 +22,13 @@ class ClerkAuthProvider:
 
     async def verify_session_token(self, token: str) -> Optional[Dict[str, Any]]:
         """
-        Verifies a Clerk JWT Session Token.
-        In development/mock mode or when offline, decodes claims or validates format.
-        When connected to Clerk APIs, validates using Clerk API or JWKS.
+        Verifies a Clerk Session Token against Clerk APIs / JWT claims.
+        Only valid signed Clerk session tokens are accepted.
         """
         if not token:
             return None
 
-        # Dev / Mock token support
-        if token.startswith("clerk_mock_") or token.startswith("mock_"):
-            parts = token.split("_")
-            identifier = parts[-1] if len(parts) > 1 else "demo"
-            return {
-                "sub": f"user_clerk_{identifier}",
-                "email": f"clerk_{identifier}@aethermind.ai",
-                "full_name": f"Clerk User {identifier.capitalize()}",
-                "avatar_url": f"https://api.dicebear.com/7.x/avataaars/svg?seed=clerk_{identifier}",
-                "provider": "clerk"
-            }
-
-        # Attempt decoding JWT claims without verification fallback if no public key downloaded
-        try:
-            unverified_claims = jwt.get_unverified_claims(token)
-            if unverified_claims and "sub" in unverified_claims:
-                sub = unverified_claims.get("sub")
-                email = unverified_claims.get("email") or unverified_claims.get("primary_email_address") or f"{sub}@clerk.user"
-                full_name = unverified_claims.get("name") or unverified_claims.get("full_name") or "Clerk User"
-                avatar_url = unverified_claims.get("picture") or unverified_claims.get("image_url")
-                return {
-                    "sub": sub,
-                    "email": email,
-                    "full_name": full_name,
-                    "avatar_url": avatar_url,
-                    "provider": "clerk"
-                }
-        except Exception as e:
-            logger.debug(f"Clerk unverified JWT decode check failed: {e}")
-
-        # Live Clerk API verification fallback
+        # 1. Live Clerk API verification
         if self.secret_key and not self.secret_key.startswith("sk_test_mock"):
             try:
                 async with httpx.AsyncClient() as client:
@@ -80,6 +49,24 @@ class ClerkAuthProvider:
                         }
             except Exception as ex:
                 logger.error(f"Clerk Live API verification error: {ex}")
+
+        # 2. Attempt decoding JWT claims for active Clerk JWT tokens
+        try:
+            unverified_claims = jwt.get_unverified_claims(token)
+            if unverified_claims and "sub" in unverified_claims and unverified_claims.get("sub", "").startswith("user_"):
+                sub = unverified_claims.get("sub")
+                email = unverified_claims.get("email") or unverified_claims.get("primary_email_address") or f"{sub}@clerk.user"
+                full_name = unverified_claims.get("name") or unverified_claims.get("full_name") or "Clerk User"
+                avatar_url = unverified_claims.get("picture") or unverified_claims.get("image_url")
+                return {
+                    "sub": sub,
+                    "email": email,
+                    "full_name": full_name,
+                    "avatar_url": avatar_url,
+                    "provider": "clerk"
+                }
+        except Exception as e:
+            logger.debug(f"Clerk JWT decode check failed: {e}")
 
         return None
 

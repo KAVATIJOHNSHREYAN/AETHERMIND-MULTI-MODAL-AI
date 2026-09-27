@@ -1153,50 +1153,46 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // =========================================================================
-    // AUTHENTICATION & LOGOUT HANDLERS
+    // AUTHENTICATION & PROFILE DROPDOWN HANDLERS
     // =========================================================================
     const btnLogout = document.getElementById("btn-logout");
+    const dropdownBtnLogout = document.getElementById("dropdown-btn-logout");
     const userProfileBadge = document.getElementById("user-profile-badge");
+    const userDropdownMenu = document.getElementById("user-dropdown-menu");
     const modalAuth = document.getElementById("modal-auth");
     const closeAuthBtn = document.getElementById("close-auth-btn");
     const authForm = document.getElementById("auth-form");
 
-    if (userProfileBadge && modalAuth) {
-        userProfileBadge.addEventListener("click", () => {
-            modalAuth.classList.remove("hidden");
-        });
-    }
-
-    if (closeAuthBtn && modalAuth) {
-        closeAuthBtn.addEventListener("click", () => {
-            modalAuth.classList.add("hidden");
-        });
-    }
-
-    if (btnLogout) {
-        btnLogout.addEventListener("click", async (e) => {
+    if (userProfileBadge && userDropdownMenu) {
+        userProfileBadge.addEventListener("click", (e) => {
             e.stopPropagation();
-            try {
-                const res = await fetch("/api/v1/auth/logout", { method: "POST" });
-                const data = await res.json();
-                showToast("Successfully signed out of AetherMind OS", "info");
-                
-                // Update UI state to signed-out
-                const userDispName = document.getElementById("user-display-name");
-                const userDispRole = document.getElementById("user-display-role");
-                if (userDispName) userDispName.textContent = "Guest User";
-                if (userDispRole) userDispRole.textContent = "Click to Sign In";
+            userDropdownMenu.classList.toggle("hidden");
+        });
 
-                if (modalAuth) {
-                    modalAuth.classList.remove("hidden");
-                }
-            } catch (err) {
-                console.error("Logout error:", err);
-                showToast("Signed out of session", "info");
-                if (modalAuth) modalAuth.classList.remove("hidden");
+        document.addEventListener("click", (e) => {
+            if (!userDropdownMenu.contains(e.target) && !userProfileBadge.contains(e.target)) {
+                userDropdownMenu.classList.add("hidden");
             }
         });
     }
+
+    async function handleClerkSignOut() {
+        try {
+            if (window.Clerk) {
+                await window.Clerk.signOut();
+            }
+            await fetch("/api/v1/auth/logout", { method: "POST" });
+        } catch (e) {
+            console.error("Sign out error:", e);
+        }
+        showToast("Signed out of AetherMind OS", "info");
+        setTimeout(() => {
+            window.location.href = "/login";
+        }, 500);
+    }
+
+    if (btnLogout) btnLogout.addEventListener("click", handleClerkSignOut);
+    if (dropdownBtnLogout) dropdownBtnLogout.addEventListener("click", handleClerkSignOut);
 
     if (authForm) {
         authForm.addEventListener("submit", async (e) => {

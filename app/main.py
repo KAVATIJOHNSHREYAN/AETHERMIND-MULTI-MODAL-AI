@@ -78,13 +78,22 @@ if not os.path.exists(templates_dir):
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 templates = Jinja2Templates(directory=templates_dir)
 
+@app.get("/login", include_in_schema=False)
+@app.get("/auth", include_in_schema=False)
+async def serve_auth(request: Request):
+    """Serve Full-Screen Clerk Authentication Page"""
+    try:
+        return templates.TemplateResponse("auth.html", {"request": request, "clerk_publishable_key": settings.CLERK_PUBLISHABLE_KEY})
+    except Exception:
+        return templates.TemplateResponse(request=request, name="auth.html", context={"clerk_publishable_key": settings.CLERK_PUBLISHABLE_KEY})
+
 @app.get("/", include_in_schema=False)
 async def serve_ui(request: Request):
     """Serve Unified Full Stack Application Root Workspace"""
     try:
-        return templates.TemplateResponse(request=request, name="index.html")
+        return templates.TemplateResponse(request=request, name="index.html", context={"clerk_publishable_key": settings.CLERK_PUBLISHABLE_KEY})
     except Exception:
-        return templates.TemplateResponse("index.html", {"request": request})
+        return templates.TemplateResponse("index.html", {"request": request, "clerk_publishable_key": settings.CLERK_PUBLISHABLE_KEY})
 
 if __name__ == "__main__":
     import uvicorn
