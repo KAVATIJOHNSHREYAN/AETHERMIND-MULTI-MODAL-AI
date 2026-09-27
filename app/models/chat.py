@@ -9,6 +9,7 @@ class Chat(Base):
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    project_id = Column(String(36), ForeignKey("projects.id", ondelete="SET NULL"), nullable=True, index=True)
     title = Column(String(255), default="New Conversation", nullable=False)
     is_pinned = Column(Boolean, default=False)
     is_archived = Column(Boolean, default=False)

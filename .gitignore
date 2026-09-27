@@ -32,6 +32,10 @@ ENV/
 .vscode/
 .idea/
 .DS_Store
-desktop.ini
-*.ico
-*.log
+# Databases & Local Uploads
+*.db
+*.sqlite
+scratch_test_files/
+app/static/uploads/*
+!app/static/uploads/.gitkeep
+

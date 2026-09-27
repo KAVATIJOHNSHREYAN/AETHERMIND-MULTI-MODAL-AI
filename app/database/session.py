@@ -44,10 +44,72 @@ async def init_db():
         import app.models.user  # noqa: F401
         import app.models.settings  # noqa: F401
         import app.models.auth_metadata  # noqa: F401
+        import app.models.chat  # noqa: F401
+        import app.models.message  # noqa: F401
+        import app.models.file  # noqa: F401
+        import app.models.memory  # noqa: F401
+        import app.models.workspace  # noqa: F401
 
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
-        logger.info("Database tables initialized successfully.")
+            
+            # Helper column patcher for SQLite fallback when new model attributes are added
+            if engine.dialect.name == "sqlite":
+                from sqlalchemy import text
+                async_conn = conn
+                
+                # Check files table columns
+                result = await async_conn.execute(text("PRAGMA table_info(files)"))
+                file_cols = [row[1] for row in result.fetchall()]
+                
+                file_patch = [
+                    ("chat_id", "VARCHAR(36)"),
+                    ("folder_id", "VARCHAR(36)"),
+                    ("project_id", "VARCHAR(36)"),
+                    ("is_starred", "INTEGER DEFAULT 0"),
+                    ("is_bookmarked", "INTEGER DEFAULT 0"),
+                    ("is_deleted", "INTEGER DEFAULT 0"),
+                    ("deleted_at", "DATETIME"),
+                    ("tags", "VARCHAR(255)"),
+                    ("extracted_text", "TEXT"),
+                    ("vector_point_id", "VARCHAR(255)"),
+                    ("media_metadata", "TEXT"),
+                ]
+                for col, col_def in file_patch:
+                    if col not in file_cols:
+                        await async_conn.execute(text(f"ALTER TABLE files ADD COLUMN {col} {col_def}"))
+                
+                # Check memory_metadata table columns
+                result = await async_conn.execute(text("PRAGMA table_info(memory_metadata)"))
+                mem_cols = [row[1] for row in result.fetchall()]
+                mem_patch = [
+                    ("memory_type", "VARCHAR(50) DEFAULT 'general'"),
+                    ("memory_key", "VARCHAR(255)"),
+                    ("memory_value", "TEXT"),
+                    ("category", "VARCHAR(100) DEFAULT 'general'"),
+                    ("importance_score", "FLOAT DEFAULT 0.5"),
+                    ("is_pinned", "INTEGER DEFAULT 0"),
+                    ("qdrant_vector_id", "VARCHAR(255)"),
+                    ("extra_metadata", "TEXT"),
+                ]
+                for col, col_def in mem_patch:
+                    if col not in mem_cols:
+                        await async_conn.execute(text(f"ALTER TABLE memory_metadata ADD COLUMN {col} {col_def}"))
+
+                # Check chats table columns
+                result = await async_conn.execute(text("PRAGMA table_info(chats)"))
+                chat_cols = [row[1] for row in result.fetchall()]
+                chat_patch = [
+                    ("project_id", "VARCHAR(36)"),
+                    ("is_starred", "INTEGER DEFAULT 0"),
+                    ("is_bookmarked", "INTEGER DEFAULT 0"),
+                    ("is_deleted", "INTEGER DEFAULT 0"),
+                ]
+                for col, col_def in chat_patch:
+                    if col not in chat_cols:
+                        await async_conn.execute(text(f"ALTER TABLE chats ADD COLUMN {col} {col_def}"))
+
+        logger.info("Database tables and columns initialized successfully.")
     except Exception as e:
         logger.warning(f"PostgreSQL connection failed ({e}). Re-initializing with SQLite local storage...")
         fallback_url = "sqlite+aiosqlite:///./aethermind.db"

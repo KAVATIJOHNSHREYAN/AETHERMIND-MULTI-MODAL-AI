@@ -28,6 +28,7 @@ class User(Base):
     chats = relationship("Chat", back_populates="user", cascade="all, delete-orphan")
     files = relationship("File", back_populates="user", cascade="all, delete-orphan")
     folders = relationship("Folder", back_populates="user", cascade="all, delete-orphan")
+    projects = relationship("Project", back_populates="user", cascade="all, delete-orphan")
     provider_settings = relationship("ProviderSettings", back_populates="user", cascade="all, delete-orphan")
     memories = relationship("MemoryMetadata", back_populates="user", cascade="all, delete-orphan")
 

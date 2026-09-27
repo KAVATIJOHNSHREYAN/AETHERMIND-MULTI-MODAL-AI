@@ -19,12 +19,15 @@ from app.middleware.error_handler import (
     validation_exception_handler,
 )
 
+from app.database.session import init_db
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Enterprise Lifespan Lifecycle Manager for Connection Pools"""
     logger.info("Initializing AetherMind Multimodal AI Infrastructure...")
     logger.info(f"Environment: {settings.ENVIRONMENT} | Version: {settings.VERSION}")
     
+    await init_db()
     await redis_manager.connect()
     await qdrant_manager.connect()
     
