@@ -1,0 +1,12 @@
+from pydantic import BaseModel
+from typing import Generic, TypeVar, Optional, List
+from datetime import datetime
+
+T = TypeVar("T")
+
+class APIResponse(BaseModel, Generic[T]):
+    success: bool = True
+    message: str = "Operation completed successfully"
+    data: Optional[T] = None
+    error_code: Optional[str] = None
+    timestamp: datetime = datetime.utcnow()
