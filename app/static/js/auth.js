@@ -96,6 +96,49 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     }
 
+    // Real Clerk OAuth Authentication Handlers (Google & GitHub)
+    const btnOauthGoogle = document.getElementById("btn-oauth-google");
+    const btnOauthGithub = document.getElementById("btn-oauth-github");
+
+    async function handleClerkOAuth(strategy) {
+        if (!window.Clerk) {
+            console.warn(`[Clerk OAuth Warning] Clerk SDK not loaded for ${strategy}`);
+            showToast("Clerk SDK is loading, please try again.", "error");
+            return;
+        }
+        try {
+            showToast(`Redirecting to ${strategy.includes('google') ? 'Google' : 'GitHub'} OAuth...`, "info");
+            
+            // Execute Clerk OAuth redirect
+            if (window.Clerk.client && window.Clerk.client.signIn) {
+                await window.Clerk.client.signIn.authenticateWithRedirect({
+                    strategy: strategy,
+                    redirectUrl: window.location.origin + "/",
+                    redirectUrlComplete: window.location.origin + "/"
+                });
+            } else if (window.Clerk.authenticateWithRedirect) {
+                await window.Clerk.authenticateWithRedirect({
+                    strategy: strategy,
+                    redirectUrl: window.location.origin + "/",
+                    redirectUrlComplete: window.location.origin + "/"
+                });
+            } else {
+                throw new Error("Clerk authenticateWithRedirect API is not available on window.Clerk");
+            }
+        } catch (err) {
+            console.error(`[Clerk OAuth Error - ${strategy}]:`, err);
+            const errorMsg = err.errors?.[0]?.longMessage || err.message || `Clerk ${strategy} OAuth failed`;
+            if (loginErrorBox) {
+                loginErrorBox.textContent = `Clerk OAuth Error: ${errorMsg}`;
+                loginErrorBox.classList.remove("hidden");
+            }
+            showToast(errorMsg, "error");
+        }
+    }
+
+    btnOauthGoogle?.addEventListener("click", () => handleClerkOAuth("oauth_google"));
+    btnOauthGithub?.addEventListener("click", () => handleClerkOAuth("oauth_github"));
+
     // 3. REAL Clerk Login Execution
     const formLogin = document.getElementById("form-login");
     const loginErrorBox = document.getElementById("login-error-box");
