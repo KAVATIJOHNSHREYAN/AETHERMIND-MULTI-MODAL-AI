@@ -3,108 +3,126 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AetherMind Multimodal AI — Enterprise Cloud Workspace</title>
+    <title>AetherMind Multimodal AI — Enterprise AI Operating System</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="/static/css/styles.css">
 </head>
-<body class="bg-[#07090e] text-slate-100 font-sans antialiased overflow-hidden flex h-screen w-screen relative">
+<body class="bg-[#070913] text-white font-sans antialiased overflow-hidden flex h-screen w-screen relative p-3 gap-3">
+
+    <!-- Background Wallpaper & Glass Dark Overlay -->
+    <div class="app-background-layer"></div>
+    <div class="app-background-overlay"></div>
 
     <!-- Toast Notification Container -->
     <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col space-y-3 pointer-events-none max-w-sm"></div>
 
     <!-- Drag and Drop Fullscreen Overlay -->
-    <div id="dropzone-overlay" class="fixed inset-0 bg-cyan-950/80 backdrop-blur-md z-40 border-4 border-dashed border-cyan-400 flex flex-col items-center justify-center space-y-4 hidden transition-all duration-200">
-        <div class="w-20 h-20 rounded-full bg-cyan-500/20 flex items-center justify-center text-cyan-300 text-4xl animate-bounce">
-            📁
+    <div id="dropzone-overlay" class="fixed inset-0 bg-[#070913]/90 backdrop-blur-xl z-50 border-2 border-dashed border-[#3ABEFF] flex flex-col items-center justify-center space-y-4 hidden transition-all duration-300 rounded-3xl">
+        <div class="w-20 h-20 rounded-full bg-[#3ABEFF]/20 flex items-center justify-center text-[#3ABEFF] animate-bounce shadow-lg shadow-[#3ABEFF]/30">
+            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
         </div>
-        <h2 class="text-2xl font-bold text-white tracking-wide">Drop Files into Cloud Workspace</h2>
-        <p class="text-cyan-200 text-sm font-medium">Supports PDF, DOCX, PPTX, CSV, Excel, TXT, JSON, MD, PNG, JPG, MP3, WAV, MP4, ZIP</p>
+        <h2 class="text-2xl font-heading font-bold text-white tracking-wide">Drop Files into AetherMind OS</h2>
+        <p class="text-[#B7C2D8] text-sm font-medium">PDF, DOCX, PPTX, CSV, Excel, TXT, JSON, MD, PNG, JPG, MP3, WAV, MP4, ZIP</p>
     </div>
 
     <!-- =========================================================================
-         1. COLLAPSIBLE SIDEBAR NAVIGATION
+         1. FLOATING GLASS SIDEBAR NAVIGATION (280px)
          ========================================================================= -->
-    <aside id="sidebar" class="w-72 bg-[#0e131f]/90 backdrop-blur-xl border-r border-white/10 flex flex-col transition-all duration-300 z-30 shrink-0">
-        <!-- Sidebar Brand Header -->
+    <aside id="sidebar" class="w-[280px] h-full glass-panel flex flex-col transition-all duration-300 z-30 shrink-0 relative overflow-hidden">
+        
+        <!-- Sidebar Header & Brand Logo -->
         <div class="h-16 flex items-center justify-between px-5 border-b border-white/10">
             <div class="flex items-center space-x-3">
-                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 via-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
-                    <span class="text-white font-bold text-lg">Æ</span>
+                <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#3ABEFF] to-[#6D5DF6] flex items-center justify-center shadow-lg shadow-[#6D5DF6]/30">
+                    <span class="text-white font-heading font-bold text-xl">Æ</span>
                 </div>
                 <div>
-                    <h1 class="font-heading font-bold text-base tracking-wide text-white">AetherMind</h1>
-                    <span class="text-[10px] uppercase font-mono tracking-wider text-cyan-400">Cloud Workspace</span>
+                    <h1 class="font-heading font-bold text-base tracking-tight text-white">AetherMind</h1>
+                    <span class="text-[10px] uppercase font-mono tracking-widest text-[#3ABEFF]">Cortex OS v4.0</span>
                 </div>
             </div>
-            <button id="sidebar-toggle-btn" class="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition" title="Toggle Sidebar">
+            <button id="sidebar-toggle-btn" class="p-2 rounded-xl text-[#B7C2D8] hover:text-white hover:bg-white/5 transition" title="Toggle Sidebar">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/></svg>
             </button>
         </div>
 
         <!-- New Conversation Button -->
-        <div class="p-4 space-y-2">
-            <button id="btn-new-chat" class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white font-medium flex items-center justify-center space-x-2 shadow-lg shadow-cyan-500/25 transition text-xs">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                <span>New Conversation</span>
+        <div class="p-4">
+            <button id="btn-new-chat" class="w-full py-3 px-4 btn-primary flex items-center justify-center space-x-2 text-xs uppercase tracking-wider">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                <span>New Chat</span>
             </button>
         </div>
 
-        <!-- Productivity Workspace Navigation Tabs -->
-        <div class="px-3 py-2 space-y-1 border-b border-white/10">
-            <button id="open-dashboard-btn" class="w-full py-2 px-3 rounded-lg text-xs font-medium text-slate-300 hover:bg-white/5 flex items-center space-x-2.5 transition">
-                <span class="text-amber-400 text-sm">📊</span>
-                <span>Dashboard Overview</span>
-            </button>
-            <button id="open-projects-btn" class="w-full py-2 px-3 rounded-lg text-xs font-medium text-slate-300 hover:bg-white/5 flex items-center space-x-2.5 transition">
-                <span class="text-cyan-400 text-sm">🚀</span>
-                <span>Projects & Folders</span>
-            </button>
-            <button id="open-media-btn" class="w-full py-2 px-3 rounded-lg text-xs font-medium text-slate-300 hover:bg-white/5 flex items-center space-x-2.5 transition">
-                <span class="text-purple-400 text-sm">🖼️</span>
-                <span>Media Gallery</span>
-            </button>
-            <button id="open-doc-lib-btn" class="w-full py-2 px-3 rounded-lg text-xs font-medium text-slate-300 hover:bg-white/5 flex items-center space-x-2.5 transition">
-                <span class="text-emerald-400 text-sm">📄</span>
-                <span>Document Library</span>
-            </button>
-            <button id="open-audio-lib-btn" class="w-full py-2 px-3 rounded-lg text-xs font-medium text-slate-300 hover:bg-white/5 flex items-center space-x-2.5 transition">
-                <span class="text-rose-400 text-sm">🎙️</span>
-                <span>Audio Library</span>
-            </button>
-        </div>
-
-        <!-- Conversations trajectory list -->
-        <div class="flex-1 overflow-y-auto px-3 space-y-4 pt-3">
-            <div>
-                <span class="px-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Conversations</span>
-                <div id="conversation-list" class="mt-2 space-y-1">
+        <!-- Workspace & Navigation Sections -->
+        <div class="flex-1 overflow-y-auto px-3 space-y-4">
+            
+            <!-- Pinned & Recent Chats Section -->
+            <div class="space-y-1">
+                <div class="px-3 text-[11px] font-mono font-semibold text-[#7E8CA5] uppercase tracking-wider">Recent Conversations</div>
+                <div id="conversation-list" class="space-y-1 pt-1">
                     <!-- Conversations rendered dynamically -->
                 </div>
             </div>
+
+            <!-- Workspace Features Section -->
+            <div class="space-y-1 pt-2 border-t border-white/10">
+                <div class="px-3 text-[11px] font-mono font-semibold text-[#7E8CA5] uppercase tracking-wider">Workspace Modules</div>
+
+                <button id="open-dashboard-btn" class="w-full py-2.5 px-3 sidebar-nav-item text-xs font-medium text-[#B7C2D8] flex items-center space-x-3">
+                    <svg class="w-4 h-4 text-[#3ABEFF]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                    <span>Workspace Dashboard</span>
+                </button>
+
+                <button id="open-doc-lib-btn" class="w-full py-2.5 px-3 sidebar-nav-item text-xs font-medium text-[#B7C2D8] flex items-center space-x-3">
+                    <svg class="w-4 h-4 text-[#22C55E]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    <span>Documents Intelligence</span>
+                </button>
+
+                <button id="open-media-btn" class="w-full py-2.5 px-3 sidebar-nav-item text-xs font-medium text-[#B7C2D8] flex items-center space-x-3">
+                    <svg class="w-4 h-4 text-[#6D5DF6]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    <span>Images & AI Artwork</span>
+                </button>
+
+                <button id="open-audio-lib-btn" class="w-full py-2.5 px-3 sidebar-nav-item text-xs font-medium text-[#B7C2D8] flex items-center space-x-3">
+                    <svg class="w-4 h-4 text-[#EF4444]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+                    <span>Audio & Voice Studio</span>
+                </button>
+
+                <button id="open-memory-btn" class="w-full py-2.5 px-3 sidebar-nav-item text-xs font-medium text-[#B7C2D8] flex items-center space-x-3">
+                    <svg class="w-4 h-4 text-[#FACC15]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                    <span>Memory & Knowledge</span>
+                </button>
+
+                <button id="open-projects-btn" class="w-full py-2.5 px-3 sidebar-nav-item text-xs font-medium text-[#B7C2D8] flex items-center space-x-3">
+                    <svg class="w-4 h-4 text-[#3ABEFF]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+                    <span>Projects & Folders</span>
+                </button>
+
+                <button id="open-settings-btn" class="w-full py-2.5 px-3 sidebar-nav-item text-xs font-medium text-[#B7C2D8] flex items-center space-x-3">
+                    <svg class="w-4 h-4 text-[#7E8CA5]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+                    <span>System Settings</span>
+                </button>
+            </div>
         </div>
 
-        <!-- Sidebar Footer Controls -->
-        <div class="p-3 border-t border-white/10 space-y-1.5">
-            <button id="open-global-search-btn" class="w-full py-2 px-3 rounded-lg text-xs font-medium text-slate-300 hover:bg-white/5 flex items-center space-x-2.5 transition">
-                <span class="text-cyan-400 text-sm">🌐</span>
-                <span>Global Workspace Search</span>
-            </button>
-            <button id="open-recycle-btn" class="w-full py-2 px-3 rounded-lg text-xs font-medium text-slate-300 hover:bg-white/5 flex items-center space-x-2.5 transition">
-                <span class="text-rose-400 text-sm">🗑️</span>
-                <span>Recycle Bin</span>
-            </button>
-            <button id="open-knowledge-btn" class="w-full py-2 px-3 rounded-lg text-xs font-medium text-slate-300 hover:bg-white/5 flex items-center space-x-2.5 transition">
-                <span class="text-indigo-400 text-sm">📚</span>
-                <span>Knowledge Base & RAG</span>
-            </button>
-            <button id="open-memory-btn" class="w-full py-2 px-3 rounded-lg text-xs font-medium text-slate-300 hover:bg-white/5 flex items-center space-x-2.5 transition">
-                <span class="text-purple-400 text-sm">🧠</span>
-                <span>Long-Term Memory</span>
-            </button>
-            <button id="open-settings-btn" class="w-full py-2 px-3 rounded-lg text-xs font-medium text-slate-300 hover:bg-white/5 flex items-center space-x-2.5 transition">
-                <span class="text-slate-400 text-sm">⚙️</span>
-                <span>AI Providers & Settings</span>
+        <!-- Bottom User Profile Section -->
+        <div class="p-3 border-t border-white/10 flex items-center justify-between bg-black/20">
+            <div class="flex items-center space-x-3">
+                <div class="relative">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#3ABEFF] to-[#6D5DF6] flex items-center justify-center font-bold text-white text-xs border border-white/20">
+                        JS
+                    </div>
+                    <span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-[#22C55E] ring-2 ring-[#070913]"></span>
+                </div>
+                <div class="text-xs">
+                    <div class="font-bold text-white leading-tight">John Shreyan</div>
+                    <div class="text-[10px] text-[#7E8CA5]">Enterprise Architect</div>
+                </div>
+            </div>
+            <button id="open-recycle-btn" class="p-2 rounded-xl text-[#7E8CA5] hover:text-[#EF4444] hover:bg-white/5 transition" title="Recycle Bin">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
             </button>
         </div>
     </aside>
@@ -112,14 +130,15 @@
     <!-- =========================================================================
          2. MAIN UNIFIED MULTIMODAL CONVERSATION CANVAS
          ========================================================================= -->
-    <main class="flex-1 flex flex-col h-full bg-[#07090e] relative overflow-hidden">
+    <main class="flex-1 flex flex-col h-full relative overflow-hidden gap-3">
         
-        <!-- Top Navigation Header Bar -->
-        <header class="h-16 border-b border-white/10 bg-[#0e131f]/60 backdrop-blur-md px-6 flex items-center justify-between z-20 shrink-0">
-            <!-- Model Selector Dropdown -->
+        <!-- Floating Glass Top Navigation Bar -->
+        <header class="h-16 glass-panel px-6 flex items-center justify-between z-20 shrink-0">
+            
+            <!-- AI Model Selector & Status Badge -->
             <div class="flex items-center space-x-4">
                 <div class="relative">
-                    <select id="model-select" class="bg-[#151c2d] border border-white/15 text-slate-200 text-sm font-medium rounded-xl py-2 px-4 pr-9 appearance-none focus:outline-none focus:border-cyan-500 cursor-pointer">
+                    <select id="model-select" class="glass-input text-xs font-semibold py-2 px-4 pr-8 appearance-none focus:outline-none cursor-pointer text-[#3ABEFF]">
                         <option value="gemini-2.5-flash">✨ Google Gemini 2.5 Flash (Multimodal + RAG)</option>
                         <option value="gpt-4o">⚡ OpenAI GPT-4o Multimodal</option>
                         <option value="claude-3-5-sonnet">🧠 Anthropic Claude 3.5 Sonnet</option>
@@ -127,168 +146,186 @@
                         <option value="deepseek-chat">🐋 DeepSeek Chat (R1)</option>
                     </select>
                 </div>
-                <span class="px-2.5 py-1 rounded-full text-[10px] font-mono font-medium bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                    Enterprise Workspace Active
+                <span class="hidden md:inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-[10px] font-mono font-medium bg-[#3ABEFF]/15 text-[#3ABEFF] border border-[#3ABEFF]/30">
+                    <span class="w-2 h-2 rounded-full bg-[#3ABEFF] animate-pulse"></span>
+                    <span>Qdrant Vector RAG Active</span>
                 </span>
             </div>
 
-            <div class="flex items-center space-x-3">
-                <button id="btn-compress-memory" class="py-1.5 px-3 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 text-xs font-medium transition flex items-center space-x-1" title="Compress Conversation into Memory">
-                    <span>🧠</span>
+            <!-- Topbar Right Control Actions -->
+            <div class="flex items-center space-x-2">
+                <button id="open-global-search-btn" class="p-2 rounded-xl text-[#B7C2D8] hover:text-white hover:bg-white/5 transition flex items-center space-x-1 text-xs" title="Global Search">
+                    <svg class="w-4 h-4 text-[#3ABEFF]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    <span class="hidden sm:inline">Search</span>
+                </button>
+                <button id="open-knowledge-btn" class="p-2 rounded-xl text-[#B7C2D8] hover:text-white hover:bg-white/5 transition flex items-center space-x-1 text-xs" title="Knowledge Base">
+                    <svg class="w-4 h-4 text-[#6D5DF6]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                    <span class="hidden sm:inline">Knowledge</span>
+                </button>
+                <button id="btn-compress-memory" class="py-1.5 px-3 rounded-xl bg-[#6D5DF6]/20 hover:bg-[#6D5DF6]/30 text-[#6D5DF6] text-xs font-semibold transition flex items-center space-x-1 border border-[#6D5DF6]/30" title="Compress Memory">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                     <span>Compress Memory</span>
                 </button>
-                <button id="btn-clear-chat" class="p-2 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition text-xs font-medium flex items-center space-x-1" title="Clear Chat History">
+                <button id="btn-clear-chat" class="p-2 rounded-xl text-[#7E8CA5] hover:text-[#EF4444] hover:bg-white/5 transition text-xs font-medium flex items-center space-x-1" title="Clear Chat">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                    <span>Clear</span>
                 </button>
             </div>
         </header>
 
-        <!-- Messages Trajectory Feed Area -->
-        <div id="messages-container" class="flex-1 overflow-y-auto p-6 space-y-6 max-w-4xl mx-auto w-full scroll-smooth">
+        <!-- Messages Trajectory Canvas (Centered Max-Width 900px) -->
+        <div id="messages-container" class="flex-1 overflow-y-auto p-6 space-y-6 max-w-[900px] mx-auto w-full scroll-smooth">
+            
             <!-- Welcome Hero Component -->
             <div id="welcome-hero" class="text-center py-12 space-y-6 animate-fade-in">
-                <div class="inline-flex p-4 rounded-3xl bg-gradient-to-tr from-cyan-500/20 via-indigo-500/20 to-purple-500/20 border border-white/10 shadow-2xl">
-                    <span class="text-5xl">📊</span>
+                <div class="inline-flex p-5 rounded-3xl bg-gradient-to-tr from-[#3ABEFF]/20 to-[#6D5DF6]/20 border border-white/10 shadow-2xl shadow-[#6D5DF6]/20">
+                    <svg class="w-12 h-12 text-[#3ABEFF]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                 </div>
                 <div class="space-y-2">
-                    <h2 class="text-3xl font-heading font-bold text-white tracking-tight">AetherMind Cloud Workspace</h2>
-                    <p class="text-slate-400 max-w-lg mx-auto text-sm leading-relaxed">
-                        Unified AI Productivity Workspace for <strong>Projects</strong>, <strong>Media Gallery</strong>, <strong>Document & Audio Libraries</strong>, <strong>Storage Analytics</strong>, and <strong>Qdrant Vector RAG</strong>.
+                    <h2 class="text-4xl font-heading font-bold text-white tracking-tight">AetherMind Multimodal AI</h2>
+                    <p class="text-[#B7C2D8] max-w-xl mx-auto text-sm leading-relaxed">
+                        Next-generation AI Operating System combining <strong>Document Intelligence</strong>, <strong>Vision OCR</strong>, <strong>AI Image Generation</strong>, <strong>Voice Audio</strong>, and <strong>Qdrant Vector RAG</strong> inside one unified workspace.
                     </p>
                 </div>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-2xl mx-auto pt-4">
-                    <button class="p-3.5 rounded-2xl bg-white/5 border border-white/10 hover:border-amber-500/40 hover:bg-white/10 text-left transition space-y-1.5 group" onclick="triggerQuickAction('dashboard')">
-                        <div class="text-xl">📊</div>
-                        <div class="font-semibold text-xs text-white group-hover:text-amber-300">Dashboard</div>
-                        <div class="text-[10px] text-slate-400">Usage & Storage Stats</div>
+
+                <!-- Quick Action Cards Grid -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3.5 max-w-2xl mx-auto pt-4">
+                    <button class="glass-card p-4 text-left transition space-y-2 group" onclick="triggerQuickAction('dashboard')">
+                        <div class="w-8 h-8 rounded-xl bg-[#3ABEFF]/20 flex items-center justify-center text-[#3ABEFF]">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                        </div>
+                        <div class="font-heading font-bold text-xs text-white group-hover:text-[#3ABEFF]">Dashboard</div>
+                        <div class="text-[10px] text-[#7E8CA5]">Storage & Usage Stats</div>
                     </button>
-                    <button class="p-3.5 rounded-2xl bg-white/5 border border-white/10 hover:border-cyan-500/40 hover:bg-white/10 text-left transition space-y-1.5 group" onclick="triggerQuickAction('projects')">
-                        <div class="text-xl">🚀</div>
-                        <div class="font-semibold text-xs text-white group-hover:text-cyan-300">Projects & Folders</div>
-                        <div class="text-[10px] text-slate-400">Organize assets</div>
+
+                    <button class="glass-card p-4 text-left transition space-y-2 group" onclick="triggerQuickAction('projects')">
+                        <div class="w-8 h-8 rounded-xl bg-[#6D5DF6]/20 flex items-center justify-center text-[#6D5DF6]">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+                        </div>
+                        <div class="font-heading font-bold text-xs text-white group-hover:text-[#6D5DF6]">Projects</div>
+                        <div class="text-[10px] text-[#7E8CA5]">Organize Workspace</div>
                     </button>
-                    <button class="p-3.5 rounded-2xl bg-white/5 border border-white/10 hover:border-purple-500/40 hover:bg-white/10 text-left transition space-y-1.5 group" onclick="triggerQuickAction('media')">
-                        <div class="text-xl">🖼️</div>
-                        <div class="font-semibold text-xs text-white group-hover:text-purple-300">Media Gallery</div>
-                        <div class="text-[10px] text-slate-400">Images & AI Artwork</div>
+
+                    <button class="glass-card p-4 text-left transition space-y-2 group" onclick="triggerQuickAction('media')">
+                        <div class="w-8 h-8 rounded-xl bg-[#22C55E]/20 flex items-center justify-center text-[#22C55E]">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                        </div>
+                        <div class="font-heading font-bold text-xs text-white group-hover:text-[#22C55E]">Media Gallery</div>
+                        <div class="text-[10px] text-[#7E8CA5]">AI Artwork & Images</div>
                     </button>
-                    <button class="p-3.5 rounded-2xl bg-white/5 border border-white/10 hover:border-emerald-500/40 hover:bg-white/10 text-left transition space-y-1.5 group" onclick="triggerQuickAction('doclib')">
-                        <div class="text-xl">📄</div>
-                        <div class="font-semibold text-xs text-white group-hover:text-emerald-300">Document Library</div>
-                        <div class="text-[10px] text-slate-400">PDF, DOCX, CSV, Excel</div>
+
+                    <button class="glass-card p-4 text-left transition space-y-2 group" onclick="triggerQuickAction('doclib')">
+                        <div class="w-8 h-8 rounded-xl bg-[#FACC15]/20 flex items-center justify-center text-[#FACC15]">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        </div>
+                        <div class="font-heading font-bold text-xs text-white group-hover:text-[#FACC15]">Document Library</div>
+                        <div class="text-[10px] text-[#7E8CA5]">PDF, DOCX, CSV, Excel</div>
                     </button>
                 </div>
             </div>
         </div>
 
         <!-- =========================================================================
-             3. BOTTOM MULTIMODAL ATTACHMENT TRAY & CHAT INPUT TOOLBAR
+             3. FLOATING SEARCH-STYLE CHAT INPUT AREA (Max-Width 900px)
              ========================================================================= -->
-        <div class="p-4 bg-[#0e131f]/80 backdrop-blur-xl border-t border-white/10 shrink-0 z-20">
-            <div class="max-w-4xl mx-auto space-y-3">
-                
-                <!-- Pending Attachment Tray -->
-                <div id="attachment-tray" class="flex flex-wrap gap-2.5 hidden animate-fade-in">
-                    <!-- Attachment chips rendered here dynamically -->
-                </div>
+        <div class="p-3 max-w-[900px] mx-auto w-full shrink-0 z-20">
+            
+            <!-- Pending File Attachment Tray -->
+            <div id="attachment-tray" class="flex flex-wrap gap-2 mb-2 hidden animate-fade-in">
+                <!-- Attachment chips rendered dynamically -->
+            </div>
 
-                <!-- Chat Form & Toolbar -->
-                <form id="chat-form" class="relative bg-[#151c2d] border border-white/15 focus-within:border-cyan-500/80 rounded-2xl shadow-2xl transition">
-                    <textarea id="chat-input" rows="2" placeholder="Ask questions, analyze uploaded files, generate images, or transcribe voice audio..." class="w-full bg-transparent px-4 py-3 text-sm text-slate-100 placeholder-slate-400 focus:outline-none resize-none min-h-[50px] max-h-36"></textarea>
+            <!-- Floating Search Input Box -->
+            <form id="chat-form" class="glass-panel p-2 flex flex-col gap-2 rounded-[22px] border border-white/10 focus-within:border-[#3ABEFF]/60 shadow-2xl transition">
+                <textarea id="chat-input" rows="2" placeholder="Ask questions, analyze uploaded documents, generate images, or transcribe voice audio..." class="w-full bg-transparent px-4 py-2 text-sm text-white placeholder-[#7E8CA5] focus:outline-none resize-none min-h-[46px] max-h-36"></textarea>
 
-                    <div class="flex items-center justify-between px-3 py-2 border-t border-white/5 bg-[#0e131f]/40 rounded-b-2xl">
-                        <!-- Multimodal Tool Action Buttons -->
-                        <div class="flex items-center space-x-1.5">
-                            <input type="file" id="file-upload-input" class="hidden" multiple accept=".pdf,.docx,.pptx,.txt,.csv,.xlsx,.xls,.json,.md,.png,.jpg,.jpeg,.webp,.svg,.mp3,.wav,.m4a,.flac,.mp4,.mov,.avi,.mkv">
-                            
-                            <button type="button" id="btn-attach-file" class="p-2 rounded-xl text-slate-400 hover:text-cyan-300 hover:bg-white/5 transition flex items-center space-x-1 text-xs" title="Attach File">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
-                                <span class="hidden sm:inline">Attach</span>
-                            </button>
+                <!-- Toolbar Actions Row -->
+                <div class="flex items-center justify-between px-2 pt-1 border-t border-white/5">
+                    
+                    <!-- Left Attachment & Multimodal Tools -->
+                    <div class="flex items-center space-x-1">
+                        <input type="file" id="file-upload-input" class="hidden" multiple accept=".pdf,.docx,.pptx,.txt,.csv,.xlsx,.xls,.json,.md,.png,.jpg,.jpeg,.webp,.svg,.mp3,.wav,.m4a,.flac,.mp4,.mov,.avi,.mkv">
+                        
+                        <button type="button" id="btn-attach-file" class="p-2 rounded-xl text-[#B7C2D8] hover:text-[#3ABEFF] hover:bg-white/5 transition flex items-center space-x-1.5 text-xs" title="Attach File">
+                            <svg class="w-4 h-4 text-[#3ABEFF]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+                            <span class="hidden sm:inline font-medium">Attach</span>
+                        </button>
 
-                            <button type="button" id="btn-open-camera" class="p-2 rounded-xl text-slate-400 hover:text-indigo-300 hover:bg-white/5 transition text-xs flex items-center space-x-1" title="Camera Snapshot">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><circle cx="12" cy="13" r="3"/></svg>
-                                <span class="hidden sm:inline">Camera</span>
-                            </button>
+                        <button type="button" id="btn-open-camera" class="p-2 rounded-xl text-[#B7C2D8] hover:text-[#6D5DF6] hover:bg-white/5 transition text-xs flex items-center space-x-1.5" title="Camera Snapshot">
+                            <svg class="w-4 h-4 text-[#6D5DF6]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><circle cx="12" cy="13" r="3"/></svg>
+                            <span class="hidden sm:inline font-medium">Camera</span>
+                        </button>
 
-                            <button type="button" id="btn-open-image-gen" class="p-2 rounded-xl text-slate-400 hover:text-purple-300 hover:bg-white/5 transition text-xs flex items-center space-x-1" title="Text to Image Generation">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                                <span class="hidden sm:inline">Generate</span>
-                            </button>
+                        <button type="button" id="btn-open-image-gen" class="p-2 rounded-xl text-[#B7C2D8] hover:text-[#22C55E] hover:bg-white/5 transition text-xs flex items-center space-x-1.5" title="Image Generation">
+                            <svg class="w-4 h-4 text-[#22C55E]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            <span class="hidden sm:inline font-medium">Generate</span>
+                        </button>
 
-                            <button type="button" id="btn-record-voice" class="p-2 rounded-xl text-slate-400 hover:text-emerald-300 hover:bg-white/5 transition text-xs flex items-center space-x-1" title="Record Voice Audio">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
-                                <span class="hidden sm:inline">Voice</span>
-                            </button>
-                        </div>
-
-                        <!-- Send Button -->
-                        <button type="submit" id="btn-send-message" class="py-2 px-4 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white font-medium text-xs flex items-center space-x-1.5 shadow-lg shadow-cyan-500/25 transition">
-                            <span>Send</span>
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9-7-9-7-9 7 9 7zm0 0v-8"/></svg>
+                        <button type="button" id="btn-record-voice" class="p-2 rounded-xl text-[#B7C2D8] hover:text-[#EF4444] hover:bg-white/5 transition text-xs flex items-center space-x-1.5" title="Voice Audio">
+                            <svg class="w-4 h-4 text-[#EF4444]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+                            <span class="hidden sm:inline font-medium">Voice</span>
                         </button>
                     </div>
-                </form>
-            </div>
+
+                    <!-- Glowing Blue-Purple Send Button -->
+                    <button type="submit" id="btn-send-message" class="py-2.5 px-5 btn-primary text-xs font-bold uppercase tracking-wider flex items-center space-x-2">
+                        <span>Send</span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                    </button>
+                </div>
+            </form>
         </div>
     </main>
 
     <!-- =========================================================================
-         4. MODAL: WORKSPACE DASHBOARD (STORAGE & USAGE STATS)
+         4. MODAL: WORKSPACE DASHBOARD
          ========================================================================= -->
-    <div id="modal-workspace-dashboard" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-        <div class="glass-panel w-full max-w-4xl rounded-2xl overflow-hidden shadow-2xl border border-white/15 animate-fade-in flex flex-col h-[85vh]">
-            <div class="h-14 px-6 border-b border-white/10 flex items-center justify-between shrink-0 bg-[#0e131f]">
+    <div id="modal-workspace-dashboard" class="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-panel w-full max-w-4xl overflow-hidden shadow-2xl animate-fade-in flex flex-col h-[85vh]">
+            <div class="h-14 px-6 border-b border-white/10 flex items-center justify-between shrink-0 bg-[#0F1220]">
                 <div class="flex items-center space-x-3">
-                    <span class="text-xl">📊</span>
+                    <svg class="w-5 h-5 text-[#3ABEFF]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
                     <h3 class="font-heading font-bold text-white text-base">Workspace Dashboard & Analytics</h3>
                 </div>
-                <button id="close-dashboard-btn" class="text-slate-400 hover:text-white">✕</button>
+                <button id="close-dashboard-btn" class="p-2 text-[#7E8CA5] hover:text-white">✕</button>
             </div>
 
-            <div class="p-6 overflow-y-auto space-y-6 flex-1 bg-[#07090e] text-xs">
-                <!-- Top Overview Metrics Grid -->
+            <div class="p-6 overflow-y-auto space-y-6 flex-1 text-xs">
                 <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
-                    <div class="p-4 rounded-xl bg-white/5 border border-white/10 space-y-1">
-                        <div class="text-[10px] uppercase font-mono text-slate-400">Projects</div>
-                        <div id="dash-stat-projects" class="text-2xl font-bold text-cyan-300">0</div>
+                    <div class="glass-card p-4 space-y-1">
+                        <div class="text-[10px] uppercase font-mono text-[#7E8CA5]">Projects</div>
+                        <div id="dash-stat-projects" class="text-2xl font-bold text-[#3ABEFF]">0</div>
                     </div>
-                    <div class="p-4 rounded-xl bg-white/5 border border-white/10 space-y-1">
-                        <div class="text-[10px] uppercase font-mono text-slate-400">Conversations</div>
-                        <div id="dash-stat-chats" class="text-2xl font-bold text-indigo-300">0</div>
+                    <div class="glass-card p-4 space-y-1">
+                        <div class="text-[10px] uppercase font-mono text-[#7E8CA5]">Conversations</div>
+                        <div id="dash-stat-chats" class="text-2xl font-bold text-[#6D5DF6]">0</div>
                     </div>
-                    <div class="p-4 rounded-xl bg-white/5 border border-white/10 space-y-1">
-                        <div class="text-[10px] uppercase font-mono text-slate-400">Files Stored</div>
-                        <div id="dash-stat-files" class="text-2xl font-bold text-purple-300">0</div>
+                    <div class="glass-card p-4 space-y-1">
+                        <div class="text-[10px] uppercase font-mono text-[#7E8CA5]">Files Stored</div>
+                        <div id="dash-stat-files" class="text-2xl font-bold text-[#22C55E]">0</div>
                     </div>
-                    <div class="p-4 rounded-xl bg-white/5 border border-white/10 space-y-1">
-                        <div class="text-[10px] uppercase font-mono text-slate-400">AI Images</div>
-                        <div id="dash-stat-gen" class="text-2xl font-bold text-emerald-300">0</div>
+                    <div class="glass-card p-4 space-y-1">
+                        <div class="text-[10px] uppercase font-mono text-[#7E8CA5]">AI Images</div>
+                        <div id="dash-stat-gen" class="text-2xl font-bold text-[#FACC15]">0</div>
                     </div>
-                    <div class="p-4 rounded-xl bg-white/5 border border-white/10 space-y-1">
-                        <div class="text-[10px] uppercase font-mono text-slate-400">RAG Collections</div>
-                        <div id="dash-stat-kb" class="text-2xl font-bold text-rose-300">0</div>
-                    </div>
-                </div>
-
-                <!-- Storage Gauge Bar -->
-                <div class="p-4 rounded-xl bg-white/5 border border-white/10 space-y-2">
-                    <div class="flex items-center justify-between font-semibold">
-                        <span class="text-white">Cloud Storage Usage</span>
-                        <span id="storage-usage-text" class="text-cyan-300 font-mono">0 MB / 50 GB (0%)</span>
-                    </div>
-                    <div class="w-full h-3 bg-black/40 rounded-full overflow-hidden border border-white/10">
-                        <div id="storage-gauge-bar" class="h-full bg-gradient-to-r from-cyan-500 via-indigo-500 to-purple-500 transition-all duration-500" style="width: 0%"></div>
+                    <div class="glass-card p-4 space-y-1">
+                        <div class="text-[10px] uppercase font-mono text-[#7E8CA5]">RAG Collections</div>
+                        <div id="dash-stat-kb" class="text-2xl font-bold text-[#EF4444]">0</div>
                     </div>
                 </div>
 
-                <!-- Recent Activity Timeline -->
+                <div class="glass-card p-5 space-y-3">
+                    <div class="flex items-center justify-between font-bold">
+                        <span class="text-white">Cloud Storage Utilization</span>
+                        <span id="storage-usage-text" class="text-[#3ABEFF] font-mono">0 MB / 50 GB (0%)</span>
+                    </div>
+                    <div class="w-full h-3 bg-black/50 rounded-full overflow-hidden border border-white/10">
+                        <div id="storage-gauge-bar" class="h-full bg-gradient-to-r from-[#3ABEFF] to-[#6D5DF6] transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                </div>
+
                 <div class="space-y-3">
-                    <h4 class="font-bold text-sm text-white">Recent Activity Timeline</h4>
-                    <div id="dashboard-activity-timeline" class="space-y-2">
-                        <!-- Timeline entries rendered dynamically -->
-                    </div>
+                    <h4 class="font-heading font-bold text-sm text-white">Recent Activity Timeline</h4>
+                    <div id="dashboard-activity-timeline" class="space-y-2"></div>
                 </div>
             </div>
         </div>
@@ -297,75 +334,65 @@
     <!-- =========================================================================
          5. MODAL: PROJECTS & FOLDERS WORKSPACE
          ========================================================================= -->
-    <div id="modal-projects-workspace" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-        <div class="glass-panel w-full max-w-4xl rounded-2xl overflow-hidden shadow-2xl border border-white/15 animate-fade-in flex flex-col h-[85vh]">
-            <div class="h-14 px-6 border-b border-white/10 flex items-center justify-between shrink-0 bg-[#0e131f]">
+    <div id="modal-projects-workspace" class="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-panel w-full max-w-4xl overflow-hidden shadow-2xl animate-fade-in flex flex-col h-[85vh]">
+            <div class="h-14 px-6 border-b border-white/10 flex items-center justify-between shrink-0 bg-[#0F1220]">
                 <div class="flex items-center space-x-3">
-                    <span class="text-xl">🚀</span>
+                    <svg class="w-5 h-5 text-[#3ABEFF]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
                     <h3 class="font-heading font-bold text-white text-base">Projects & File Manager</h3>
                 </div>
-                <button id="close-projects-btn" class="text-slate-400 hover:text-white">✕</button>
+                <button id="close-projects-btn" class="p-2 text-[#7E8CA5] hover:text-white">✕</button>
             </div>
 
-            <div class="p-6 overflow-y-auto space-y-6 flex-1 bg-[#07090e] text-xs">
-                <!-- Create Project & Folder Toolbar -->
+            <div class="p-6 overflow-y-auto space-y-6 flex-1 text-xs">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <form id="form-create-project" class="p-4 rounded-xl bg-white/5 border border-white/10 space-y-3">
-                        <h4 class="font-bold text-sm text-white">Create New Project</h4>
-                        <input type="text" id="proj-name-input" required placeholder="Project Name (e.g. Q4 Launch)" class="w-full bg-[#151c2d] border border-white/15 rounded-lg p-2 text-slate-100">
-                        <textarea id="proj-desc-input" rows="1" placeholder="Project description..." class="w-full bg-[#151c2d] border border-white/15 rounded-lg p-2 text-slate-100 resize-none"></textarea>
-                        <button type="submit" class="py-2 px-4 rounded-xl bg-cyan-500/20 text-cyan-300 font-medium">Create Project</button>
+                    <form id="form-create-project" class="glass-card p-4 space-y-3">
+                        <h4 class="font-heading font-bold text-sm text-white">Create Project</h4>
+                        <input type="text" id="proj-name-input" required placeholder="Project Name" class="w-full glass-input p-2.5 text-white">
+                        <textarea id="proj-desc-input" rows="1" placeholder="Project description..." class="w-full glass-input p-2.5 text-white resize-none"></textarea>
+                        <button type="submit" class="py-2 px-4 btn-primary text-xs">Create Project</button>
                     </form>
 
-                    <form id="form-create-folder" class="p-4 rounded-xl bg-white/5 border border-white/10 space-y-3">
-                        <h4 class="font-bold text-sm text-white">Create New Folder</h4>
-                        <input type="text" id="folder-name-input" required placeholder="Folder Name (e.g. Architecture Specs)" class="w-full bg-[#151c2d] border border-white/15 rounded-lg p-2 text-slate-100">
-                        <select id="folder-proj-select" class="w-full bg-[#151c2d] border border-white/15 rounded-lg p-2 text-slate-200">
+                    <form id="form-create-folder" class="glass-card p-4 space-y-3">
+                        <h4 class="font-heading font-bold text-sm text-white">Create Folder</h4>
+                        <input type="text" id="folder-name-input" required placeholder="Folder Name" class="w-full glass-input p-2.5 text-white">
+                        <select id="folder-proj-select" class="w-full glass-input p-2.5 text-white">
                             <option value="">No Project (Root)</option>
                         </select>
-                        <button type="submit" class="py-2 px-4 rounded-xl bg-indigo-500/20 text-indigo-300 font-medium">Create Folder</button>
+                        <button type="submit" class="py-2 px-4 btn-secondary text-xs">Create Folder</button>
                     </form>
                 </div>
 
-                <!-- Projects List -->
                 <div class="space-y-3">
-                    <h4 class="font-bold text-sm text-white">Projects Workspace</h4>
-                    <div id="projects-grid" class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <!-- Project cards rendered dynamically -->
-                    </div>
+                    <h4 class="font-heading font-bold text-sm text-white">Projects Grid</h4>
+                    <div id="projects-grid" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
                 </div>
 
-                <!-- File Manager Section -->
-                <div class="space-y-3 pt-3 border-t border-white/10">
+                <div class="space-y-3 pt-4 border-t border-white/10">
                     <div class="flex items-center justify-between">
-                        <h4 class="font-bold text-sm text-white">Workspace Files</h4>
-                        <button id="btn-bulk-download" class="py-1 px-3 rounded-lg bg-cyan-500/20 text-cyan-300 text-xs font-medium">Bulk Download ZIP</button>
+                        <h4 class="font-heading font-bold text-sm text-white">Workspace Files</h4>
+                        <button id="btn-bulk-download" class="py-1.5 px-3 btn-secondary text-xs">Bulk Download ZIP</button>
                     </div>
-                    <div id="file-manager-grid" class="space-y-2">
-                        <!-- Files listed dynamically -->
-                    </div>
+                    <div id="file-manager-grid" class="space-y-2"></div>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- =========================================================================
-         6. MODAL: MEDIA GALLERY (IMAGES & AI ARTWORK)
+         6. MODAL: MEDIA GALLERY
          ========================================================================= -->
-    <div id="modal-media-gallery" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-        <div class="glass-panel w-full max-w-5xl rounded-2xl overflow-hidden shadow-2xl border border-white/15 animate-fade-in flex flex-col h-[85vh]">
-            <div class="h-14 px-6 border-b border-white/10 flex items-center justify-between shrink-0 bg-[#0e131f]">
+    <div id="modal-media-gallery" class="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-panel w-full max-w-5xl overflow-hidden shadow-2xl animate-fade-in flex flex-col h-[85vh]">
+            <div class="h-14 px-6 border-b border-white/10 flex items-center justify-between shrink-0 bg-[#0F1220]">
                 <div class="flex items-center space-x-3">
-                    <span class="text-xl">🖼️</span>
+                    <svg class="w-5 h-5 text-[#6D5DF6]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                     <h3 class="font-heading font-bold text-white text-base">Media Gallery (Images & AI Artwork)</h3>
                 </div>
-                <button id="close-media-btn" class="text-slate-400 hover:text-white">✕</button>
+                <button id="close-media-btn" class="p-2 text-[#7E8CA5] hover:text-white">✕</button>
             </div>
-
-            <div class="p-6 overflow-y-auto space-y-4 flex-1 bg-[#07090e] text-xs">
-                <div id="media-gallery-grid" class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <!-- Media cards rendered dynamically -->
-                </div>
+            <div class="p-6 overflow-y-auto space-y-4 flex-1 text-xs">
+                <div id="media-gallery-grid" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
             </div>
         </div>
     </div>
@@ -373,217 +400,218 @@
     <!-- =========================================================================
          7. MODAL: DOCUMENT LIBRARY
          ========================================================================= -->
-    <div id="modal-doc-library" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-        <div class="glass-panel w-full max-w-4xl rounded-2xl overflow-hidden shadow-2xl border border-white/15 animate-fade-in flex flex-col h-[85vh]">
-            <div class="h-14 px-6 border-b border-white/10 flex items-center justify-between shrink-0 bg-[#0e131f]">
+    <div id="modal-doc-library" class="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-panel w-full max-w-4xl overflow-hidden shadow-2xl animate-fade-in flex flex-col h-[85vh]">
+            <div class="h-14 px-6 border-b border-white/10 flex items-center justify-between shrink-0 bg-[#0F1220]">
                 <div class="flex items-center space-x-3">
-                    <span class="text-xl">📄</span>
-                    <h3 class="font-heading font-bold text-white text-base">Document Library</h3>
+                    <svg class="w-5 h-5 text-[#22C55E]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    <h3 class="font-heading font-bold text-white text-base">Document Intelligence Library</h3>
                 </div>
-                <button id="close-doc-lib-btn" class="text-slate-400 hover:text-white">✕</button>
+                <button id="close-doc-lib-btn" class="p-2 text-[#7E8CA5] hover:text-white">✕</button>
             </div>
-            <div class="p-6 overflow-y-auto space-y-3 flex-1 bg-[#07090e] text-xs" id="doc-library-list">
-                <!-- Document items listed dynamically -->
-            </div>
+            <div class="p-6 overflow-y-auto space-y-3 flex-1 text-xs" id="doc-library-list"></div>
         </div>
     </div>
 
     <!-- =========================================================================
          8. MODAL: AUDIO LIBRARY
          ========================================================================= -->
-    <div id="modal-audio-library" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-        <div class="glass-panel w-full max-w-4xl rounded-2xl overflow-hidden shadow-2xl border border-white/15 animate-fade-in flex flex-col h-[85vh]">
-            <div class="h-14 px-6 border-b border-white/10 flex items-center justify-between shrink-0 bg-[#0e131f]">
+    <div id="modal-audio-library" class="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-panel w-full max-w-4xl overflow-hidden shadow-2xl animate-fade-in flex flex-col h-[85vh]">
+            <div class="h-14 px-6 border-b border-white/10 flex items-center justify-between shrink-0 bg-[#0F1220]">
                 <div class="flex items-center space-x-3">
-                    <span class="text-xl">🎙️</span>
-                    <h3 class="font-heading font-bold text-white text-base">Audio & Voice Library</h3>
+                    <svg class="w-5 h-5 text-[#EF4444]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+                    <h3 class="font-heading font-bold text-white text-base">Audio & Voice Studio</h3>
                 </div>
-                <button id="close-audio-lib-btn" class="text-slate-400 hover:text-white">✕</button>
+                <button id="close-audio-lib-btn" class="p-2 text-[#7E8CA5] hover:text-white">✕</button>
             </div>
-            <div class="p-6 overflow-y-auto space-y-3 flex-1 bg-[#07090e] text-xs" id="audio-library-list">
-                <!-- Audio items listed dynamically -->
-            </div>
+            <div class="p-6 overflow-y-auto space-y-3 flex-1 text-xs" id="audio-library-list"></div>
         </div>
     </div>
 
     <!-- =========================================================================
          9. MODAL: RECYCLE BIN
          ========================================================================= -->
-    <div id="modal-recycle-bin" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-        <div class="glass-panel w-full max-w-3xl rounded-2xl overflow-hidden shadow-2xl border border-white/15 animate-fade-in flex flex-col h-[85vh]">
-            <div class="h-14 px-6 border-b border-white/10 flex items-center justify-between shrink-0 bg-[#0e131f]">
+    <div id="modal-recycle-bin" class="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-panel w-full max-w-3xl overflow-hidden shadow-2xl animate-fade-in flex flex-col h-[85vh]">
+            <div class="h-14 px-6 border-b border-white/10 flex items-center justify-between shrink-0 bg-[#0F1220]">
                 <div class="flex items-center space-x-3">
-                    <span class="text-xl">🗑️</span>
+                    <svg class="w-5 h-5 text-[#EF4444]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                     <h3 class="font-heading font-bold text-white text-base">Recycle Bin</h3>
                 </div>
                 <div class="flex items-center space-x-3">
-                    <button id="btn-empty-bin" class="py-1.5 px-3 rounded-lg bg-rose-500/20 text-rose-300 text-xs font-medium hover:bg-rose-500/30">Empty Bin</button>
-                    <button id="close-recycle-btn" class="text-slate-400 hover:text-white">✕</button>
+                    <button id="btn-empty-bin" class="py-1.5 px-3 btn-danger text-xs">Empty Bin</button>
+                    <button id="close-recycle-btn" class="p-2 text-[#7E8CA5] hover:text-white">✕</button>
                 </div>
             </div>
-            <div class="p-6 overflow-y-auto space-y-3 flex-1 bg-[#07090e] text-xs" id="recycle-bin-list">
-                <!-- Soft deleted items listed dynamically -->
-            </div>
+            <div class="p-6 overflow-y-auto space-y-3 flex-1 text-xs" id="recycle-bin-list"></div>
         </div>
     </div>
 
     <!-- =========================================================================
-         10. MODAL: GLOBAL WORKSPACE SEARCH
+         10. MODAL: GLOBAL SEARCH
          ========================================================================= -->
-    <div id="modal-global-search" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-        <div class="glass-panel w-full max-w-4xl rounded-2xl overflow-hidden shadow-2xl border border-white/15 animate-fade-in flex flex-col h-[85vh]">
-            <div class="h-14 px-6 border-b border-white/10 flex items-center justify-between shrink-0 bg-[#0e131f]">
+    <div id="modal-global-search" class="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-panel w-full max-w-4xl overflow-hidden shadow-2xl animate-fade-in flex flex-col h-[85vh]">
+            <div class="h-14 px-6 border-b border-white/10 flex items-center justify-between shrink-0 bg-[#0F1220]">
                 <div class="flex items-center space-x-3">
-                    <span class="text-xl">🌐</span>
+                    <svg class="w-5 h-5 text-[#3ABEFF]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                     <h3 class="font-heading font-bold text-white text-base">Global Workspace Search</h3>
                 </div>
-                <button id="close-global-search-btn" class="text-slate-400 hover:text-white">✕</button>
+                <button id="close-global-search-btn" class="p-2 text-[#7E8CA5] hover:text-white">✕</button>
             </div>
-            <div class="p-6 overflow-y-auto space-y-4 flex-1 bg-[#07090e] text-xs">
-                <form id="form-global-search" class="flex items-center space-x-3 p-3 rounded-xl bg-white/5 border border-white/10">
-                    <input type="text" id="global-search-input" required placeholder="Search everything across Chats, Files, Images, Documents, Audio, Projects, and Memory..." class="flex-1 bg-[#151c2d] border border-white/15 rounded-lg p-2.5 text-slate-100 text-sm focus:outline-none focus:border-cyan-500">
-                    <button type="submit" class="py-2.5 px-5 rounded-xl bg-cyan-500/20 text-cyan-300 font-medium">Search All</button>
+            <div class="p-6 overflow-y-auto space-y-4 flex-1 text-xs">
+                <form id="form-global-search" class="flex items-center space-x-3 glass-card p-3">
+                    <input type="text" id="global-search-input" required placeholder="Search everything across Chats, Files, Images, Documents, Audio, Projects, and Memory..." class="flex-1 glass-input p-2.5 text-white">
+                    <button type="submit" class="py-2.5 px-5 btn-primary text-xs">Search All</button>
                 </form>
-                <div id="global-search-results" class="space-y-2">
-                    <!-- Global search matches -->
-                </div>
+                <div id="global-search-results" class="space-y-2"></div>
             </div>
         </div>
     </div>
 
-    <!-- Modals from previous phases (Knowledge Base, Memory, Document Viewer, Lightbox, Image Gen, Camera, Voice, Settings) -->
-    <div id="modal-knowledge-base" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-        <div class="glass-panel w-full max-w-4xl rounded-2xl overflow-hidden shadow-2xl border border-white/15 flex flex-col h-[85vh]">
-            <div class="h-14 px-6 border-b border-white/10 flex items-center justify-between bg-[#0e131f]">
-                <h3 class="font-heading font-bold text-white text-base">Knowledge Base & Collections</h3>
-                <button id="close-knowledge-btn" class="text-slate-400 hover:text-white">✕</button>
+    <!-- MODAL: KNOWLEDGE BASE -->
+    <div id="modal-knowledge-base" class="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-panel w-full max-w-4xl overflow-hidden shadow-2xl flex flex-col h-[85vh]">
+            <div class="h-14 px-6 border-b border-white/10 flex items-center justify-between bg-[#0F1220]">
+                <h3 class="font-heading font-bold text-white text-base">Knowledge Base & Qdrant Collections</h3>
+                <button id="close-knowledge-btn" class="p-2 text-[#7E8CA5] hover:text-white">✕</button>
             </div>
-            <div class="p-6 overflow-y-auto space-y-6 flex-1 bg-[#07090e] text-xs">
-                <form id="form-create-collection" class="p-4 rounded-xl bg-white/5 border border-white/10 space-y-3">
-                    <h4 class="font-bold text-sm text-white">Create Knowledge Collection</h4>
-                    <input type="text" id="col-name-input" required placeholder="Collection Name..." class="w-full bg-[#151c2d] border border-white/15 rounded-lg p-2.5 text-slate-100">
-                    <textarea id="col-desc-input" rows="2" placeholder="Description..." class="w-full bg-[#151c2d] border border-white/15 rounded-lg p-2.5 text-slate-100 resize-none"></textarea>
-                    <button type="submit" class="py-2 px-4 rounded-xl bg-cyan-500/20 text-cyan-300 font-medium">Create Collection</button>
+            <div class="p-6 overflow-y-auto space-y-6 flex-1 text-xs">
+                <form id="form-create-collection" class="glass-card p-4 space-y-3">
+                    <h4 class="font-heading font-bold text-sm text-white">Create Knowledge Collection</h4>
+                    <input type="text" id="col-name-input" required placeholder="Collection Name..." class="w-full glass-input p-2.5 text-white">
+                    <textarea id="col-desc-input" rows="2" placeholder="Description..." class="w-full glass-input p-2.5 text-white resize-none"></textarea>
+                    <button type="submit" class="py-2 px-4 btn-primary text-xs">Create Collection</button>
                 </form>
-                <form id="form-ingest-doc" class="p-4 rounded-xl bg-white/5 border border-white/10 space-y-3">
-                    <h4 class="font-bold text-sm text-white">Ingest Document to Knowledge Base</h4>
-                    <select id="ingest-col-select" class="w-full bg-[#151c2d] border border-white/15 rounded-lg p-2.5 text-slate-200"><option value="">Default Collection</option></select>
-                    <input type="file" id="ingest-file-input" required accept=".pdf,.docx,.md,.txt" class="w-full bg-[#151c2d] border border-white/15 rounded-lg p-2 text-slate-300">
-                    <button type="submit" class="py-2 px-4 rounded-xl bg-cyan-500/20 text-cyan-300 font-medium">Ingest Document</button>
+                <form id="form-ingest-doc" class="glass-card p-4 space-y-3">
+                    <h4 class="font-heading font-bold text-sm text-white">Ingest Document</h4>
+                    <select id="ingest-col-select" class="w-full glass-input p-2.5 text-white"><option value="">Default Collection</option></select>
+                    <input type="file" id="ingest-file-input" required accept=".pdf,.docx,.md,.txt" class="w-full glass-input p-2 text-white">
+                    <button type="submit" class="py-2 px-4 btn-secondary text-xs">Ingest Document</button>
                 </form>
                 <div id="knowledge-collections-list" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
             </div>
         </div>
     </div>
 
-    <div id="modal-memory-dashboard" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-        <div class="glass-panel w-full max-w-4xl rounded-2xl overflow-hidden shadow-2xl border border-white/15 flex flex-col h-[85vh]">
-            <div class="h-14 px-6 border-b border-white/10 flex items-center justify-between bg-[#0e131f]">
+    <!-- MODAL: LONG-TERM MEMORY -->
+    <div id="modal-memory-dashboard" class="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-panel w-full max-w-4xl overflow-hidden shadow-2xl flex flex-col h-[85vh]">
+            <div class="h-14 px-6 border-b border-white/10 flex items-center justify-between bg-[#0F1220]">
                 <h3 class="font-heading font-bold text-white text-base">Long-Term Memory Dashboard</h3>
-                <button id="close-memory-btn" class="text-slate-400 hover:text-white">✕</button>
+                <button id="close-memory-btn" class="p-2 text-[#7E8CA5] hover:text-white">✕</button>
             </div>
-            <div class="p-6 overflow-y-auto space-y-6 flex-1 bg-[#07090e] text-xs">
-                <form id="form-add-memory" class="p-4 rounded-xl bg-white/5 border border-white/10 space-y-3">
-                    <h4 class="font-bold text-sm text-white">Add Memory Point</h4>
+            <div class="p-6 overflow-y-auto space-y-6 flex-1 text-xs">
+                <form id="form-add-memory" class="glass-card p-4 space-y-3">
+                    <h4 class="font-heading font-bold text-sm text-white">Add Memory Point</h4>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <input type="text" id="mem-key-input" required placeholder="Memory Key" class="bg-[#151c2d] border border-white/15 rounded-lg p-2.5 text-slate-100">
-                        <select id="mem-type-select" class="bg-[#151c2d] border border-white/15 rounded-lg p-2.5 text-slate-200"><option value="persistent">Persistent Memory</option><option value="preference">User Preference</option><option value="pinned">Pinned Fact</option></select>
-                        <input type="text" id="mem-cat-input" placeholder="Category" class="bg-[#151c2d] border border-white/15 rounded-lg p-2.5 text-slate-100">
+                        <input type="text" id="mem-key-input" required placeholder="Memory Key" class="glass-input p-2.5 text-white">
+                        <select id="mem-type-select" class="glass-input p-2.5 text-white"><option value="persistent">Persistent Memory</option><option value="preference">User Preference</option><option value="pinned">Pinned Fact</option></select>
+                        <input type="text" id="mem-cat-input" placeholder="Category" class="glass-input p-2.5 text-white">
                     </div>
-                    <textarea id="mem-val-input" rows="2" required placeholder="Memory Value..." class="w-full bg-[#151c2d] border border-white/15 rounded-lg p-2.5 text-slate-100 resize-none"></textarea>
-                    <button type="submit" class="py-2 px-4 rounded-xl bg-indigo-500/20 text-indigo-300 font-medium">Store Memory</button>
+                    <textarea id="mem-val-input" rows="2" required placeholder="Memory Value..." class="w-full glass-input p-2.5 text-white resize-none"></textarea>
+                    <button type="submit" class="py-2 px-4 btn-primary text-xs">Store Memory</button>
                 </form>
                 <div id="memory-items-list" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
             </div>
         </div>
     </div>
 
-    <div id="modal-document-viewer" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-        <div class="glass-panel w-full max-w-4xl rounded-2xl overflow-hidden shadow-2xl border border-white/15 flex flex-col h-[85vh]">
-            <div class="h-14 px-6 border-b border-white/10 flex items-center justify-between bg-[#0e131f]">
-                <h3 id="doc-viewer-title" class="font-heading font-bold text-white text-base">Document Intelligence Viewer</h3>
-                <button id="close-doc-viewer-btn" class="text-slate-400 hover:text-white">✕</button>
+    <!-- MODAL: DOCUMENT VIEWER -->
+    <div id="modal-document-viewer" class="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-panel w-full max-w-4xl overflow-hidden shadow-2xl flex flex-col h-[85vh]">
+            <div class="h-14 px-6 border-b border-white/10 flex items-center justify-between bg-[#0F1220]">
+                <h3 id="doc-viewer-title" class="font-heading font-bold text-white text-base">Document Viewer</h3>
+                <button id="close-doc-viewer-btn" class="p-2 text-[#7E8CA5] hover:text-white">✕</button>
             </div>
-            <div class="p-3 bg-[#151c2d] border-b border-white/10 flex items-center justify-between text-xs">
+            <div class="p-3 bg-black/40 border-b border-white/10 flex items-center justify-between text-xs">
                 <div class="flex items-center space-x-2">
-                    <button id="btn-doc-prev-page" class="py-1 px-3 rounded-lg bg-white/5 text-white">Previous</button>
-                    <span id="doc-page-indicator" class="font-mono text-cyan-300">Page 1 of 1</span>
-                    <button id="btn-doc-next-page" class="py-1 px-3 rounded-lg bg-white/5 text-white">Next</button>
+                    <button id="btn-doc-prev-page" class="py-1 px-3 btn-secondary">Previous</button>
+                    <span id="doc-page-indicator" class="font-mono text-[#3ABEFF]">Page 1 of 1</span>
+                    <button id="btn-doc-next-page" class="py-1 px-3 btn-secondary">Next</button>
                 </div>
             </div>
-            <div id="doc-viewer-content" class="flex-1 p-6 overflow-y-auto font-mono text-xs text-slate-200 bg-[#080b12] whitespace-pre-wrap"></div>
+            <div id="doc-viewer-content" class="flex-1 p-6 overflow-y-auto font-mono text-xs text-white bg-[#070913]/60 whitespace-pre-wrap"></div>
         </div>
     </div>
 
+    <!-- MODAL: LIGHTBOX PREVIEW -->
     <div id="modal-image-preview" class="fixed inset-0 bg-black/90 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
-        <div class="glass-panel w-full max-w-5xl rounded-2xl overflow-hidden shadow-2xl border border-white/15 flex flex-col max-h-[90vh]">
-            <div class="h-14 px-6 border-b border-white/10 flex items-center justify-between bg-[#0e131f]">
+        <div class="glass-panel w-full max-w-5xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+            <div class="h-14 px-6 border-b border-white/10 flex items-center justify-between bg-[#0F1220]">
                 <h3 class="font-heading font-bold text-white text-base">Image Preview Lightbox</h3>
-                <button id="close-img-preview-btn" class="text-slate-400 hover:text-white">✕</button>
+                <button id="close-img-preview-btn" class="p-2 text-[#7E8CA5] hover:text-white">✕</button>
             </div>
-            <div class="flex-1 flex flex-col md:flex-row overflow-hidden bg-[#07090e]">
-                <div class="flex-1 relative flex items-center justify-center p-6 bg-black/40">
-                    <img id="lightbox-img" src="" class="max-h-[65vh] max-w-full object-contain" alt="Preview Image">
+            <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
+                <div class="flex-1 relative flex items-center justify-center p-6 bg-black/60">
+                    <img id="lightbox-img" src="" class="max-h-[65vh] max-w-full object-contain rounded-xl" alt="Preview Image">
                 </div>
-                <div class="w-full md:w-80 p-5 border-l border-white/10 bg-[#0e131f]/80 text-xs space-y-4">
-                    <div id="lightbox-metadata" class="space-y-1.5 text-slate-300"></div>
-                    <a id="btn-download-img" href="#" download class="w-full py-2 px-3 rounded-xl bg-cyan-500/20 text-cyan-300 font-medium block text-center">Download Image</a>
+                <div class="w-full md:w-80 p-5 border-l border-white/10 bg-[#0F1220]/90 text-xs space-y-4">
+                    <div id="lightbox-metadata" class="space-y-1.5 text-[#B7C2D8]"></div>
+                    <a id="btn-download-img" href="#" download class="w-full py-2.5 px-4 btn-primary block text-center">Download Image</a>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="modal-image-gen" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-        <div class="glass-panel w-full max-w-2xl rounded-2xl overflow-hidden shadow-2xl border border-white/15 flex flex-col">
-            <div class="h-14 px-6 border-b border-white/10 flex items-center justify-between bg-[#0e131f]">
+    <!-- MODAL: IMAGE GENERATION -->
+    <div id="modal-image-gen" class="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-panel w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col">
+            <div class="h-14 px-6 border-b border-white/10 flex items-center justify-between bg-[#0F1220]">
                 <h3 class="font-heading font-bold text-white text-base">AI Text-to-Image Generation</h3>
-                <button id="close-image-gen-btn" class="text-slate-400 hover:text-white">✕</button>
+                <button id="close-image-gen-btn" class="p-2 text-[#7E8CA5] hover:text-white">✕</button>
             </div>
             <form id="form-generate-image" class="p-6 space-y-4 text-xs">
-                <textarea id="gen-prompt-input" rows="3" required placeholder="Describe the image you want to generate..." class="w-full bg-[#151c2d] border border-white/15 rounded-xl p-3 text-slate-100"></textarea>
-                <button type="submit" class="py-2.5 px-5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-medium">Generate Image</button>
+                <textarea id="gen-prompt-input" rows="3" required placeholder="Describe the image you want to generate..." class="w-full glass-input p-3 text-white"></textarea>
+                <button type="submit" class="py-2.5 px-5 btn-primary text-xs">Generate Image</button>
             </form>
         </div>
     </div>
 
-    <div id="modal-camera" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-        <div class="glass-panel w-full max-w-xl rounded-2xl overflow-hidden shadow-2xl border border-white/15 flex flex-col">
-            <div class="h-14 px-6 border-b border-white/10 flex items-center justify-between bg-[#0e131f]">
+    <!-- MODAL: CAMERA SNAPSHOT -->
+    <div id="modal-camera" class="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-panel w-full max-w-xl overflow-hidden shadow-2xl flex flex-col">
+            <div class="h-14 px-6 border-b border-white/10 flex items-center justify-between bg-[#0F1220]">
                 <h3 class="font-heading font-bold text-white text-base">Camera Snapshot</h3>
-                <button id="close-camera-btn" class="text-slate-400 hover:text-white">✕</button>
+                <button id="close-camera-btn" class="p-2 text-[#7E8CA5] hover:text-white">✕</button>
             </div>
             <div class="p-6 flex flex-col items-center space-y-4">
                 <video id="webcam-video" autoplay playsinline class="w-full h-64 object-cover rounded-xl bg-black border border-white/10"></video>
                 <canvas id="webcam-canvas" class="hidden"></canvas>
-                <button id="btn-capture-snapshot" class="py-2.5 px-5 rounded-xl bg-indigo-600 text-white font-medium">Capture & Attach</button>
+                <button id="btn-capture-snapshot" class="py-2.5 px-5 btn-primary text-xs">Capture & Attach</button>
             </div>
         </div>
     </div>
 
-    <div id="modal-voice-recorder" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-        <div class="glass-panel w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl border border-white/15 flex flex-col">
-            <div class="h-14 px-6 border-b border-white/10 flex items-center justify-between bg-[#0e131f]">
+    <!-- MODAL: VOICE RECORDER -->
+    <div id="modal-voice-recorder" class="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-panel w-full max-w-lg overflow-hidden shadow-2xl flex flex-col">
+            <div class="h-14 px-6 border-b border-white/10 flex items-center justify-between bg-[#0F1220]">
                 <h3 class="font-heading font-bold text-white text-base">Voice Recorder</h3>
-                <button id="close-voice-btn" class="text-slate-400 hover:text-white">✕</button>
+                <button id="close-voice-btn" class="p-2 text-[#7E8CA5] hover:text-white">✕</button>
             </div>
             <div class="p-6 flex flex-col items-center space-y-5">
-                <div class="w-20 h-20 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 text-3xl animate-pulse">🎙️</div>
-                <div id="voice-timer" class="font-mono text-xs text-emerald-400">00:00</div>
-                <button id="btn-stop-voice" class="py-2.5 px-5 rounded-xl bg-emerald-600 text-white font-medium">Stop & Transcribe</button>
+                <div class="w-20 h-20 rounded-full bg-[#EF4444]/20 border border-[#EF4444]/40 flex items-center justify-center text-[#EF4444] animate-pulse">
+                    <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+                </div>
+                <div id="voice-timer" class="font-mono text-sm text-[#EF4444] font-bold">00:00</div>
+                <button id="btn-stop-voice" class="py-2.5 px-5 btn-danger text-xs">Stop & Transcribe</button>
             </div>
         </div>
     </div>
 
-    <div id="modal-settings" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-        <div class="glass-panel w-full max-w-3xl rounded-2xl overflow-hidden shadow-2xl border border-white/15 flex flex-col max-h-[85vh]">
-            <div class="h-14 px-6 border-b border-white/10 flex items-center justify-between">
+    <!-- MODAL: SETTINGS -->
+    <div id="modal-settings" class="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-panel w-full max-w-3xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]">
+            <div class="h-14 px-6 border-b border-white/10 flex items-center justify-between bg-[#0F1220]">
                 <h3 class="font-heading font-bold text-lg text-white">AI Provider Settings & API Keys</h3>
-                <button id="close-settings-btn" class="text-slate-400 hover:text-white">✕</button>
+                <button id="close-settings-btn" class="p-2 text-[#7E8CA5] hover:text-white">✕</button>
             </div>
             <div class="p-6 overflow-y-auto space-y-4 text-xs">
-                <div class="p-4 rounded-xl bg-white/5 border border-white/10 space-y-3">
-                    <div class="font-semibold text-white text-sm">✨ Google Gemini</div>
-                    <input type="password" placeholder="Enter Google Gemini API Key" class="w-full bg-[#151c2d] border border-white/15 rounded-lg px-3 py-2 text-slate-100">
+                <div class="glass-card p-4 space-y-3">
+                    <div class="font-bold text-white text-sm">✨ Google Gemini API Key</div>
+                    <input type="password" placeholder="Enter Google Gemini API Key" class="w-full glass-input px-3 py-2 text-white">
                 </div>
             </div>
         </div>
