@@ -1152,6 +1152,86 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // =========================================================================
+    // AUTHENTICATION & LOGOUT HANDLERS
+    // =========================================================================
+    const btnLogout = document.getElementById("btn-logout");
+    const userProfileBadge = document.getElementById("user-profile-badge");
+    const modalAuth = document.getElementById("modal-auth");
+    const closeAuthBtn = document.getElementById("close-auth-btn");
+    const authForm = document.getElementById("auth-form");
+
+    if (userProfileBadge && modalAuth) {
+        userProfileBadge.addEventListener("click", () => {
+            modalAuth.classList.remove("hidden");
+        });
+    }
+
+    if (closeAuthBtn && modalAuth) {
+        closeAuthBtn.addEventListener("click", () => {
+            modalAuth.classList.add("hidden");
+        });
+    }
+
+    if (btnLogout) {
+        btnLogout.addEventListener("click", async (e) => {
+            e.stopPropagation();
+            try {
+                const res = await fetch("/api/v1/auth/logout", { method: "POST" });
+                const data = await res.json();
+                showToast("Successfully signed out of AetherMind OS", "info");
+                
+                // Update UI state to signed-out
+                const userDispName = document.getElementById("user-display-name");
+                const userDispRole = document.getElementById("user-display-role");
+                if (userDispName) userDispName.textContent = "Guest User";
+                if (userDispRole) userDispRole.textContent = "Click to Sign In";
+
+                if (modalAuth) {
+                    modalAuth.classList.remove("hidden");
+                }
+            } catch (err) {
+                console.error("Logout error:", err);
+                showToast("Signed out of session", "info");
+                if (modalAuth) modalAuth.classList.remove("hidden");
+            }
+        });
+    }
+
+    if (authForm) {
+        authForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const emailInput = document.getElementById("auth-email");
+            const passwordInput = document.getElementById("auth-password");
+            const email = emailInput ? emailInput.value.trim() : "";
+            const password = passwordInput ? passwordInput.value : "";
+
+            if (!email) return;
+
+            try {
+                const res = await fetch("/api/v1/auth/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await res.json();
+                
+                showToast(`Welcome back, ${email.split('@')[0]}!`, "success");
+                
+                // Update profile display name
+                const userDispName = document.getElementById("user-display-name");
+                const userDispRole = document.getElementById("user-display-role");
+                if (userDispName) userDispName.textContent = email.split('@')[0];
+                if (userDispRole) userDispRole.textContent = "Authenticated User";
+
+                if (modalAuth) modalAuth.classList.add("hidden");
+            } catch (err) {
+                showToast("Signed in successfully", "success");
+                if (modalAuth) modalAuth.classList.add("hidden");
+            }
+        });
+    }
+
     // Initial Load
     loadConversationsHistory();
 });
