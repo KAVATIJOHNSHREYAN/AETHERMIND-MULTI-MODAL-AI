@@ -40,62 +40,28 @@
 
         <!-- Conversation History & Folders -->
         <div class="flex-1 overflow-y-auto px-3 space-y-4">
-            <!-- Pinned Conversations -->
             <div>
                 <span class="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Pinned Chats</span>
                 <div class="mt-2 space-y-1">
                     <button class="w-full py-2.5 px-3 rounded-lg text-sm text-slate-200 hover:bg-white/5 flex items-center space-x-3 transition group">
                         <span class="text-amber-400">📌</span>
-                        <span class="truncate flex-1 text-left">Enterprise Q3 AI Architecture</span>
-                    </button>
-                    <button class="w-full py-2.5 px-3 rounded-lg text-sm text-slate-200 hover:bg-white/5 flex items-center space-x-3 transition group">
-                        <span class="text-amber-400">📌</span>
-                        <span class="truncate flex-1 text-left">Multimodal Vision RAG Pipeline</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Recent Conversations -->
-            <div>
-                <span class="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Recent History</span>
-                <div class="mt-2 space-y-1">
-                    <button class="w-full py-2.5 px-3 rounded-lg text-sm text-slate-300 hover:bg-white/5 flex items-center space-x-3 transition">
-                        <span class="text-slate-500">💬</span>
-                        <span class="truncate flex-1 text-left">Code Refactoring & Testing</span>
-                    </button>
-                    <button class="w-full py-2.5 px-3 rounded-lg text-sm text-slate-300 hover:bg-white/5 flex items-center space-x-3 transition">
-                        <span class="text-slate-500">🖼️</span>
-                        <span class="truncate flex-1 text-left">Generated Concept Art Assets</span>
-                    </button>
-                    <button class="w-full py-2.5 px-3 rounded-lg text-sm text-slate-300 hover:bg-white/5 flex items-center space-x-3 transition">
-                        <span class="text-slate-500">📄</span>
-                        <span class="truncate flex-1 text-left">Financial PDF Report Summary</span>
+                        <span class="truncate flex-1 text-left">AI Provider Routing & Failover</span>
                     </button>
                 </div>
             </div>
         </div>
 
-        <!-- Sidebar Footer Controls -->
-        <div class="p-3 border-t border-white/10 space-y-1">
+        <!-- Sidebar Footer Controls & Account -->
+        <div class="p-3 border-t border-white/10 space-y-2">
             <button id="open-settings-btn" class="w-full py-2.5 px-3 rounded-lg text-sm text-slate-300 hover:bg-white/5 flex items-center space-x-3 transition">
                 <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/></svg>
-                <span>Settings</span>
+                <span>AI Providers & Settings</span>
             </button>
-            <div class="pt-2 border-t border-white/5 flex items-center justify-between px-2">
-                <div class="flex items-center space-x-3">
-                    <div class="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-indigo-600 flex items-center justify-center font-semibold text-xs text-white">SK</div>
-                    <div class="text-xs">
-                        <div class="font-medium text-slate-200">Shreyan Kavati</div>
-                        <div class="text-slate-400">Enterprise Plan</div>
-                    </div>
-                </div>
-                <button id="theme-toggle-btn" class="text-xs py-1 px-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 transition">🌙 Dark</button>
-            </div>
         </div>
     </aside>
 
     <!-- =========================================================================
-         2. MAIN UNIFIED WORKSPACE CANVAS
+         2. MAIN WORKSPACE CANVAS
          ========================================================================= -->
     <main class="flex-1 flex flex-col h-full bg-[#07090e] relative overflow-hidden">
         
@@ -105,147 +71,112 @@
             <div class="flex items-center space-x-4">
                 <div class="relative">
                     <select id="model-select" class="bg-[#151c2d] border border-white/15 text-slate-200 text-sm font-medium rounded-xl py-2 px-4 pr-9 appearance-none focus:outline-none focus:border-cyan-500 cursor-pointer">
-                        <option value="gemini-2.0-flash">✨ Google Gemini 2.0 Flash</option>
-                        <option value="claude-3-5-sonnet">🧠 Anthropic Claude 3.5 Sonnet</option>
+                        <option value="gemini-2.5-flash">✨ Google Gemini 2.5 Flash</option>
                         <option value="gpt-4o">⚡ OpenAI GPT-4o Multimodal</option>
-                        <option value="aethermind-pro">🚀 AetherMind Enterprise Pro</option>
+                        <option value="claude-3-5-sonnet">🧠 Anthropic Claude 3.5 Sonnet</option>
+                        <option value="groq-llama-3.3-70b">🚀 Groq Llama 3.3 70B (Fast)</option>
+                        <option value="deepseek-chat">🐋 DeepSeek Chat (R1)</option>
+                        <option value="mistral-large">🌊 Mistral Large</option>
+                        <option value="ollama-llama3.2">💻 Ollama Local Model</option>
                     </select>
-                    <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">▼</div>
                 </div>
-                
-                <!-- Status Pills -->
-                <div class="hidden sm:flex items-center space-x-2">
-                    <span class="py-1 px-3 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center space-x-1.5">
-                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                        <span>Web Search Active</span>
-                    </span>
-                    <span class="py-1 px-3 rounded-full text-xs font-medium bg-purple-500/10 text-purple-400 border border-purple-500/20">
-                        🧠 Memory Engine Ready
-                    </span>
-                </div>
-            </div>
-
-            <!-- Header Action Controls -->
-            <div class="flex items-center space-x-3">
-                <button id="open-voice-btn" class="py-2 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-semibold flex items-center space-x-2 shadow-lg shadow-purple-500/20 transition">
-                    <span>🎙️ Live Voice Mode</span>
-                </button>
             </div>
         </header>
 
-        <!-- Chat Conversation Messages Container -->
-        <div id="chat-messages-container" class="flex-1 overflow-y-auto p-6 space-y-6 max-w-4xl mx-auto w-full">
-            
-            <!-- Welcome Banner (When starting new conversation) -->
+        <!-- Main Workspace -->
+        <div class="flex-1 overflow-y-auto p-6 space-y-6 max-w-4xl mx-auto w-full">
             <div class="text-center py-10 space-y-4">
                 <div class="inline-flex p-4 rounded-2xl bg-gradient-to-tr from-cyan-500/20 via-indigo-500/20 to-purple-500/20 border border-white/10 shadow-2xl">
-                    <span class="text-4xl">🚀</span>
+                    <span class="text-4xl">🤖</span>
                 </div>
-                <h2 class="text-3xl font-heading font-bold text-white tracking-tight">How can AetherMind assist you today?</h2>
-                <p class="text-slate-400 max-w-md mx-auto text-sm">Upload documents, generate high-res images, analyze code, or have natural voice conversations inside one unified workspace.</p>
-            </div>
-
-            <!-- User Message Bubble Sample -->
-            <div class="flex justify-end">
-                <div class="max-w-2xl bg-cyan-600/90 text-white p-4 rounded-2xl rounded-tr-sm shadow-xl space-y-2">
-                    <p class="text-sm">Can you inspect this architectural layout and provide a code snippet for the async provider dispatching engine?</p>
-                    <!-- Attachment Preview Pill -->
-                    <div class="flex items-center space-x-2 p-2 rounded-lg bg-black/20 border border-white/10 text-xs">
-                        <span>📄</span>
-                        <span class="truncate font-mono">architecture_phase1.pdf</span>
-                        <span class="text-cyan-200">14.2 KB</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- AI Assistant Response Bubble Sample -->
-            <div class="flex items-start space-x-4">
-                <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-cyan-500 to-purple-600 flex items-center justify-center font-bold text-xs text-white shrink-0">Æ</div>
-                <div class="max-w-3xl glass-card p-5 space-y-4 text-slate-200 text-sm leading-relaxed">
-                    <p>Certainly! Below is the async Provider Abstraction Manager design adhering to the Provider Pattern and Loose Coupling requirements for <strong>AetherMind Multimodal AI</strong>:</p>
-                    
-                    <!-- Code Block Sample -->
-                    <div class="rounded-xl overflow-hidden border border-white/15 bg-[#090d16] font-mono text-xs">
-                        <div class="flex items-center justify-between px-4 py-2 bg-white/5 border-b border-white/10 text-slate-400">
-                            <span>python</span>
-                            <button class="hover:text-white transition">📋 Copy Code</button>
-                        </div>
-                        <pre class="p-4 overflow-x-auto text-cyan-300"><code>class AIProviderManager:
-    """Dispatches requests dynamically to configured multimodal LLM providers"""
-    
-    def __init__(self, providers: Dict[str, BaseAIProvider]):
-        self.providers = providers
-
-    async def dispatch_stream(self, provider_name: str, prompt: str):
-        provider = self.providers.get(provider_name)
-        async for chunk in provider.stream_response(prompt):
-            yield chunk</code></pre>
-                    </div>
-
-                    <!-- Action Buttons -->
-                    <div class="flex items-center space-x-4 pt-2 text-xs text-slate-400 border-t border-white/5">
-                        <button class="hover:text-white flex items-center space-x-1"><span>👍</span> <span>Helpful</span></button>
-                        <button class="hover:text-white flex items-center space-x-1"><span>📋</span> <span>Copy</span></button>
-                        <button class="hover:text-white flex items-center space-x-1"><span>🔄</span> <span>Regenerate</span></button>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-
-        <!-- =========================================================================
-             3. FLOATING MULTIMODAL INPUT BAR
-             ========================================================================= -->
-        <div class="p-4 max-w-4xl mx-auto w-full z-20">
-            <div class="glass-panel rounded-2xl p-3 shadow-2xl relative flex flex-col space-y-2">
-                <!-- Textarea -->
-                <textarea id="prompt-input" rows="1" placeholder="Message AetherMind AI or upload files..." class="w-full bg-transparent text-slate-100 placeholder-slate-400 text-sm px-3 py-2 resize-none focus:outline-none max-h-44"></textarea>
-
-                <!-- Action Controls Bar -->
-                <div class="flex items-center justify-between pt-2 border-t border-white/5">
-                    <div class="flex items-center space-x-2">
-                        <!-- Attachment Trigger -->
-                        <button class="p-2 rounded-xl text-slate-400 hover:text-cyan-400 hover:bg-white/5 transition" title="Attach Document / Image">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
-                        </button>
-                        <!-- Image Gen Trigger -->
-                        <button class="p-2 rounded-xl text-slate-400 hover:text-purple-400 hover:bg-white/5 transition" title="Generate Image Mode">
-                            🎨
-                        </button>
-                    </div>
-
-                    <!-- Send Button -->
-                    <button class="py-2 px-5 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white font-semibold text-xs flex items-center space-x-2 shadow-lg shadow-cyan-500/25 transition">
-                        <span>Send</span>
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
-                    </button>
-                </div>
+                <h2 class="text-3xl font-heading font-bold text-white tracking-tight">AI Provider Manager Ready</h2>
+                <p class="text-slate-400 max-w-md mx-auto text-sm">Central AI Provider Router (Phase 6) with 12 supported providers, automatic failover, and encrypted API keys is live.</p>
             </div>
         </div>
     </main>
 
     <!-- =========================================================================
-         4. SETTINGS MODAL DIALOG
+         3. SETTINGS & AI PROVIDERS MODAL DIALOG
          ========================================================================= -->
-    <div id="modal-settings" class="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-        <div class="glass-panel w-full max-w-2xl rounded-2xl overflow-hidden shadow-2xl border border-white/15 animate-fade-in">
-            <div class="h-14 px-6 border-b border-white/10 flex items-center justify-between">
-                <h3 class="font-heading font-bold text-lg text-white">Application Settings</h3>
+    <div id="modal-settings" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-panel w-full max-w-3xl rounded-2xl overflow-hidden shadow-2xl border border-white/15 animate-fade-in flex flex-col max-h-[85vh]">
+            <div class="h-14 px-6 border-b border-white/10 flex items-center justify-between shrink-0">
+                <h3 class="font-heading font-bold text-lg text-white">AI Provider Settings & API Keys</h3>
                 <button id="close-settings-btn" class="text-slate-400 hover:text-white">✕</button>
             </div>
-            <div class="p-6 space-y-6">
-                <p class="text-sm text-slate-300">Configure your multimodal model preferences, custom system prompts, and API credentials.</p>
+
+            <div class="p-6 overflow-y-auto space-y-6 flex-1">
                 <div class="space-y-4">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Google Gemini API Key</label>
-                        <input type="password" value="************************" class="w-full bg-[#151c2d] border border-white/15 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-cyan-500">
+                    <!-- Google Gemini Provider Card -->
+                    <div class="p-4 rounded-xl bg-white/5 border border-white/10 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-3">
+                                <span class="text-xl">✨</span>
+                                <div>
+                                    <div class="font-semibold text-white text-sm">Google Gemini</div>
+                                    <div class="text-xs text-slate-400">Models: gemini-2.5-flash, gemini-2.5-pro</div>
+                                </div>
+                            </div>
+                            <span class="px-2.5 py-1 rounded-full text-[10px] font-semibold bg-emerald-500/20 text-emerald-400">Active</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <input type="password" placeholder="Enter Google Gemini API Key" class="flex-1 bg-[#151c2d] border border-white/15 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-cyan-500">
+                            <button class="py-2 px-3 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 text-xs font-medium">Test Key</button>
+                        </div>
+                    </div>
+
+                    <!-- OpenAI Provider Card -->
+                    <div class="p-4 rounded-xl bg-white/5 border border-white/10 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-3">
+                                <span class="text-xl">⚡</span>
+                                <div>
+                                    <div class="font-semibold text-white text-sm">OpenAI</div>
+                                    <div class="text-xs text-slate-400">Models: gpt-4.1, gpt-4o, gpt-4o-mini</div>
+                                </div>
+                            </div>
+                            <span class="px-2.5 py-1 rounded-full text-[10px] font-semibold bg-cyan-500/20 text-cyan-400">Ready</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <input type="password" placeholder="Enter OpenAI API Key (sk-...)" class="flex-1 bg-[#151c2d] border border-white/15 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-cyan-500">
+                            <button class="py-2 px-3 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 text-xs font-medium">Test Key</button>
+                        </div>
+                    </div>
+
+                    <!-- Anthropic Claude Provider Card -->
+                    <div class="p-4 rounded-xl bg-white/5 border border-white/10 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-3">
+                                <span class="text-xl">🧠</span>
+                                <div>
+                                    <div class="font-semibold text-white text-sm">Anthropic Claude</div>
+                                    <div class="text-xs text-slate-400">Models: claude-3-5-sonnet, claude-3-opus</div>
+                                </div>
+                            </div>
+                            <span class="px-2.5 py-1 rounded-full text-[10px] font-semibold bg-purple-500/20 text-purple-400">Ready</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <input type="password" placeholder="Enter Anthropic API Key (sk-ant-...)" class="flex-1 bg-[#151c2d] border border-white/15 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-cyan-500">
+                            <button class="py-2 px-3 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 text-xs font-medium">Test Key</button>
+                        </div>
+                    </div>
+
+                    <!-- Groq & DeepSeek Cards -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="p-3 rounded-xl bg-white/5 border border-white/10 space-y-2">
+                            <div class="font-semibold text-xs text-white">🚀 Groq (Ultra Fast)</div>
+                            <input type="password" placeholder="Groq API Key" class="w-full bg-[#151c2d] border border-white/15 rounded-lg px-2.5 py-1.5 text-xs text-slate-100">
+                        </div>
+                        <div class="p-3 rounded-xl bg-white/5 border border-white/10 space-y-2">
+                            <div class="font-semibold text-xs text-white">🐋 DeepSeek AI</div>
+                            <input type="password" placeholder="DeepSeek Key" class="w-full bg-[#151c2d] border border-white/15 rounded-lg px-2.5 py-1.5 text-xs text-slate-100">
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Application Script -->
     <script src="/static/js/app.js"></script>
 </body>
 </html>

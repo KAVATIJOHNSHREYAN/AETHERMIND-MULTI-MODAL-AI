@@ -25,13 +25,11 @@ async def lifespan(app: FastAPI):
     logger.info("Initializing AetherMind Multimodal AI Infrastructure...")
     logger.info(f"Environment: {settings.ENVIRONMENT} | Version: {settings.VERSION}")
     
-    # Initialize infrastructure connections
     await redis_manager.connect()
     await qdrant_manager.connect()
     
     yield
     
-    # Shutdown infrastructure connections
     logger.info("Shutting down AetherMind Infrastructure Pools...")
     await redis_manager.disconnect()
     await qdrant_manager.disconnect()
@@ -80,7 +78,10 @@ templates = Jinja2Templates(directory=templates_dir)
 @app.get("/", include_in_schema=False)
 async def serve_ui(request: Request):
     """Serve Unified Full Stack Application Root Workspace"""
-    return templates.TemplateResponse("index.html", {"request": request})
+    try:
+        return templates.TemplateResponse(request=request, name="index.html")
+    except Exception:
+        return templates.TemplateResponse("index.html", {"request": request})
 
 if __name__ == "__main__":
     import uvicorn
