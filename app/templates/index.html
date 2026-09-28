@@ -233,47 +233,33 @@
             
             <!-- Welcome Hero Component -->
             <div id="welcome-hero" class="text-center py-12 space-y-6 animate-fade-in">
-                <div class="inline-flex p-5 rounded-3xl bg-gradient-to-tr from-[#3ABEFF]/20 to-[#6D5DF6]/20 border border-white/10 shadow-2xl shadow-[#6D5DF6]/20">
-                    <svg class="w-12 h-12 text-[#3ABEFF]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                </div>
                 <div class="space-y-2">
                     <h2 class="text-4xl font-heading font-bold text-white tracking-tight">AetherMind Multimodal AI</h2>
                 </div>
 
                 <!-- Quick Action Cards Grid -->
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3.5 max-w-2xl mx-auto pt-4">
-                    <button class="glass-card p-4 text-left transition space-y-2 group" onclick="triggerQuickAction('dashboard')">
-                        <div class="w-8 h-8 rounded-xl bg-[#3ABEFF]/20 flex items-center justify-center text-[#3ABEFF]">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-                        </div>
+                    <button class="glass-card p-4 text-left transition space-y-1 group" onclick="triggerQuickAction('dashboard')">
                         <div class="font-heading font-bold text-xs text-white group-hover:text-[#3ABEFF]">Dashboard</div>
                         <div class="text-[10px] text-[#7E8CA5]">Storage & Usage Stats</div>
                     </button>
 
-                    <button class="glass-card p-4 text-left transition space-y-2 group" onclick="triggerQuickAction('projects')">
-                        <div class="w-8 h-8 rounded-xl bg-[#6D5DF6]/20 flex items-center justify-center text-[#6D5DF6]">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
-                        </div>
+                    <button class="glass-card p-4 text-left transition space-y-1 group" onclick="triggerQuickAction('projects')">
                         <div class="font-heading font-bold text-xs text-white group-hover:text-[#6D5DF6]">Projects</div>
                         <div class="text-[10px] text-[#7E8CA5]">Organize Workspace</div>
                     </button>
 
-                    <button class="glass-card p-4 text-left transition space-y-2 group" onclick="triggerQuickAction('media')">
-                        <div class="w-8 h-8 rounded-xl bg-[#22C55E]/20 flex items-center justify-center text-[#22C55E]">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                        </div>
+                    <button class="glass-card p-4 text-left transition space-y-1 group" onclick="triggerQuickAction('media')">
                         <div class="font-heading font-bold text-xs text-white group-hover:text-[#22C55E]">Media Gallery</div>
                         <div class="text-[10px] text-[#7E8CA5]">AI Artwork & Images</div>
                     </button>
 
-                    <button class="glass-card p-4 text-left transition space-y-2 group" onclick="triggerQuickAction('doclib')">
-                        <div class="w-8 h-8 rounded-xl bg-[#FACC15]/20 flex items-center justify-center text-[#FACC15]">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                        </div>
+                    <button class="glass-card p-4 text-left transition space-y-1 group" onclick="triggerQuickAction('doclib')">
                         <div class="font-heading font-bold text-xs text-white group-hover:text-[#FACC15]">Document Library</div>
                         <div class="text-[10px] text-[#7E8CA5]">PDF, DOCX, CSV, Excel</div>
                     </button>
                 </div>
+            </div>
             </div>
         </div>
 
