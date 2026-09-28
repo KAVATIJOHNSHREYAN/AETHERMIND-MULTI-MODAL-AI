@@ -4,6 +4,8 @@
 
 ### Enterprise-Grade Unified Multimodal AI Operating System & Identity Portal
 
+#### **Created by Kavati John Shreyan**
+
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![Streamlit App](https://img.shields.io/badge/Streamlit_Cloud-Live_App-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)](https://aethermind-multi-modal-ai-fwt8jmcqdbbmoahwveobze.streamlit.app/)
@@ -199,8 +201,10 @@ For detailed steps on setting up Firebase Authentication (Email/Password, Anonym
 
 ---
 
-## 📜 License
+## 📜 License & Author
+
+Created and Maintained by **Kavati John Shreyan**.
 
 Distributed under the MIT License. See `LICENSE` for details.
 
-*Copyright © 2026 AetherMind AI Team*
+*Copyright © 2026 Kavati John Shreyan. All Rights Reserved.*
