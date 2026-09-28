@@ -1772,14 +1772,19 @@ document.addEventListener("DOMContentLoaded", () => {
             console.error("Sign out error:", err);
         }
 
-        // Display dedicated logout modal overlay
+        // Display login page modal on logout
+        const modalAuth = document.getElementById("modal-auth");
         const modalLogout = document.getElementById("modal-logout");
-        if (modalLogout) {
-            hideAllModals();
+        hideAllModals();
+
+        if (modalAuth) {
+            modalAuth.classList.remove("hidden");
+            showToast("🔒 Signed out. Please sign in to access your workspace.", "info");
+        } else if (modalLogout) {
             modalLogout.classList.remove("hidden");
             showToast("🛡️ Signed out. Session securely terminated.", "info");
         } else {
-            window.location.href = "/logout";
+            window.location.href = "/login";
         }
     }
 
@@ -1814,6 +1819,41 @@ document.addEventListener("DOMContentLoaded", () => {
             setTimeout(() => {
                 location.reload();
             }, 300);
+        });
+    }
+
+    // Modal Login Card Listeners
+    const btnModalGuestLogin = document.getElementById("btn-modal-guest-login");
+    const btnModalOauthGoogle = document.getElementById("btn-modal-oauth-google");
+    const btnModalOauthGithub = document.getElementById("btn-modal-oauth-github");
+
+    if (btnModalGuestLogin) {
+        btnModalGuestLogin.addEventListener("click", () => {
+            document.cookie = "aethermind_token=token_guest_firebase; path=/; max-age=604800; SameSite=Lax";
+            localStorage.setItem("aethermind_user_email", "guest@aethermind.ai");
+            showToast("⚡ Signed in as Guest!", "success");
+            hideAllModals();
+            setTimeout(() => { location.reload(); }, 300);
+        });
+    }
+
+    if (btnModalOauthGoogle) {
+        btnModalOauthGoogle.addEventListener("click", () => {
+            document.cookie = "aethermind_token=token_firebase_google; path=/; max-age=604800; SameSite=Lax";
+            localStorage.setItem("aethermind_user_email", "google.user@aethermind.ai");
+            showToast("Signed in with Google Auth!", "success");
+            hideAllModals();
+            setTimeout(() => { location.reload(); }, 300);
+        });
+    }
+
+    if (btnModalOauthGithub) {
+        btnModalOauthGithub.addEventListener("click", () => {
+            document.cookie = "aethermind_token=token_firebase_github; path=/; max-age=604800; SameSite=Lax";
+            localStorage.setItem("aethermind_user_email", "github.user@aethermind.ai");
+            showToast("Signed in with GitHub Auth!", "success");
+            hideAllModals();
+            setTimeout(() => { location.reload(); }, 300);
         });
     }
 
