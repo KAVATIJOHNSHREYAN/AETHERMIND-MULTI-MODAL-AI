@@ -458,5 +458,6 @@ def build_standalone_aethermind_html(_cache_key=None):
 # Build & Render Standalone HTML directly in Streamlit container
 mtime_key = get_files_mtime_hash()
 standalone_html = build_standalone_aethermind_html(_cache_key=mtime_key)
-components.html(standalone_html, height=1000, scrolling=False, key=f"aethermind_v_{hash(standalone_html)}")
+components.html(standalone_html, height=1000, scrolling=False)
+
 
