@@ -26,7 +26,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Inject CSS to hide Streamlit Chrome & Headers
+# Inject CSS to hide Streamlit Chrome & Headers and fit 100% viewport height
 st.markdown("""
 <style>
     /* Hide Streamlit Chrome & Headers */
@@ -36,25 +36,35 @@ st.markdown("""
     div[data-testid="stToolbar"] {visibility: hidden;}
     div[data-testid="stHeader"] {visibility: hidden;}
     
-    /* Remove padding around container */
-    .block-container {
+    /* Force 100% fullscreen app container */
+    html, body, [data-testid="stAppViewContainer"], .block-container {
         padding: 0rem !important;
         margin: 0rem !important;
-        max-width: 100vw !important;
+        width: 100vw !important;
         height: 100vh !important;
+        max-width: 100vw !important;
+        max-height: 100vh !important;
+        overflow: hidden !important;
     }
     
     .element-container, div.stMarkdown, div.stHtml {
         width: 100% !important;
         height: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
     }
 
-    iframe {
+    iframe, iframe[title="st.components.v1.html"] {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
         width: 100vw !important;
-        height: 98vh !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
         border: none !important;
         margin: 0 !important;
         padding: 0 !important;
+        z-index: 99999 !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -434,4 +444,4 @@ def build_standalone_aethermind_html():
 
 # Build & Render Standalone HTML directly in Streamlit container
 standalone_html = build_standalone_aethermind_html()
-components.html(standalone_html, height=950, scrolling=True)
+components.html(standalone_html, height=1000, scrolling=False)

@@ -282,7 +282,7 @@
         <!-- =========================================================================
              3. FLOATING SEARCH-STYLE CHAT INPUT AREA (Max-Width 900px)
              ========================================================================= -->
-        <div class="p-3 max-w-[900px] mx-auto w-full shrink-0 z-20">
+        <div class="p-2 sm:p-3 max-w-[900px] mx-auto w-full shrink-0 z-20">
             
             <!-- Pending File Attachment Tray -->
             <div id="attachment-tray" class="flex flex-wrap gap-2 mb-2 hidden animate-fade-in">
@@ -290,8 +290,8 @@
             </div>
 
             <!-- Floating Search Input Box -->
-            <form id="chat-form" class="glass-panel p-2 flex flex-col gap-2 rounded-[22px] border border-white/10 focus-within:border-[#3ABEFF]/60 shadow-2xl transition">
-                <textarea id="chat-input" rows="2" placeholder="Ask questions, analyze uploaded documents, generate images, or transcribe voice audio..." class="w-full bg-transparent px-4 py-2 text-sm text-white placeholder-[#7E8CA5] focus:outline-none resize-none min-h-[46px] max-h-36"></textarea>
+            <form id="chat-form" class="glass-panel p-2 flex flex-col gap-1.5 rounded-[22px] border border-white/10 focus-within:border-[#3ABEFF]/60 shadow-2xl transition">
+                <textarea id="chat-input" rows="1" placeholder="Ask questions, analyze uploaded documents, generate images, or transcribe voice audio..." class="w-full bg-transparent px-4 py-1.5 text-sm text-white placeholder-[#7E8CA5] focus:outline-none resize-none min-h-[40px] max-h-28"></textarea>
 
                 <!-- Toolbar Actions Row -->
                 <div class="flex items-center justify-between px-2 pt-1 border-t border-white/5">
@@ -300,31 +300,31 @@
                     <div class="flex items-center space-x-1">
                         <input type="file" id="file-upload-input" class="hidden" multiple accept=".pdf,.docx,.pptx,.txt,.csv,.xlsx,.xls,.json,.md,.png,.jpg,.jpeg,.webp,.svg,.mp3,.wav,.m4a,.flac,.mp4,.mov,.avi,.mkv">
                         
-                        <button type="button" id="btn-attach-file" class="p-2 rounded-xl text-[#B7C2D8] hover:text-[#3ABEFF] hover:bg-white/5 transition flex items-center space-x-1.5 text-xs" title="Attach File">
+                        <button type="button" id="btn-attach-file" class="p-1.5 sm:p-2 rounded-xl text-[#B7C2D8] hover:text-[#3ABEFF] hover:bg-white/5 transition flex items-center space-x-1 text-xs" title="Attach File">
                             <svg class="w-4 h-4 text-[#3ABEFF]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
-                            <span class="hidden sm:inline font-medium">Attach</span>
+                            <span class="inline font-medium text-[11px] sm:text-xs">Attach</span>
                         </button>
 
-                        <button type="button" id="btn-open-camera" class="p-2 rounded-xl text-[#B7C2D8] hover:text-[#6D5DF6] hover:bg-white/5 transition text-xs flex items-center space-x-1.5" title="Camera Snapshot">
+                        <button type="button" id="btn-open-camera" class="p-1.5 sm:p-2 rounded-xl text-[#B7C2D8] hover:text-[#6D5DF6] hover:bg-white/5 transition text-xs flex items-center space-x-1" title="Camera Snapshot">
                             <svg class="w-4 h-4 text-[#6D5DF6]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><circle cx="12" cy="13" r="3"/></svg>
-                            <span class="hidden sm:inline font-medium">Camera</span>
+                            <span class="inline font-medium text-[11px] sm:text-xs">Camera</span>
                         </button>
 
-                        <button type="button" id="btn-open-image-gen" class="p-2 rounded-xl text-[#B7C2D8] hover:text-[#22C55E] hover:bg-white/5 transition text-xs flex items-center space-x-1.5" title="Image Generation">
+                        <button type="button" id="btn-open-image-gen" class="p-1.5 sm:p-2 rounded-xl text-[#B7C2D8] hover:text-[#22C55E] hover:bg-white/5 transition text-xs flex items-center space-x-1" title="Image Generation">
                             <svg class="w-4 h-4 text-[#22C55E]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                            <span class="hidden sm:inline font-medium">Generate</span>
+                            <span class="inline font-medium text-[11px] sm:text-xs">Generate</span>
                         </button>
 
-                        <button type="button" id="btn-record-voice" class="p-2 rounded-xl text-[#B7C2D8] hover:text-[#EF4444] hover:bg-white/5 transition text-xs flex items-center space-x-1.5" title="Voice Audio">
+                        <button type="button" id="btn-record-voice" class="p-1.5 sm:p-2 rounded-xl text-[#B7C2D8] hover:text-[#EF4444] hover:bg-white/5 transition text-xs flex items-center space-x-1" title="Voice Audio">
                             <svg class="w-4 h-4 text-[#EF4444]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
-                            <span class="hidden sm:inline font-medium">Voice</span>
+                            <span class="inline font-medium text-[11px] sm:text-xs">Voice</span>
                         </button>
                     </div>
 
-                    <!-- Glowing Blue-Purple Send Button -->
-                    <button type="submit" id="btn-send-message" class="py-2.5 px-5 btn-primary text-xs font-bold uppercase tracking-wider flex items-center space-x-2">
+                    <!-- Glowing Send Button -->
+                    <button type="submit" id="btn-send-message" class="py-2 px-4 btn-primary text-xs font-bold uppercase tracking-wider flex items-center space-x-1.5 shadow-md">
                         <span>Send</span>
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
                     </button>
                 </div>
             </form>

@@ -2035,26 +2035,31 @@ AetherMind Multimodal AI OS is an enterprise-grade artificial intelligence opera
 
         const activeClass = "px-2 py-1 rounded-lg bg-[#3ABEFF]/20 text-[#3ABEFF] border border-[#3ABEFF]/30 font-semibold text-[11px] hover:bg-[#3ABEFF]/30 transition flex items-center space-x-1 shadow-md";
 
+        mainCanvas.style.height = "100%";
+        mainCanvas.style.display = "flex";
+        mainCanvas.style.flexDirection = "column";
+        mainCanvas.style.overflow = "hidden";
+
         if (mode === "phone") {
             mainCanvas.style.maxWidth = "390px";
             mainCanvas.style.margin = "0 auto";
             mainCanvas.style.borderRadius = "24px";
-            mainCanvas.style.border = "1px solid rgba(56, 189, 248, 0.3)";
-            mainCanvas.style.boxShadow = "0 0 50px rgba(56, 189, 248, 0.2)";
+            mainCanvas.style.border = "1px solid rgba(56, 189, 248, 0.4)";
+            mainCanvas.style.boxShadow = "0 0 50px rgba(56, 189, 248, 0.25)";
             if (btnSizePhone) btnSizePhone.className = activeClass;
         } else if (mode === "tablet") {
             mainCanvas.style.maxWidth = "768px";
             mainCanvas.style.margin = "0 auto";
             mainCanvas.style.borderRadius = "20px";
-            mainCanvas.style.border = "1px solid rgba(56, 189, 248, 0.2)";
-            mainCanvas.style.boxShadow = "0 0 35px rgba(56, 189, 248, 0.15)";
+            mainCanvas.style.border = "1px solid rgba(56, 189, 248, 0.3)";
+            mainCanvas.style.boxShadow = "0 0 35px rgba(56, 189, 248, 0.2)";
             if (btnSizeTablet) btnSizeTablet.className = activeClass;
         } else if (mode === "laptop") {
             mainCanvas.style.maxWidth = "1280px";
             mainCanvas.style.margin = "0 auto";
             mainCanvas.style.borderRadius = "16px";
-            mainCanvas.style.border = "none";
-            mainCanvas.style.boxShadow = "none";
+            mainCanvas.style.border = "1px solid rgba(255, 255, 255, 0.1)";
+            mainCanvas.style.boxShadow = "0 10px 40px rgba(0,0,0,0.5)";
             if (btnSizeLaptop) btnSizeLaptop.className = activeClass;
         } else {
             mainCanvas.style.maxWidth = "100%";
