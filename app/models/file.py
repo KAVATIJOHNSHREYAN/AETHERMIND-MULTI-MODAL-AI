@@ -8,7 +8,7 @@ class Folder(Base):
     __tablename__ = "folders"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(String(255), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     project_id = Column(String(36), ForeignKey("projects.id", ondelete="SET NULL"), nullable=True, index=True)
     name = Column(String(255), nullable=False)
     parent_id = Column(String(36), ForeignKey("folders.id", ondelete="SET NULL"), nullable=True)
@@ -24,7 +24,7 @@ class File(Base):
     __tablename__ = "files"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(String(255), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     chat_id = Column(String(36), ForeignKey("chats.id", ondelete="SET NULL"), nullable=True, index=True)
     folder_id = Column(String(36), ForeignKey("folders.id", ondelete="SET NULL"), nullable=True)
     project_id = Column(String(36), ForeignKey("projects.id", ondelete="SET NULL"), nullable=True, index=True)
@@ -51,7 +51,7 @@ class ImageGenerationRecord(Base):
     __tablename__ = "image_generation_records"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(String(255), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     project_id = Column(String(36), ForeignKey("projects.id", ondelete="SET NULL"), nullable=True)
     prompt = Column(Text, nullable=False)
     negative_prompt = Column(Text, nullable=True)

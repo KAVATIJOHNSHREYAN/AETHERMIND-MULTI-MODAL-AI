@@ -66,6 +66,16 @@ document.addEventListener("DOMContentLoaded", async () => {
             // Check existing authenticated Clerk session
             if (clerk.user) {
                 if (splashStatus) splashStatus.textContent = `Authenticated as ${clerk.user.primaryEmailAddress?.emailAddress || clerk.user.fullName}`;
+                if (clerk.session) {
+                    try {
+                        const token = await clerk.session.getToken();
+                        if (token) {
+                            document.cookie = `aethermind_token=${token}; path=/; max-age=604800; SameSite=Lax`;
+                        }
+                    } catch (tokenErr) {
+                        console.warn("Could not retrieve Clerk token on auth load:", tokenErr);
+                    }
+                }
                 setTimeout(() => runWorkspaceLoadingSequence(), 600);
                 return;
             } else {
@@ -108,61 +118,75 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         try {
-            // Ensure Clerk SDK is initialized
             if (!window.Clerk.isReady && typeof window.Clerk.load === "function") {
                 await window.Clerk.load();
             }
 
-            const providerName = strategy.includes('google') ? 'Google' : 'GitHub';
+            const providerName = (strategy.includes('google') ? 'Google' : 'GitHub');
             showToast(`Redirecting to ${providerName} OAuth via Clerk...`, "info");
 
-            const redirectUrl = window.location.origin + "/";
+            const redirectUrl = window.location.origin + "/sso-callback";
             const redirectUrlComplete = window.location.origin + "/";
 
-            // Method 1: Existing Clerk signIn instance
-            if (window.Clerk.client && window.Clerk.client.signIn && typeof window.Clerk.client.signIn.authenticateWithRedirect === "function") {
-                await window.Clerk.client.signIn.authenticateWithRedirect({
-                    strategy: strategy,
-                    redirectUrl: redirectUrl,
-                    redirectUrlComplete: redirectUrlComplete
-                });
-                return;
-            }
+            const strategiesToTry = [strategy];
+            if (strategy === "oauth_github") strategiesToTry.push("github");
+            if (strategy === "github") strategiesToTry.push("oauth_github");
+            if (strategy === "oauth_google") strategiesToTry.push("google");
+            if (strategy === "google") strategiesToTry.push("oauth_google");
 
-            // Method 2: Global Clerk authenticateWithRedirect
-            if (typeof window.Clerk.authenticateWithRedirect === "function") {
-                await window.Clerk.authenticateWithRedirect({
-                    strategy: strategy,
-                    redirectUrl: redirectUrl,
-                    redirectUrlComplete: redirectUrlComplete
-                });
-                return;
-            }
+            let lastErr = null;
+            for (const strat of strategiesToTry) {
+                try {
+                    // Method 1: Global Clerk authenticateWithRedirect
+                    if (typeof window.Clerk.authenticateWithRedirect === "function") {
+                        await window.Clerk.authenticateWithRedirect({
+                            strategy: strat,
+                            redirectUrl: redirectUrl,
+                            redirectUrlComplete: redirectUrlComplete
+                        });
+                        return;
+                    }
 
-            // Method 3: Initialize signIn via Clerk client
-            if (window.Clerk.client) {
-                const signIn = await window.Clerk.client.signIn.create({
-                    strategy: strategy,
-                    redirectUrl: redirectUrl,
-                    redirectUrlComplete: redirectUrlComplete
-                });
+                    // Method 2: Initialize signIn via Clerk client
+                    if (window.Clerk.client && typeof window.Clerk.client.signIn?.create === "function") {
+                        const signIn = await window.Clerk.client.signIn.create({
+                            strategy: strat,
+                            redirectUrl: redirectUrl,
+                            redirectUrlComplete: redirectUrlComplete
+                        });
 
-                if (signIn && signIn.firstFactorVerification && signIn.firstFactorVerification.externalVerificationRedirectURL) {
-                    window.location.href = signIn.firstFactorVerification.externalVerificationRedirectURL.href;
-                    return;
+                        if (signIn && signIn.firstFactorVerification && signIn.firstFactorVerification.externalVerificationRedirectURL) {
+                            window.location.href = signIn.firstFactorVerification.externalVerificationRedirectURL.href;
+                            return;
+                        }
+                    }
+
+                    // Method 3: Existing Clerk signIn instance
+                    if (window.Clerk.client && window.Clerk.client.signIn && typeof window.Clerk.client.signIn.authenticateWithRedirect === "function") {
+                        await window.Clerk.client.signIn.authenticateWithRedirect({
+                            strategy: strat,
+                            redirectUrl: redirectUrl,
+                            redirectUrlComplete: redirectUrlComplete
+                        });
+                        return;
+                    }
+                } catch (stratErr) {
+                    console.warn(`[Clerk OAuth Strategy ${strat} failed]:`, stratErr);
+                    lastErr = stratErr;
                 }
             }
 
             // Method 4: Fallback to Clerk.redirectToSignIn
             if (typeof window.Clerk.redirectToSignIn === "function") {
                 await window.Clerk.redirectToSignIn({
-                    signInForceRedirectUrl: redirectUrl,
+                    signInForceRedirectUrl: redirectUrlComplete,
                     signUpForceRedirectUrl: redirectUrlComplete
                 });
                 return;
             }
 
-            throw new Error(`Unable to initialize ${providerName} OAuth with Clerk. Please check that ${providerName} OAuth is enabled in your Clerk Dashboard.`);
+            if (lastErr) throw lastErr;
+            throw new Error(`Unable to initialize ${providerName} OAuth with Clerk.`);
 
         } catch (err) {
             console.error(`[Clerk OAuth Error - ${strategy}]:`, err);

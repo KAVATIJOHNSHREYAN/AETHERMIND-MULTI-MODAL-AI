@@ -46,30 +46,34 @@ async def analyze_image(
     return APIResponse(success=True, data=res, message="Vision analysis and OCR completed")
 
 
+from app.core.dependencies import get_current_user_or_session
+from app.models.user import User
+
 @router.post("/generate", response_model=APIResponse[ImageGenerationResponse])
 async def generate_image(
     req: ImageGenerationRequest,
+    current_user: User = Depends(get_current_user_or_session),
     db: AsyncSession = Depends(get_async_db)
 ):
-    """Text to Image Generation integrated with AI Provider Manager and aspect ratio / quality parameters."""
+    """Text to Image Generation with Auto-Rotating API-less Multi-Model Engine."""
     res = await image_generator.generate_image(
         prompt=req.prompt,
         negative_prompt=req.negative_prompt,
         aspect_ratio=req.aspect_ratio or "1:1",
         quality=req.quality or "standard",
-        model=req.model or "gemini-2.5-flash"
+        model=req.model or "auto"
     )
 
     # Save to ImageGenerationRecord database table
     record = ImageGenerationRecord(
         id=res["id"],
-        user_id="default-user-id",
+        user_id=current_user.id,
         prompt=res["prompt"],
         negative_prompt=req.negative_prompt,
         aspect_ratio=res["aspect_ratio"],
         quality=res["quality"],
         image_url=res["image_url"],
-        model_used=req.model or "gemini-2.5-flash",
+        model_used=res.get("model_name", "AetherMind Flux"),
         generation_metadata=res.get("metadata", {})
     )
 
@@ -85,6 +89,7 @@ async def generate_image(
         prompt=res["prompt"],
         aspect_ratio=res["aspect_ratio"],
         image_url=res["image_url"],
+        model_name=res.get("model_name", "AetherMind Flux"),
         created_at=record.created_at or res.get("created_at") or datetime.utcnow()
     )
 
@@ -96,6 +101,7 @@ async def generate_image_variation(
     image_id: str = Form(...),
     prompt: Optional[str] = Form("Generative variation of selected image"),
     aspect_ratio: Optional[str] = Form("1:1"),
+    current_user: User = Depends(get_current_user_or_session),
     db: AsyncSession = Depends(get_async_db)
 ):
     """Generate visual variation of an existing image in history."""
@@ -103,7 +109,7 @@ async def generate_image_variation(
 
     record = ImageGenerationRecord(
         id=res["id"],
-        user_id="default-user-id",
+        user_id=current_user.id,
         prompt=res["prompt"],
         aspect_ratio=res["aspect_ratio"],
         quality=res["quality"],
@@ -128,10 +134,13 @@ async def generate_image_variation(
 
 
 @router.get("/history", response_model=APIResponse[List[dict]])
-async def image_generation_history(db: AsyncSession = Depends(get_async_db)):
-    """Retrieve Image Generation history records."""
+async def image_generation_history(
+    current_user: User = Depends(get_current_user_or_session),
+    db: AsyncSession = Depends(get_async_db)
+):
+    """Retrieve Image Generation history records strictly for current user."""
     try:
-        query = select(ImageGenerationRecord).order_by(ImageGenerationRecord.created_at.desc())
+        query = select(ImageGenerationRecord).where(ImageGenerationRecord.user_id == current_user.id).order_by(ImageGenerationRecord.created_at.desc())
         result = await db.execute(query)
         records = result.scalars().all()
         data = [
@@ -155,10 +164,16 @@ async def image_generation_history(db: AsyncSession = Depends(get_async_db)):
 
 
 @router.delete("/history/{record_id}", response_model=APIResponse[dict])
-async def delete_image_history_record(record_id: str, db: AsyncSession = Depends(get_async_db)):
-    """Delete an image generation record from history."""
+async def delete_image_history_record(
+    record_id: str,
+    current_user: User = Depends(get_current_user_or_session),
+    db: AsyncSession = Depends(get_async_db)
+):
+    """Delete an image generation record from history strictly verifying user ownership."""
     try:
-        result = await db.execute(select(ImageGenerationRecord).where(ImageGenerationRecord.id == record_id))
+        result = await db.execute(
+            select(ImageGenerationRecord).where(ImageGenerationRecord.id == record_id, ImageGenerationRecord.user_id == current_user.id)
+        )
         rec = result.scalar_one_or_none()
         if rec:
             await db.delete(rec)

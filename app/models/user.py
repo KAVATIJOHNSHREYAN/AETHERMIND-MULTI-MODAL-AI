@@ -7,7 +7,7 @@ from app.database.base import Base
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = Column(String(255), primary_key=True, default=lambda: str(uuid.uuid4()))
     clerk_id = Column(String(255), unique=True, nullable=True, index=True)
     email = Column(String(255), unique=True, nullable=False, index=True)
     password_hash = Column(String(255), nullable=True)
@@ -36,7 +36,7 @@ class UserSession(Base):
     __tablename__ = "user_sessions"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(String(255), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     session_token = Column(String(512), unique=True, nullable=False, index=True)
     ip_address = Column(String(100), nullable=True)
     user_agent = Column(String(512), nullable=True)

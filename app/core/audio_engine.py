@@ -14,7 +14,7 @@ from app.providers.manager import ai_provider_manager
 class AudioProcessingEngine:
     """Audio & Voice Processing Engine for Speech-to-Text transcription, Text-to-Speech, and Audio Analysis"""
 
-    SUPPORTED_AUDIO_EXTENSIONS = [".mp3", ".wav", ".m4a", ".flac"]
+    SUPPORTED_AUDIO_EXTENSIONS = [".mp3", ".wav", ".m4a", ".flac", ".webm", ".ogg", ".aac", ".opus"]
 
     async def transcribe_audio(
         self,

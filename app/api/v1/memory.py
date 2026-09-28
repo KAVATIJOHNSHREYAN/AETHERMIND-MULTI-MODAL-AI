@@ -25,12 +25,19 @@ class AddMemoryRequest(BaseModel):
     is_pinned: Optional[bool] = False
 
 
+from app.core.dependencies import get_current_user_or_session
+from app.models.user import User
+
 @router.post("", response_model=APIResponse[dict])
-async def add_memory(req: AddMemoryRequest, db: AsyncSession = Depends(get_async_db)):
+async def add_memory(
+    req: AddMemoryRequest,
+    current_user: User = Depends(get_current_user_or_session),
+    db: AsyncSession = Depends(get_async_db)
+):
     """Add a long-term memory point, generate vector embedding, and index in Qdrant."""
     res = await memory_service.add_memory(
         db=db,
-        user_id="default-user-id",
+        user_id=current_user.id,
         memory_key=req.memory_key,
         memory_value=req.memory_value,
         memory_type=req.memory_type or "persistent",
@@ -44,22 +51,31 @@ async def add_memory(req: AddMemoryRequest, db: AsyncSession = Depends(get_async
 @router.get("", response_model=APIResponse[List[dict]])
 async def list_memories(
     memory_type: Optional[str] = None,
+    current_user: User = Depends(get_current_user_or_session),
     db: AsyncSession = Depends(get_async_db)
 ):
     """Retrieve long-term memory items for user."""
-    memories = await memory_service.list_memories(db=db, user_id="default-user-id", memory_type=memory_type)
+    memories = await memory_service.list_memories(db=db, user_id=current_user.id, memory_type=memory_type)
     return APIResponse(success=True, data=memories, message="Memories list loaded")
 
 
 @router.post("/compress/{chat_id}", response_model=APIResponse[dict])
-async def compress_conversation_memory(chat_id: str, db: AsyncSession = Depends(get_async_db)):
+async def compress_conversation_memory(
+    chat_id: str,
+    current_user: User = Depends(get_current_user_or_session),
+    db: AsyncSession = Depends(get_async_db)
+):
     """Compress active conversation trajectory into long-term Memory points."""
-    res = await memory_service.compress_conversation(db=db, chat_id=chat_id, user_id="default-user-id")
+    res = await memory_service.compress_conversation(db=db, chat_id=chat_id, user_id=current_user.id)
     return APIResponse(success=True, data=res, message="Conversation trajectory compressed into long-term memory")
 
 
 @router.delete("/{memory_id}", response_model=APIResponse[dict])
-async def delete_memory(memory_id: str, db: AsyncSession = Depends(get_async_db)):
-    """Delete long-term memory point."""
-    success = await memory_service.delete_memory(db=db, memory_id=memory_id)
+async def delete_memory(
+    memory_id: str,
+    current_user: User = Depends(get_current_user_or_session),
+    db: AsyncSession = Depends(get_async_db)
+):
+    """Delete long-term memory point strictly belonging to user."""
+    success = await memory_service.delete_memory(db=db, memory_id=memory_id, user_id=current_user.id)
     return APIResponse(success=success, message=f"Memory {memory_id} deleted", data={"id": memory_id})

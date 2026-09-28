@@ -8,10 +8,12 @@ document.addEventListener("DOMContentLoaded", () => {
     console.log("🚀 AetherMind Multimodal AI Phase 8 Engine Initialized.");
 
     // State Variables
-    let activeChatId = null;
+    let activeChatId = localStorage.getItem('aethermind_active_chat') || null;
     let pendingAttachments = [];
     let mediaRecorder = null;
     let audioChunks = [];
+    let voiceSeconds = 0;
+    let voiceTimerInterval = null;
     let recordStartTime = 0;
     let recordTimerInterval = null;
     let currentLightboxZoom = 1.0;
@@ -19,6 +21,93 @@ document.addEventListener("DOMContentLoaded", () => {
     let currentDocumentPageIdx = 0;
     let currentDocumentId = null;
     let currentMemoryFilter = "all";
+
+    // Global Window Helpers for Inline onclick Handlers
+    window.openImagePreview = (url, name) => {
+        const modalImagePreview = document.getElementById("modal-image-preview");
+        const previewImgElement = document.getElementById("preview-img-element");
+        const previewImgTitle = document.getElementById("preview-img-title");
+        const previewDownloadBtn = document.getElementById("preview-download-btn");
+
+        if (modalImagePreview && previewImgElement) {
+            document.querySelectorAll('[id^="modal-"]').forEach(m => m.classList.add("hidden"));
+            previewImgElement.src = url;
+            if (previewImgTitle) previewImgTitle.innerText = name || "AI Artwork Preview";
+            if (previewDownloadBtn) {
+                previewDownloadBtn.href = url;
+                previewDownloadBtn.download = name || "artwork.png";
+            }
+            modalImagePreview.classList.remove("hidden");
+        }
+    };
+
+    window.openDocumentViewer = async (docId, filename) => {
+        const modalDocumentViewer = document.getElementById("modal-document-viewer");
+        const docViewerTitle = document.getElementById("doc-viewer-title");
+        const docViewerContent = document.getElementById("doc-viewer-content");
+
+        if (modalDocumentViewer) {
+            document.querySelectorAll('[id^="modal-"]').forEach(m => m.classList.add("hidden"));
+            if (docViewerTitle) docViewerTitle.innerText = filename || "Document Viewer";
+            if (docViewerContent) docViewerContent.innerHTML = `<div class="text-slate-400 p-4 font-mono">Loading document content...</div>`;
+            modalDocumentViewer.classList.remove("hidden");
+
+            try {
+                const res = await authenticatedFetch(`/api/v1/files/${docId}`);
+                const data = await res.json();
+                if (data.success && data.data && data.data.extracted_text) {
+                    if (docViewerContent) docViewerContent.innerText = data.data.extracted_text;
+                } else {
+                    if (docViewerContent) docViewerContent.innerText = "Document loaded.";
+                }
+            } catch (e) {
+                if (docViewerContent) docViewerContent.innerText = "Error loading document details.";
+            }
+        }
+    };
+
+    function getOrCreateClientSessionId() {
+        let sid = localStorage.getItem("aethermind_session");
+        if (!sid) {
+            sid = "sess_guest_" + Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
+            localStorage.setItem("aethermind_session", sid);
+        }
+        document.cookie = `aethermind_session=${sid}; path=/; max-age=31536000; SameSite=Lax`;
+        return sid;
+    }
+
+    // Centralized User-Isolated Authenticated Fetch Wrapper
+    async function authenticatedFetch(url, options = {}) {
+        options.headers = options.headers || {};
+        const clientSid = getOrCreateClientSessionId();
+
+        if (options.headers instanceof Headers) {
+            options.headers.set("X-Session-ID", clientSid);
+        } else if (Array.isArray(options.headers)) {
+            options.headers.push(["X-Session-ID", clientSid]);
+        } else {
+            options.headers["X-Session-ID"] = clientSid;
+        }
+
+        if (window.Clerk && window.Clerk.session) {
+            try {
+                const token = await window.Clerk.session.getToken();
+                if (token) {
+                    if (options.headers instanceof Headers) {
+                        options.headers.set("Authorization", `Bearer ${token}`);
+                    } else if (Array.isArray(options.headers)) {
+                        options.headers.push(["Authorization", `Bearer ${token}`]);
+                    } else {
+                        options.headers["Authorization"] = `Bearer ${token}`;
+                    }
+                    document.cookie = `aethermind_token=${token}; path=/; max-age=604800; SameSite=Lax`;
+                }
+            } catch (err) {
+                console.warn("[Auth Fetch Warning] Unable to attach Clerk session token:", err);
+            }
+        }
+        return fetch(url, options);
+    }
 
     // Main DOM Elements
     const messagesContainer = document.getElementById("messages-container");
@@ -107,7 +196,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Phase 9 Modals & Workspace Elements
     const modalWorkspaceDashboard = document.getElementById("modal-workspace-dashboard");
-    const closeWorkspaceDashboardBtn = document.getElementById("close-workspace-dashboard-btn");
+    const closeWorkspaceDashboardBtn = document.getElementById("close-workspace-dashboard-btn") || document.getElementById("close-dashboard-btn");
     const openDashboardBtn = document.getElementById("open-dashboard-btn");
 
     const modalProjectsWorkspace = document.getElementById("modal-projects-workspace");
@@ -123,17 +212,17 @@ document.addEventListener("DOMContentLoaded", () => {
     const mediaTypeFilter = document.getElementById("media-type-filter");
 
     const modalDocLibrary = document.getElementById("modal-doc-library");
-    const closeDocsBtn = document.getElementById("close-docs-btn");
+    const closeDocsBtn = document.getElementById("close-docs-btn") || document.getElementById("close-doc-lib-btn");
     const openDocsBtn = document.getElementById("open-docs-btn");
     const docLibraryList = document.getElementById("doc-library-list");
 
     const modalAudioLibrary = document.getElementById("modal-audio-library");
-    const closeAudioBtn = document.getElementById("close-audio-btn");
+    const closeAudioBtn = document.getElementById("close-audio-btn") || document.getElementById("close-audio-lib-btn");
     const openAudioBtn = document.getElementById("open-audio-btn");
     const audioLibraryList = document.getElementById("audio-library-list");
 
     const modalRecycleBin = document.getElementById("modal-recycle-bin");
-    const closeRecycleBinBtn = document.getElementById("close-recycle-bin-btn");
+    const closeRecycleBinBtn = document.getElementById("close-recycle-bin-btn") || document.getElementById("close-recycle-btn");
     const openRecycleBinBtn = document.getElementById("open-recycle-bin-btn");
     const recycleBinList = document.getElementById("recycle-bin-list");
     const btnEmptyRecycleBin = document.getElementById("btn-empty-recycle-bin");
@@ -146,17 +235,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Modal Display Helpers
     const hideAllModals = () => {
-        [
-            modalSettings, modalDocumentViewer, modalImagePreview, modalImageGen, modalCamera, modalVoiceRecorder,
-            modalKnowledgeBase, modalMemoryDashboard, modalSemanticSearch,
-            modalWorkspaceDashboard, modalProjectsWorkspace, modalMediaGallery, modalDocLibrary, modalAudioLibrary, modalRecycleBin, modalGlobalSearch
-        ].forEach(m => m && m.classList.add("hidden"));
-        if (webcamVideo.srcObject) {
+        document.querySelectorAll('[id^="modal-"]').forEach(m => m.classList.add("hidden"));
+        if (webcamVideo && webcamVideo.srcObject) {
             webcamVideo.srcObject.getTracks().forEach(t => t.stop());
             webcamVideo.srcObject = null;
         }
     };
 
+    // Bind all close buttons
     closeSettingsBtn?.addEventListener("click", hideAllModals);
     closeDocViewerBtn?.addEventListener("click", hideAllModals);
     closeImgPreviewBtn?.addEventListener("click", hideAllModals);
@@ -175,6 +261,118 @@ document.addEventListener("DOMContentLoaded", () => {
     closeRecycleBinBtn?.addEventListener("click", hideAllModals);
     closeGlobalSearchBtn?.addEventListener("click", hideAllModals);
 
+    // Dynamic Close Button & Action Bar Event Listener Delegation
+    document.addEventListener("click", async (e) => {
+        // Sidebar Collapse & Expand Toggle Buttons
+        const toggleSidebarBtn = e.target.closest("#sidebar-toggle-btn, #sidebar-open-btn");
+        if (toggleSidebarBtn) {
+            e.preventDefault();
+            const sidebar = document.getElementById("sidebar");
+            const sidebarOpenBtn = document.getElementById("sidebar-open-btn");
+            if (sidebar) {
+                sidebar.classList.toggle("hidden");
+                if (sidebarOpenBtn) {
+                    sidebarOpenBtn.classList.toggle("hidden", !sidebar.classList.contains("hidden"));
+                }
+            }
+            return;
+        }
+
+        const closeBtn = e.target.closest("button[id^='close-']");
+        if (closeBtn) {
+            hideAllModals();
+            return;
+        }
+
+        // Attach File Button
+        const attachBtn = e.target.closest("#btn-attach-file, #btn-attach");
+        if (attachBtn) {
+            e.preventDefault();
+            const fileInput = document.getElementById("file-upload-input");
+            if (fileInput) fileInput.click();
+            return;
+        }
+
+        // Camera Button
+        const cameraBtn = e.target.closest("#btn-open-camera, #btn-camera");
+        if (cameraBtn) {
+            e.preventDefault();
+            hideAllModals();
+            const modalCam = document.getElementById("modal-camera");
+            if (modalCam) modalCam.classList.remove("hidden");
+            const webcamVid = document.getElementById("webcam-video");
+            if (webcamVid) {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    webcamVid.srcObject = stream;
+                    webcamVid.play();
+                } catch (err) {
+                    showToast("Camera access required for webcam snapshot.", "info");
+                }
+            }
+            return;
+        }
+
+        // Generate Image Button
+        const genBtn = e.target.closest("#btn-open-image-gen, #btn-image-gen");
+        if (genBtn) {
+            e.preventDefault();
+            hideAllModals();
+            const modalGen = document.getElementById("modal-image-gen");
+            if (modalGen) modalGen.classList.remove("hidden");
+            return;
+        }
+
+        // Voice Recorder Button
+        const voiceBtn = e.target.closest("#btn-record-voice, #btn-voice");
+        if (voiceBtn) {
+            e.preventDefault();
+            hideAllModals();
+            const modalVoice = document.getElementById("modal-voice-recorder");
+            if (modalVoice) modalVoice.classList.remove("hidden");
+            const voiceTimer = document.getElementById("voice-timer");
+            if (voiceTimer) voiceTimer.innerText = "00:00";
+
+            try {
+                audioChunks = [];
+                voiceSeconds = 0;
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                mediaRecorder.ondataavailable = (ev) => {
+                    if (ev.data.size > 0) audioChunks.push(ev.data);
+                };
+                mediaRecorder.start();
+
+                if (voiceTimerInterval) clearInterval(voiceTimerInterval);
+                voiceTimerInterval = setInterval(() => {
+                    voiceSeconds++;
+                    const mins = String(Math.floor(voiceSeconds / 60)).padStart(2, "0");
+                    const secs = String(voiceSeconds % 60).padStart(2, "0");
+                    if (voiceTimer) voiceTimer.innerText = `${mins}:${secs}`;
+                }, 1000);
+            } catch (err) {
+                showToast("Microphone access required for voice recording.", "info");
+            }
+            return;
+        }
+    });
+
+    // Backdrop click listener to close modal when clicking outside dialog content panel
+    document.querySelectorAll('[id^="modal-"]').forEach(modal => {
+        modal.addEventListener("click", (e) => {
+            if (e.target === modal) {
+                hideAllModals();
+            }
+        });
+    });
+
+    // Escape Key Listener to dismiss any open modal
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+            hideAllModals();
+        }
+    });
+
     openSettingsBtn?.addEventListener("click", () => { hideAllModals(); modalSettings.classList.remove("hidden"); });
     openKnowledgeBtn?.addEventListener("click", () => { hideAllModals(); modalKnowledgeBase.classList.remove("hidden"); loadKnowledgeCollections(); });
     openMemoryBtn?.addEventListener("click", () => { hideAllModals(); modalMemoryDashboard.classList.remove("hidden"); loadMemories(); });
@@ -187,11 +385,168 @@ document.addEventListener("DOMContentLoaded", () => {
     openAudioBtn?.addEventListener("click", () => { hideAllModals(); modalAudioLibrary.classList.remove("hidden"); loadAudioLibrary(); });
     openRecycleBinBtn?.addEventListener("click", () => { hideAllModals(); modalRecycleBin.classList.remove("hidden"); loadRecycleBin(); });
     openGlobalSearchBtn?.addEventListener("click", () => { hideAllModals(); modalGlobalSearch.classList.remove("hidden"); });
+    btnOpenImageGen?.addEventListener("click", () => { hideAllModals(); modalImageGen.classList.remove("hidden"); });
+
+    // Wire Action Bar Buttons (Attach, Camera, Voice, Snapshot, Recorder)
+    const btnAttachFileAlt = document.getElementById("btn-attach-file") || document.getElementById("btn-attach");
+    const btnOpenCameraAlt = document.getElementById("btn-open-camera") || document.getElementById("btn-camera");
+    const btnRecordVoiceAlt = document.getElementById("btn-record-voice") || document.getElementById("btn-voice");
+    const btnCaptureSnapshotAlt = document.getElementById("btn-capture-snapshot");
+    const btnStopVoiceAlt = document.getElementById("btn-stop-voice");
+
+    if (btnAttachFileAlt) {
+        btnAttachFileAlt.addEventListener("click", () => {
+            if (fileUploadInput) fileUploadInput.click();
+        });
+    }
+
+    if (btnOpenCameraAlt) {
+        btnOpenCameraAlt.addEventListener("click", async () => {
+            hideAllModals();
+            if (modalCamera) modalCamera.classList.remove("hidden");
+            if (webcamVideo) {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    webcamVideo.srcObject = stream;
+                    webcamVideo.play();
+                } catch (e) {
+                    showToast("Camera access required to capture snapshot.", "info");
+                }
+            }
+        });
+    }
+
+    if (btnCaptureSnapshotAlt) {
+        btnCaptureSnapshotAlt.addEventListener("click", () => {
+            if (!webcamVideo || !webcamCanvas) return;
+            const context = webcamCanvas.getContext("2d");
+            webcamCanvas.width = webcamVideo.videoWidth || 640;
+            webcamCanvas.height = webcamVideo.videoHeight || 480;
+            context.drawImage(webcamVideo, 0, 0, webcamCanvas.width, webcamCanvas.height);
+
+            webcamCanvas.toBlob(async (blob) => {
+                if (!blob) return;
+                const snapshotFile = new File([blob], `camera_snapshot_${Date.now()}.png`, { type: "image/png" });
+                hideAllModals();
+                await uploadFileToApi(snapshotFile);
+            }, "image/png");
+        });
+    }
+
+// Reset voice recording state variables
+    audioChunks = [];
+    voiceSeconds = 0;
+
+    if (btnRecordVoiceAlt) {
+        btnRecordVoiceAlt.addEventListener("click", async () => {
+            hideAllModals();
+            if (modalVoiceRecorder) modalVoiceRecorder.classList.remove("hidden");
+            audioChunks = [];
+            voiceSeconds = 0;
+            const voiceTimer = document.getElementById("voice-timer");
+            if (voiceTimer) voiceTimer.innerText = "00:00";
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                mediaRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) audioChunks.push(e.data);
+                };
+                mediaRecorder.start();
+
+                if (voiceTimerInterval) clearInterval(voiceTimerInterval);
+                voiceTimerInterval = setInterval(() => {
+                    voiceSeconds++;
+                    const mins = String(Math.floor(voiceSeconds / 60)).padStart(2, "0");
+                    const secs = String(voiceSeconds % 60).padStart(2, "0");
+                    if (voiceTimer) voiceTimer.innerText = `${mins}:${secs}`;
+                }, 1000);
+            } catch (err) {
+                showToast("Microphone permission required for voice recording.", "info");
+            }
+        });
+    }
+
+    if (btnStopVoiceAlt) {
+        btnStopVoiceAlt.addEventListener("click", () => {
+            if (voiceTimerInterval) clearInterval(voiceTimerInterval);
+            if (mediaRecorder && mediaRecorder.state !== "inactive") {
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+                    const voiceFile = new File([audioBlob], `voice_record_${Date.now()}.webm`, { type: "audio/webm" });
+                    hideAllModals();
+                    await uploadFileToApi(voiceFile);
+                };
+                mediaRecorder.stop();
+                if (mediaRecorder.stream) {
+                    mediaRecorder.stream.getTracks().forEach(t => t.stop());
+                }
+            } else {
+                hideAllModals();
+            }
+        });
+    }
+
+    // AI Text-to-Image Modal Submission
+    const formGenerateImage = document.getElementById("form-generate-image");
+    const genPromptInput = document.getElementById("gen-prompt-input");
+
+    if (formGenerateImage) {
+        formGenerateImage.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const prompt = genPromptInput ? genPromptInput.value.trim() : "";
+            if (!prompt) return;
+
+            hideAllModals();
+            showToast("🎨 Generating AI artwork...", "info");
+
+            if (welcomeHero) welcomeHero.classList.add("hidden");
+            renderMessage({ role: "user", content: `Generate image: ${prompt}`, attachments: [], created_at: new Date().toISOString() });
+
+            const typingId = "asst_" + Date.now();
+            renderAssistantTyping(typingId, "Image Generator");
+
+            try {
+                const res = await authenticatedFetch("/api/v1/image/generate", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ prompt, aspect_ratio: "1:1", quality: "standard" })
+                });
+                const data = await res.json();
+                removeAssistantTyping(typingId);
+
+                if (data.success && data.data && data.data.image_url) {
+                    const engineName = (data.data.model_name) || "AetherMind Flux";
+                    renderMessage({
+                        role: "assistant",
+                        content: `Here is your generated image:\n\n![${prompt}](${data.data.image_url})`,
+                        model_name: engineName,
+                        created_at: new Date().toISOString()
+                    });
+                    if (genPromptInput) genPromptInput.value = "";
+                    showToast("Image generation complete!", "success");
+                } else {
+                    renderMessage({ role: "assistant", content: `⚠️ Image generation failed: ${data.message || "Unknown error"}` });
+                }
+            } catch (err) {
+                removeAssistantTyping(typingId);
+                renderMessage({ role: "assistant", content: "⚠️ Network error while generating image." });
+            }
+        });
+    }
 
     // Quick Actions Trigger from Hero
     window.triggerQuickAction = (action) => {
         hideAllModals();
-        if (action === "document" || action === "image") {
+        if (action === "dashboard" && openDashboardBtn) {
+            openDashboardBtn.click();
+        } else if (action === "projects" && openProjectsBtn) {
+            openProjectsBtn.click();
+        } else if (action === "media" && openMediaBtn) {
+            openMediaBtn.click();
+        } else if (action === "doclib" && openDocsBtn) {
+            openDocsBtn.click();
+        } else if (action === "document" || action === "image") {
             fileUploadInput.click();
         } else if (action === "knowledge") {
             modalKnowledgeBase.classList.remove("hidden");
@@ -253,7 +608,7 @@ document.addEventListener("DOMContentLoaded", () => {
         renderPendingChip({ id: tempId, filename: file.name, file_type: getCategoryFromMime(file.type, file.name), uploading: true });
 
         try {
-            const res = await fetch("/api/v1/upload", { method: "POST", body: formData });
+            const res = await authenticatedFetch("/api/v1/upload", { method: "POST", body: formData });
             const data = await res.json();
             removePendingChip(tempId);
             if (data.success && data.data) {
@@ -326,7 +681,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const prompt = chatInput.value.trim();
             if (!prompt && pendingAttachments.length === 0) return;
 
-            const selectedModel = modelSelect.value || "gemini-2.5-flash";
+            const selectedModel = modelSelect ? (modelSelect.value || "gemini-2.5-flash") : "gemini-2.5-flash";
             const attachmentIds = pendingAttachments.map(a => a.id);
             const currentAtts = [...pendingAttachments];
 
@@ -342,7 +697,7 @@ document.addEventListener("DOMContentLoaded", () => {
             renderAssistantTyping(typingId, selectedModel);
 
             try {
-                const res = await fetch("/api/v1/chat/completions", {
+                const res = await authenticatedFetch("/api/v1/chat/completions", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ prompt, chat_id: activeChatId, model: selectedModel, attachment_ids: attachmentIds })
@@ -352,10 +707,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 if (data.success && data.data) {
                     activeChatId = data.data.chat_id;
+                    localStorage.setItem('aethermind_active_chat', activeChatId);
                     renderMessage({ role: "assistant", content: data.data.content, model_name: selectedModel, created_at: data.data.created_at });
                     loadConversationsHistory();
                 } else {
-                    renderMessage({ role: "assistant", content: `⚠️ Error: ${data.detail || "Completion failed"}` });
+                    renderMessage({ role: "assistant", content: `⚠️ Error: ${data.detail || data.message || "Completion failed"}` });
                 }
             } catch (err) {
                 removeAssistantTyping(typingId);
@@ -364,10 +720,46 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // Handle Enter to Send / Shift+Enter for New Line
+    if (chatInput) {
+        chatInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                if (chatForm) chatForm.requestSubmit();
+            }
+        });
+    }
+
+    // Format message content with markdown images & text escaping
+    const formatMessageContent = (text) => {
+        if (!text) return "";
+        let formatted = text.replace(/!\[(.*?)\]\((.*?)\)/g, (match, alt, url) => {
+            const safeAlt = escapeHtml(alt || "Generated AI Image");
+            const safeUrl = escapeHtml(url);
+            return `
+                <div class="my-3 rounded-2xl overflow-hidden border border-cyan-500/30 bg-black/60 shadow-2xl max-w-md cursor-pointer group" onclick="openImagePreview('${safeUrl}', '${safeAlt}')">
+                    <img src="${safeUrl}" alt="${safeAlt}" class="w-full h-auto max-h-[380px] object-cover group-hover:scale-[1.02] transition-transform duration-300 rounded-t-xl" />
+                    <div class="p-3 bg-[#0d121f] text-xs text-cyan-300 font-medium flex items-center justify-between border-t border-cyan-500/20">
+                        <span class="truncate font-mono">🎨 ${safeAlt}</span>
+                        <span class="text-[10px] text-slate-400 group-hover:text-white shrink-0 ml-2">Click to View ↗</span>
+                    </div>
+                </div>
+            `;
+        });
+
+        const parts = formatted.split(/(<div class="my-3 rounded-2xl[\s\S]*?<\/div>)/g);
+        return parts.map(part => {
+            if (part.startsWith('<div class="my-3 rounded-2xl')) {
+                return part;
+            }
+            return escapeHtml(part);
+        }).join("");
+    };
+
     const renderMessage = (msg) => {
         const msgDiv = document.createElement("div");
         const isUser = msg.role === "user";
-        msgDiv.className = `flex ${isUser ? 'justify-end' : 'justify-start'} animate-fade-in`;
+        msgDiv.className = `flex ${isUser ? 'justify-end' : 'justify-start'} animate-fade-in my-1.5`;
 
         let attachmentsHtml = "";
         if (msg.attachments && msg.attachments.length > 0) {
@@ -392,14 +784,14 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         msgDiv.innerHTML = `
-            <div class="flex space-x-3 max-w-2xl ${isUser ? 'flex-row-reverse space-x-reverse' : ''}">
-                <div class="w-8 h-8 rounded-xl ${isUser ? 'bg-gradient-to-tr from-cyan-500 to-indigo-600' : 'bg-gradient-to-tr from-indigo-600 to-purple-600'} flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-lg">
+            <div class="flex items-start space-x-2.5 max-w-[85%] md:max-w-xl ${isUser ? 'flex-row-reverse space-x-reverse' : ''}">
+                <div class="w-7 h-7 rounded-xl ${isUser ? 'bg-gradient-to-tr from-cyan-500 to-indigo-600' : 'bg-gradient-to-tr from-indigo-600 to-purple-600'} flex items-center justify-center text-white text-[11px] font-bold shrink-0 shadow-md">
                     ${isUser ? '👤' : 'Æ'}
                 </div>
-                <div class="space-y-1">
-                    <div class="p-4 rounded-2xl ${isUser ? 'bg-indigo-600/30 border border-indigo-500/30 text-slate-100 rounded-tr-none' : 'bg-[#0e131f]/90 border border-white/10 text-slate-200 rounded-tl-none'} shadow-xl text-sm leading-relaxed whitespace-pre-wrap">
+                <div class="inline-block max-w-full">
+                    <div class="px-4 py-2.5 rounded-2xl ${isUser ? 'bg-indigo-900/50 border border-indigo-500/40 text-slate-100 rounded-tr-xs shadow-md backdrop-blur-md' : 'bg-[#0b101d]/80 border border-white/12 text-slate-200 rounded-tl-xs shadow-md backdrop-blur-md'} text-sm leading-relaxed whitespace-pre-wrap break-words inline-block text-left">
                         ${attachmentsHtml}
-                        <div>${escapeHtml(msg.content)}</div>
+                        <div class="inline-block max-w-full">${formatMessageContent(msg.content)}</div>
                     </div>
                 </div>
             </div>
@@ -411,12 +803,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const renderAssistantTyping = (id, model) => {
         const div = document.createElement("div");
         div.id = id;
-        div.className = "flex justify-start animate-fade-in";
+        div.className = "flex justify-start animate-fade-in my-1.5";
         div.innerHTML = `
-            <div class="flex space-x-3 max-w-2xl">
-                <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-white text-xs font-bold shrink-0">Æ</div>
-                <div class="p-4 rounded-2xl bg-[#0e131f]/90 border border-white/10 text-slate-300 flex items-center space-x-2">
-                    <span class="text-xs font-mono text-cyan-400">${model} Qdrant RAG processing</span>
+            <div class="flex items-start space-x-2.5 max-w-[85%] md:max-w-xl">
+                <div class="w-7 h-7 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-white text-[11px] font-bold shrink-0 shadow-md">Æ</div>
+                <div class="px-4 py-2.5 rounded-2xl bg-[#0b101d]/80 border border-cyan-500/30 text-slate-300 flex items-center space-x-2 text-xs backdrop-blur-md shadow-md rounded-tl-xs">
+                    <span class="font-mono text-cyan-400">${model} Qdrant RAG processing</span>
                     <span class="typing-dot"></span><span class="typing-dot"></span>
                 </div>
             </div>
@@ -443,7 +835,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const tags = document.getElementById("col-tags-input").value.split(",").map(t => t.strip ? t.strip() : t);
 
             try {
-                const res = await fetch("/api/v1/knowledge/collections", {
+                const res = await authenticatedFetch("/api/v1/knowledge/collections", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ name, description, tags })
@@ -474,7 +866,7 @@ document.addEventListener("DOMContentLoaded", () => {
             showToast("Ingesting & embedding document into Qdrant...", "info");
 
             try {
-                const res = await fetch("/api/v1/knowledge/ingest", { method: "POST", body: formData });
+                const res = await authenticatedFetch("/api/v1/knowledge/ingest", { method: "POST", body: formData });
                 const data = await res.json();
                 if (data.success) {
                     showToast(`Ingested ${fileInput.files[0].name} (${data.data.chunk_count} chunks)`, "success");
@@ -490,7 +882,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const loadKnowledgeCollections = async () => {
         if (!knowledgeCollectionsList) return;
         try {
-            const res = await fetch("/api/v1/knowledge/collections");
+            const res = await authenticatedFetch("/api/v1/knowledge/collections");
             const data = await res.json();
             if (data.success && data.data) {
                 renderKnowledgeCollections(data.data);
@@ -541,7 +933,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const category = document.getElementById("mem-cat-input").value || "general";
 
             try {
-                const res = await fetch("/api/v1/memory", {
+                const res = await authenticatedFetch("/api/v1/memory", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ memory_key, memory_value, memory_type, category })
@@ -566,7 +958,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
             try {
-                const res = await fetch(`/api/v1/memory/compress/${activeChatId}`, { method: "POST" });
+                const res = await authenticatedFetch(`/api/v1/memory/compress/${activeChatId}`, { method: "POST" });
                 const data = await res.json();
                 if (data.success) {
                     showToast("Conversation compressed into long-term memory", "success");
@@ -581,7 +973,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!memoryItemsList) return;
         try {
             const url = currentMemoryFilter === "all" ? "/api/v1/memory" : `/api/v1/memory?memory_type=${currentMemoryFilter}`;
-            const res = await fetch(url);
+            const res = await authenticatedFetch(url);
             const data = await res.json();
             if (data.success && data.data) {
                 renderMemoryItems(data.data);
@@ -621,7 +1013,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     window.deleteMemoryItem = async (memId) => {
         try {
-            await fetch(`/api/v1/memory/${memId}`, { method: "DELETE" });
+            await authenticatedFetch(`/api/v1/memory/${memId}`, { method: "DELETE" });
             loadMemories();
             showToast("Memory item deleted", "info");
         } catch (e) {}
@@ -640,7 +1032,7 @@ document.addEventListener("DOMContentLoaded", () => {
             searchResultsOutput.innerHTML = `<div class="text-slate-400 text-center py-4">Searching Qdrant Vector DB & Knowledge Base...</div>`;
 
             try {
-                const res = await fetch("/api/v1/search", {
+                const res = await authenticatedFetch("/api/v1/search", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ query, search_type, limit: 10 })
@@ -680,7 +1072,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const loadConversationsHistory = async () => {
         if (!conversationList) return;
         try {
-            const res = await fetch("/api/v1/chat/conversations");
+            const res = await authenticatedFetch("/api/v1/chat/conversations");
             const data = await res.json();
             if (data.success && data.data) renderConversationsList(data.data);
         } catch (e) {}
@@ -706,9 +1098,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     window.switchConversation = async (chatId) => {
         activeChatId = chatId;
+        localStorage.setItem('aethermind_active_chat', chatId);
         messagesContainer.innerHTML = "";
         try {
-            const res = await fetch(`/api/v1/chat/conversations/${chatId}`);
+            const res = await authenticatedFetch(`/api/v1/chat/conversations/${chatId}`);
             const data = await res.json();
             if (data.success && data.data) {
                 (data.data.messages || []).forEach(m => renderMessage(m));
@@ -720,9 +1113,10 @@ document.addEventListener("DOMContentLoaded", () => {
     window.deleteConversation = async (chatId, event) => {
         if (event) event.stopPropagation();
         try {
-            await fetch(`/api/v1/chat/conversations/${chatId}`, { method: "DELETE" });
+            await authenticatedFetch(`/api/v1/chat/conversations/${chatId}`, { method: "DELETE" });
             if (activeChatId === chatId) {
                 activeChatId = null;
+                localStorage.removeItem('aethermind_active_chat');
                 messagesContainer.innerHTML = "";
                 if (welcomeHero) messagesContainer.classList.remove("hidden");
             }
@@ -733,6 +1127,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (btnNewChat) {
         btnNewChat.addEventListener("click", () => {
             activeChatId = null;
+            localStorage.removeItem('aethermind_active_chat');
             messagesContainer.innerHTML = "";
             if (welcomeHero) messagesContainer.appendChild(welcomeHero);
             if (welcomeHero) welcomeHero.classList.remove("hidden");
@@ -756,7 +1151,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // A. WORKSPACE DASHBOARD OVERVIEW
     const loadWorkspaceDashboard = async () => {
         try {
-            const res = await fetch("/api/v1/dashboard/overview");
+            const res = await authenticatedFetch("/api/v1/dashboard/overview");
             const data = await res.json();
             if (data.success && data.data) {
                 const stats = data.data.overview || data.data.stats || {};
@@ -812,7 +1207,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!name) return;
 
             try {
-                const res = await fetch("/api/v1/projects", {
+                const res = await authenticatedFetch("/api/v1/projects", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ name, description, color })
@@ -835,7 +1230,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const loadProjects = async () => {
         if (!projectsGrid) return;
         try {
-            const res = await fetch("/api/v1/projects");
+            const res = await authenticatedFetch("/api/v1/projects");
             const data = await res.json();
             if (data.success && data.data) {
                 renderProjectsList(data.data);
@@ -875,7 +1270,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     window.deleteProject = async (projectId) => {
         try {
-            const res = await fetch(`/api/v1/projects/${projectId}`, { method: "DELETE" });
+            const res = await authenticatedFetch(`/api/v1/projects/${projectId}`, { method: "DELETE" });
             const data = await res.json();
             if (data.success) {
                 showToast("Project deleted", "info");
@@ -893,7 +1288,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!mediaGalleryGrid) return;
         const cat = mediaTypeFilter ? mediaTypeFilter.value : "all";
         try {
-            const res = await fetch(`/api/v1/workspace/media-gallery?category=${cat}`);
+            const res = await authenticatedFetch(`/api/v1/workspace/media-gallery?category=${cat}`);
             const data = await res.json();
             if (data.success && data.data) {
                 renderMediaGallery(data.data);
@@ -931,7 +1326,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const loadDocLibrary = async () => {
         if (!docLibraryList) return;
         try {
-            const res = await fetch("/api/v1/workspace/doc-library");
+            const res = await authenticatedFetch("/api/v1/workspace/doc-library");
             const data = await res.json();
             if (data.success && data.data) {
                 renderDocLibrary(data.data);
@@ -971,7 +1366,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const loadAudioLibrary = async () => {
         if (!audioLibraryList) return;
         try {
-            const res = await fetch("/api/v1/workspace/audio-library");
+            const res = await authenticatedFetch("/api/v1/workspace/audio-library");
             const data = await res.json();
             if (data.success && data.data) {
                 renderAudioLibrary(data.data);
@@ -1007,7 +1402,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const loadRecycleBin = async () => {
         if (!recycleBinList) return;
         try {
-            const res = await fetch("/api/v1/workspace/recycle-bin");
+            const res = await authenticatedFetch("/api/v1/workspace/recycle-bin");
             const data = await res.json();
             if (data.success && data.data) {
                 renderRecycleBin(data.data);
@@ -1042,7 +1437,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (btnEmptyRecycleBin) {
         btnEmptyRecycleBin.addEventListener("click", async () => {
             try {
-                const res = await fetch("/api/v1/workspace/recycle-bin/empty", { method: "POST" });
+                const res = await authenticatedFetch("/api/v1/workspace/recycle-bin/empty", { method: "POST" });
                 const data = await res.json();
                 if (data.success) {
                     showToast("Recycle bin emptied", "info");
@@ -1054,7 +1449,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     window.restoreFromRecycleBin = async (fileId) => {
         try {
-            const res = await fetch(`/api/v1/workspace/recycle-bin/restore/${fileId}`, { method: "POST" });
+            const res = await authenticatedFetch(`/api/v1/workspace/recycle-bin/restore/${fileId}`, { method: "POST" });
             const data = await res.json();
             if (data.success) {
                 showToast("File restored successfully", "success");
@@ -1074,7 +1469,7 @@ document.addEventListener("DOMContentLoaded", () => {
             workspaceSearchResults.innerHTML = `<div class="text-slate-400 text-center py-4">Searching workspace entities...</div>`;
 
             try {
-                const res = await fetch("/api/v1/workspace/search", {
+                const res = await authenticatedFetch("/api/v1/workspace/search", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ query, entity_type, limit: 15 })
@@ -1118,7 +1513,7 @@ document.addEventListener("DOMContentLoaded", () => {
     window.toggleStarFile = async (fileId, event) => {
         if (event) event.stopPropagation();
         try {
-            const res = await fetch(`/api/v1/files/${fileId}/star`, { method: "POST" });
+            const res = await authenticatedFetch(`/api/v1/files/${fileId}/star`, { method: "POST" });
             const data = await res.json();
             if (data.success) {
                 showToast(data.data.is_starred ? "File starred" : "File unstarred", "info");
@@ -1131,7 +1526,7 @@ document.addEventListener("DOMContentLoaded", () => {
     window.softDeleteFile = async (fileId, event) => {
         if (event) event.stopPropagation();
         try {
-            const res = await fetch(`/api/v1/files/${fileId}/delete`, { method: "POST" });
+            const res = await authenticatedFetch(`/api/v1/files/${fileId}/delete`, { method: "POST" });
             const data = await res.json();
             if (data.success) {
                 showToast("File moved to Recycle Bin", "info");
@@ -1178,17 +1573,28 @@ document.addEventListener("DOMContentLoaded", () => {
 
     async function handleClerkSignOut() {
         try {
+            // Delete token cookies
+            document.cookie = "aethermind_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
+            document.cookie = "aethermind_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
+
+            // Reset frontend in-memory state & UI
+            activeChatId = null;
+            localStorage.removeItem('aethermind_active_chat');
+            pendingAttachments = [];
+            if (conversationList) conversationList.innerHTML = "";
+            if (messagesContainer) messagesContainer.innerHTML = "";
+
             if (window.Clerk) {
                 await window.Clerk.signOut();
             }
-            await fetch("/api/v1/auth/logout", { method: "POST" });
+            await authenticatedFetch("/api/v1/auth/logout", { method: "POST" });
         } catch (e) {
             console.error("Sign out error:", e);
         }
         showToast("Signed out of AetherMind OS", "info");
         setTimeout(() => {
             window.location.href = "/login";
-        }, 500);
+        }, 300);
     }
 
     if (btnLogout) btnLogout.addEventListener("click", handleClerkSignOut);
@@ -1205,7 +1611,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!email) return;
 
             try {
-                const res = await fetch("/api/v1/auth/login", {
+                const res = await authenticatedFetch("/api/v1/auth/login", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ email, password })
@@ -1228,7 +1634,42 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // Initialize User Session & Sync Auth State
+    async function initUserSession() {
+        if (window.Clerk) {
+            try {
+                if (!window.Clerk.isReady && typeof window.Clerk.load === "function") {
+                    await window.Clerk.load();
+                }
+                if (window.Clerk.user) {
+                    const user = window.Clerk.user;
+                    const token = await window.Clerk.session?.getToken();
+                    if (token) {
+                        document.cookie = `aethermind_token=${token}; path=/; max-age=604800; SameSite=Lax`;
+                    }
+                    const userDispName = document.getElementById("user-display-name");
+                    const userDispEmail = document.getElementById("user-display-email");
+                    const userAvatarImg = document.getElementById("user-avatar-img");
+                    if (userDispName) userDispName.textContent = user.fullName || user.firstName || user.primaryEmailAddress?.emailAddress || "Authenticated User";
+                    if (userDispEmail) userDispEmail.textContent = user.primaryEmailAddress?.emailAddress || "";
+                    if (userAvatarImg && user.imageUrl) userAvatarImg.src = user.imageUrl;
+                }
+            } catch (err) {
+                console.warn("[Clerk Init Warning]:", err);
+            }
+        }
+        loadConversationsHistory();
+
+        // Restore last active conversation on page load/refresh
+        const savedChatId = localStorage.getItem('aethermind_active_chat');
+        if (savedChatId) {
+            setTimeout(() => {
+                switchConversation(savedChatId);
+            }, 500);
+        }
+    }
+
     // Initial Load
-    loadConversationsHistory();
+    initUserSession();
 });
 

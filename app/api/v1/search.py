@@ -25,15 +25,19 @@ class SearchQueryRequest(BaseModel):
     limit: Optional[int] = 10
 
 
+from app.core.dependencies import get_current_user_or_session
+from app.models.user import User
+
 @router.post("", response_model=APIResponse[dict])
 async def search_knowledge_and_memory(
     req: SearchQueryRequest,
+    current_user: User = Depends(get_current_user_or_session),
     db: AsyncSession = Depends(get_async_db)
 ):
     """Perform Semantic, Keyword, or Hybrid Vector RAG Search across Knowledge Base Collections and Long-Term Memory."""
     res = await search_service.execute_search(
         db=db,
-        user_id="default-user-id",
+        user_id=current_user.id,
         query=req.query,
         search_type=req.search_type or "hybrid",
         collection_id=req.collection_id,
@@ -43,10 +47,13 @@ async def search_knowledge_and_memory(
 
 
 @router.get("/history", response_model=APIResponse[List[dict]])
-async def get_search_history(db: AsyncSession = Depends(get_async_db)):
-    """Retrieve search query trajectory history."""
+async def get_search_history(
+    current_user: User = Depends(get_current_user_or_session),
+    db: AsyncSession = Depends(get_async_db)
+):
+    """Retrieve search query trajectory history strictly filtered by user."""
     try:
-        q = select(SearchHistory).order_by(SearchHistory.created_at.desc()).limit(20)
+        q = select(SearchHistory).where(SearchHistory.user_id == current_user.id).order_by(SearchHistory.created_at.desc()).limit(20)
         res = await db.execute(q)
         hist = res.scalars().all()
         return APIResponse(

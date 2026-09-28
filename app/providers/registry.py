@@ -13,10 +13,11 @@ from app.providers.other_providers import (
     OllamaProvider,
     LMStudioProvider,
 )
+from app.providers.apiless import APIlessProvider
 from app.logging.logger import logger
 
 class ProviderRegistry:
-    """Registry managing all 12 supported AI Providers & Model Routing Mappings"""
+    """Registry managing all supported AI Providers & Model Routing Mappings"""
 
     def __init__(self):
         self._providers: Dict[str, BaseAIProvider] = {}
@@ -25,6 +26,7 @@ class ProviderRegistry:
 
     def _register_default_providers(self):
         defaults = [
+            APIlessProvider(),
             GeminiProvider(),
             OpenAIProvider(),
             ClaudeProvider(),

@@ -1,0 +1,216 @@
+Metadata-Version: 2.4
+Name: aethermind-multimodal-ai
+Version: 3.0.0
+Summary: AetherMind Multimodal AI - Single Unified Enterprise Multimodal AI Platform
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: fastapi>=0.110.0
+Requires-Dist: uvicorn[standard]>=0.28.0
+Requires-Dist: pydantic>=2.6.0
+Requires-Dist: pydantic-settings>=2.2.0
+Requires-Dist: sqlalchemy>=2.0.28
+Requires-Dist: alembic>=1.13.1
+Dynamic: license-file
+
+<div align="center">
+
+# 🚀 AetherMind Multimodal AI
+### Enterprise-Grade Unified Multimodal AI Engine & Knowledge RAG System
+
+[![Python Version](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![Qdrant Vector DB](https://img.shields.io/badge/Qdrant-VectorDB-DC2626?style=for-the-badge&logo=qdrant&logoColor=white)](https://qdrant.tech)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://postgresql.org)
+[![Docker Support](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://docker.com)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
+
+**One Unified Multimodal Engine. Zero App Switching.**  
+Chat with PDFs, analyze images & charts with Vision AI, generate HD artwork, transcribe voice recordings, maintain infinite long-term memory, organize projects, and perform hybrid vector searches in one enterprise application.
+
+[GitHub Repository](https://github.com/KAVATIJOHNSHREYAN/AETHERMIND-MULTI-MODAL-AI) • [Features](#-core-features) • [Quickstart](#-quickstart--installation) • [Docker Deployment](#-docker-deployment) • [API Documentation](#-api-reference)
+
+</div>
+
+---
+
+## 🌟 Overview
+
+**AetherMind Multimodal AI** transforms traditional AI assistants into a unified multimodal workspace. Built with high-performance Python FastAPI, Qdrant Vector DB, PostgreSQL, and modern Vanilla JS glassmorphism UI, AetherMind brings together:
+
+- 💬 **Unified Multimodal Chat Engine**: Seamlessly switch between Google Gemini 2.5, OpenAI GPT-4o, Anthropic Claude 3.5, and local Ollama models with automated provider failover.
+- 📄 **Document Intelligence RAG**: Upload PDF, DOCX, CSV, Excel, or TXT files. Automatic chunking, vector embedding, and context-aware RAG Q&A.
+- 🖼️ **Vision AI & Text-to-Image Engine**: Scene understanding, object recognition, handwritten notes OCR, plus HD text-to-image generation with aspect ratio and quality selection.
+- 🎙️ **Voice & Audio Processing**: Web Audio recording, real-time wave visualization, and speech-to-text transcription.
+- 🧠 **Long-Term Memory Dashboard**: Autonomous memory compression, pin key facts, filter preferences, and maintain contextual continuity.
+- 📚 **Knowledge Base & Collections**: Organize enterprise documents into distinct Qdrant vector collections with dense + sparse hybrid search capabilities.
+- 📁 **Cloud Workspace & Productivity**: Manage Projects, Folders, Media Gallery, Document Library, Audio Library, Storage Analytics, Soft Delete & Recycle Bin, and Bulk ZIP downloads.
+
+---
+
+## 🏛️ System Architecture
+
+```mermaid
+graph TD
+    Client[Browser Client - Vanilla JS & Glassmorphism UI] --> APIGateway[FastAPI Application Server]
+    
+    subgraph Core AI & Multimodal Engines
+        APIGateway --> ProviderMgr[AI Model Provider Manager]
+        ProviderMgr --> Gemini[Google Gemini Provider]
+        ProviderMgr --> OpenAI[OpenAI GPT-4o Provider]
+        ProviderMgr --> Anthropic[Anthropic Claude Provider]
+        ProviderMgr --> Ollama[Local Ollama / Llama 3]
+        
+        APIGateway --> VisionEngine[Vision AI Engine & OCR]
+        APIGateway --> ImageGen[Text-to-Image Engine]
+        APIGateway --> AudioEngine[Voice Recorder & STT Engine]
+        APIGateway --> DocEngine[Document Intelligence & RAG]
+    end
+
+    subgraph Memory & Knowledge RAG System
+        APIGateway --> MemoryEngine[Long-Term Memory Manager]
+        APIGateway --> KnowledgeEngine[Knowledge Base & Collection Manager]
+        APIGateway --> VectorSearch[Hybrid Vector Search & RAG]
+        VectorSearch --> Qdrant[(Qdrant Vector DB)]
+    end
+
+    subgraph Cloud Workspace & Storage
+        APIGateway --> ProjectMgr[Projects & Folders Manager]
+        APIGateway --> FileManager[File Manager & ZIP Exporter]
+        APIGateway --> DashMgr[Workspace Analytics & Usage Dashboard]
+        APIGateway --> RecycleBin[Soft Delete & Recycle Bin Manager]
+    end
+
+    subgraph Data & Storage Layer
+        APIGateway --> RelationalDB[(PostgreSQL 16 / SQLite Fallback)]
+        APIGateway --> RedisCache[(Redis 7 Cache / Task Broker)]
+        APIGateway --> StoragePath[Local Storage System]
+    end
+```
+
+---
+
+## ⚙️ Core Features
+
+### 1. Unified Multimodal AI Chat Engine
+- Multi-provider AI dispatch with retry backoff logic (Gemini, OpenAI, Anthropic, Ollama).
+- Context-preserving chat threads with live switching between models.
+
+### 2. Document Intelligence & Knowledge RAG
+- Extract text and tables from PDFs, DOCX, CSV, and plain text.
+- Chunking strategies with Qdrant vector embedding indexing.
+
+### 3. Vision AI & Image Generation
+- OCR text extraction from screenshots, charts, graphs, and handwritten notes.
+- High-definition AI image generation with aspect ratio (`1:1`, `16:9`, `9:16`) and style controls.
+
+### 4. Speech-to-Text & Audio Recorder
+- Built-in browser audio recording widget with real-time waveform visualization.
+- Audio file uploads (`.mp3`, `.wav`, `.m4a`, `.flac`) with transcript generation.
+
+### 5. Long-Term Memory Dashboard
+- Store key user preferences, technical specifications, and personal facts.
+- Automatic conversation summarization and memory compression.
+
+### 6. Cloud Workspace & Productivity System
+- **Projects & Folders**: Organize chats and files into custom-colored project workspaces.
+- **Media, Document & Audio Libraries**: Specialized galleries with quick preview and star filters.
+- **Recycle Bin**: Soft-delete items with instant restore and permanent purge options.
+- **Storage Analytics**: Real-time storage meter, file distribution breakdown, and activity timeline.
+- **Bulk Operations**: Multi-file select and single-click ZIP archive downloads.
+
+---
+
+## 🚀 Quickstart & Installation
+
+### Prerequisites
+- **Python**: 3.11 or higher
+- **Git**
+
+### Local Setup (Development)
+
+1. **Clone the Repository**:
+   ```bash
+   git clone https://github.com/KAVATIJOHNSHREYAN/AETHERMIND-MULTI-MODAL-AI.git
+   cd AETHERMIND-MULTI-MODAL-AI
+   ```
+
+2. **Create a Virtual Environment**:
+   ```bash
+   python -m venv venv
+   # On Windows:
+   venv\Scripts\activate
+   # On Linux/macOS:
+   source venv/bin/activate
+   ```
+
+3. **Install Dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Environment Variables**:
+   Copy `.env.example` to `.env` and configure your API keys:
+   ```bash
+   cp .env.example .env
+   ```
+   *Note: If no external DB or Qdrant key is provided, AetherMind automatically initializes a local SQLite database and memory-fallback vector index!*
+
+5. **Run the Application**:
+   ```bash
+   python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+   ```
+
+6. **Access the Web Interface**:
+   Open your browser and navigate to `http://localhost:8000/`.
+
+---
+
+## 🐳 Docker Deployment
+
+AetherMind includes a production-ready `Dockerfile` and `docker-compose.yml` orchestrating FastAPI, PostgreSQL 16, Qdrant Vector DB, and Redis 7.
+
+```bash
+# Build and launch all containerized services
+docker-compose up -d --build
+```
+
+Access the API server at `http://localhost:8000/`.
+
+---
+
+## 🧪 Testing Suite
+
+Run the full pytest suite (37 unit & integration tests covering all phases):
+
+```bash
+pytest
+```
+
+---
+
+## 🛰️ API Reference Overview
+
+| Endpoint | Method | Description |
+|---|---|---|
+| `/api/v1/chat/completions` | `POST` | Send prompt for multimodal AI chat response |
+| `/api/v1/chat/conversations` | `GET` | List active chat conversations |
+| `/api/v1/image/analyze` | `POST` | Vision AI analysis & OCR on images |
+| `/api/v1/image/generate` | `POST` | Text-to-Image generation |
+| `/api/v1/document/upload` | `POST` | Upload & ingest document into RAG vector index |
+| `/api/v1/audio/transcribe` | `POST` | Speech-to-text audio transcription |
+| `/api/v1/memory` | `GET / POST` | Manage long-term user memories |
+| `/api/v1/knowledge/collections` | `GET / POST` | Knowledge base collection management |
+| `/api/v1/projects` | `GET / POST` | Create and manage workspace projects |
+| `/api/v1/files/bulk-download` | `POST` | Download selected files as a ZIP archive |
+| `/api/v1/workspace/recycle-bin` | `GET` | List soft-deleted files in Recycle Bin |
+| `/api/v1/workspace/search` | `POST` | Cross-entity global workspace search |
+| `/api/v1/dashboard/overview` | `GET` | Retrieve workspace storage & usage analytics |
+
+---
+
+## 📄 License
+
+This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+
+Developed with ❤️ by **Kavati John Shreyan**.

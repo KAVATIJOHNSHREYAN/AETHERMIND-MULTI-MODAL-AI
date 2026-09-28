@@ -15,8 +15,14 @@ from app.logging.logger import logger
 router = APIRouter()
 
 
+from app.core.dependencies import get_current_user_or_session
+from app.models.user import User
+
 @router.get("/overview", response_model=APIResponse[dict])
-async def get_dashboard_overview(db: AsyncSession = Depends(get_async_db)):
+async def get_dashboard_overview(
+    current_user: User = Depends(get_current_user_or_session),
+    db: AsyncSession = Depends(get_async_db)
+):
     """Retrieve Workspace Overview Dashboard analytics & storage statistics."""
-    data = await dashboard_service.get_dashboard_overview(db=db, user_id="default-user-id")
+    data = await dashboard_service.get_dashboard_overview(db=db, user_id=current_user.id)
     return APIResponse(success=True, data=data, message="Workspace Dashboard overview loaded")

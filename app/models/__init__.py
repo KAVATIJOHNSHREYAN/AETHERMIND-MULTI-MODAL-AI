@@ -5,6 +5,8 @@ from app.models.file import File, Folder, ImageGenerationRecord
 from app.models.settings import UserSettings, ProviderSettings
 from app.models.memory import MemoryMetadata
 from app.models.provider import AIProviderConfig, AIModelRegistry
+from app.models.auth_metadata import AuthMetadata
+from app.models.workspace import WorkspaceMetadata, Project, Bookmark, ActivityLog
 
 __all__ = [
     "User",
@@ -21,4 +23,9 @@ __all__ = [
     "MemoryMetadata",
     "AIProviderConfig",
     "AIModelRegistry",
+    "AuthMetadata",
+    "WorkspaceMetadata",
+    "Project",
+    "Bookmark",
+    "ActivityLog"
 ]

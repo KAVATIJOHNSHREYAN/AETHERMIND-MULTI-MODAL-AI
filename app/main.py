@@ -80,6 +80,7 @@ templates = Jinja2Templates(directory=templates_dir)
 
 @app.get("/login", include_in_schema=False)
 @app.get("/auth", include_in_schema=False)
+@app.get("/sso-callback", include_in_schema=False)
 async def serve_auth(request: Request):
     """Serve Full-Screen Clerk Authentication Page"""
     try:

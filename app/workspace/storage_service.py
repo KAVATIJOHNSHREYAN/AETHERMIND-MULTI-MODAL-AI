@@ -142,10 +142,10 @@ class StorageService:
             logger.warning(f"Error fetching file manager files: {e}")
             return []
 
-    async def toggle_star_file(self, db: AsyncSession, file_id: str) -> bool:
+    async def toggle_star_file(self, db: AsyncSession, file_id: str, user_id: str) -> bool:
         """Star or unstar file."""
         try:
-            res = await db.execute(select(FileModel).where(FileModel.id == file_id))
+            res = await db.execute(select(FileModel).where(FileModel.id == file_id, FileModel.user_id == user_id))
             f = res.scalar_one_or_none()
             if f:
                 f.is_starred = not (f.is_starred or False)
@@ -156,10 +156,10 @@ class StorageService:
             await db.rollback()
             return False
 
-    async def move_file(self, db: AsyncSession, file_id: str, folder_id: Optional[str] = None, project_id: Optional[str] = None) -> bool:
+    async def move_file(self, db: AsyncSession, file_id: str, user_id: str, folder_id: Optional[str] = None, project_id: Optional[str] = None) -> bool:
         """Move file to folder or project."""
         try:
-            res = await db.execute(select(FileModel).where(FileModel.id == file_id))
+            res = await db.execute(select(FileModel).where(FileModel.id == file_id, FileModel.user_id == user_id))
             f = res.scalar_one_or_none()
             if f:
                 if folder_id is not None:
@@ -174,10 +174,10 @@ class StorageService:
             await db.rollback()
             return False
 
-    async def soft_delete_file(self, db: AsyncSession, file_id: str) -> bool:
+    async def soft_delete_file(self, db: AsyncSession, file_id: str, user_id: str) -> bool:
         """Soft delete file to Recycle Bin."""
         try:
-            res = await db.execute(select(FileModel).where(FileModel.id == file_id))
+            res = await db.execute(select(FileModel).where(FileModel.id == file_id, FileModel.user_id == user_id))
             f = res.scalar_one_or_none()
             if f:
                 f.is_deleted = True
@@ -190,13 +190,13 @@ class StorageService:
             await db.rollback()
             return False
 
-    async def bulk_delete_files(self, db: AsyncSession, file_ids: List[str]) -> int:
+    async def bulk_delete_files(self, db: AsyncSession, file_ids: List[str], user_id: str) -> int:
         """Bulk soft delete multiple files to Recycle Bin."""
         try:
             now = datetime.utcnow()
             await db.execute(
                 update(FileModel)
-                .where(FileModel.id.in_(file_ids))
+                .where(FileModel.id.in_(file_ids), FileModel.user_id == user_id)
                 .values(is_deleted=True, deleted_at=now)
             )
             await db.commit()
@@ -205,9 +205,9 @@ class StorageService:
             await db.rollback()
             return 0
 
-    async def create_bulk_zip(self, db: AsyncSession, file_ids: List[str]) -> bytes:
+    async def create_bulk_zip(self, db: AsyncSession, file_ids: List[str], user_id: str) -> bytes:
         """Generate ZIP archive bytes for bulk downloading selected files."""
-        res = await db.execute(select(FileModel).where(FileModel.id.in_(file_ids)))
+        res = await db.execute(select(FileModel).where(FileModel.id.in_(file_ids), FileModel.user_id == user_id))
         files = res.scalars().all()
 
         zip_buffer = io.BytesIO()

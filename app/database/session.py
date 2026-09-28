@@ -8,6 +8,9 @@ from app.database.base import Base
 db_url = settings.DATABASE_URL
 if os.getenv("TESTING", "0") == "1":
     db_url = "sqlite+aiosqlite:///:memory:"
+elif os.getenv("VERCEL") and ("localhost" in db_url or "127.0.0.1" in db_url):
+    sqlite_path = "/tmp/aethermind.db"
+    db_url = f"sqlite+aiosqlite:///{sqlite_path}"
 
 try:
     if "postgresql" in db_url:
@@ -24,8 +27,9 @@ try:
             future=True,
         )
 except Exception as e:
-    logger.warning(f"Failed to initialize engine for {db_url}: {e}. Falling back to local SQLite database.")
-    db_url = "sqlite+aiosqlite:///./aethermind.db"
+    logger.warning(f"Failed to initialize engine for {db_url}: {e}. Falling back to SQLite database.")
+    sqlite_path = "/tmp/aethermind.db" if (os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME")) else "./aethermind.db"
+    db_url = f"sqlite+aiosqlite:///{sqlite_path}"
     engine = create_async_engine(db_url, echo=settings.DEBUG, future=True)
 
 AsyncSessionLocal = async_sessionmaker(

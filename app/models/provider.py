@@ -8,7 +8,7 @@ class AIProviderConfig(Base):
     __tablename__ = "ai_provider_configs"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(String(255), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     provider_name = Column(String(100), nullable=False, index=True) # 'openai', 'google_gemini', 'anthropic_claude', 'groq', 'openrouter', 'deepseek', 'mistral', 'together', 'cohere', 'xai', 'ollama', 'lmstudio'
     api_key_encrypted = Column(String(1024), nullable=True)
     api_base_url = Column(String(512), nullable=True)

@@ -34,12 +34,19 @@ class BulkFileRequest(BaseModel):
     file_ids: List[str]
 
 
+from app.core.dependencies import get_current_user_or_session
+from app.models.user import User
+
 @router.post("/folders", response_model=APIResponse[dict])
-async def create_folder(req: CreateFolderRequest, db: AsyncSession = Depends(get_async_db)):
+async def create_folder(
+    req: CreateFolderRequest,
+    current_user: User = Depends(get_current_user_or_session),
+    db: AsyncSession = Depends(get_async_db)
+):
     """Create a new folder container."""
     res = await storage_service.create_folder(
         db=db,
-        user_id="default-user-id",
+        user_id=current_user.id,
         name=req.name,
         parent_id=req.parent_id,
         project_id=req.project_id,
@@ -53,10 +60,11 @@ async def create_folder(req: CreateFolderRequest, db: AsyncSession = Depends(get
 async def list_folders(
     parent_id: Optional[str] = None,
     project_id: Optional[str] = None,
+    current_user: User = Depends(get_current_user_or_session),
     db: AsyncSession = Depends(get_async_db)
 ):
     """List folders in workspace."""
-    folders = await storage_service.list_folders(db=db, user_id="default-user-id", parent_id=parent_id, project_id=project_id)
+    folders = await storage_service.list_folders(db=db, user_id=current_user.id, parent_id=parent_id, project_id=project_id)
     return APIResponse(success=True, data=folders, message="Folders list loaded")
 
 
@@ -67,12 +75,13 @@ async def list_files_manager(
     file_type: Optional[str] = None,
     is_starred: Optional[bool] = None,
     search: Optional[str] = None,
+    current_user: User = Depends(get_current_user_or_session),
     db: AsyncSession = Depends(get_async_db)
 ):
     """Retrieve active workspace files for File Manager with filtering."""
     files = await storage_service.list_files_manager(
         db=db,
-        user_id="default-user-id",
+        user_id=current_user.id,
         folder_id=folder_id,
         project_id=project_id,
         file_type=file_type,
@@ -83,37 +92,58 @@ async def list_files_manager(
 
 
 @router.post("/{file_id}/star", response_model=APIResponse[dict])
-async def toggle_star_file(file_id: str, db: AsyncSession = Depends(get_async_db)):
+async def toggle_star_file(
+    file_id: str,
+    current_user: User = Depends(get_current_user_or_session),
+    db: AsyncSession = Depends(get_async_db)
+):
     """Toggle star/favorite status on a file."""
-    success = await storage_service.toggle_star_file(db=db, file_id=file_id)
+    success = await storage_service.toggle_star_file(db=db, file_id=file_id, user_id=current_user.id)
     return APIResponse(success=success, message="File star status updated", data={"id": file_id})
 
 
 @router.post("/{file_id}/move", response_model=APIResponse[dict])
-async def move_file(file_id: str, req: MoveFileRequest, db: AsyncSession = Depends(get_async_db)):
+async def move_file(
+    file_id: str,
+    req: MoveFileRequest,
+    current_user: User = Depends(get_current_user_or_session),
+    db: AsyncSession = Depends(get_async_db)
+):
     """Move file to specified folder or project."""
-    success = await storage_service.move_file(db=db, file_id=file_id, folder_id=req.folder_id, project_id=req.project_id)
+    success = await storage_service.move_file(db=db, file_id=file_id, user_id=current_user.id, folder_id=req.folder_id, project_id=req.project_id)
     return APIResponse(success=success, message="File moved successfully", data={"id": file_id})
 
 
 @router.delete("/{file_id}/trash", response_model=APIResponse[dict])
-async def soft_delete_file(file_id: str, db: AsyncSession = Depends(get_async_db)):
+async def soft_delete_file(
+    file_id: str,
+    current_user: User = Depends(get_current_user_or_session),
+    db: AsyncSession = Depends(get_async_db)
+):
     """Soft delete file to Recycle Bin."""
-    success = await storage_service.soft_delete_file(db=db, file_id=file_id)
+    success = await storage_service.soft_delete_file(db=db, file_id=file_id, user_id=current_user.id)
     return APIResponse(success=success, message="File moved to Recycle Bin", data={"id": file_id})
 
 
 @router.post("/bulk-delete", response_model=APIResponse[dict])
-async def bulk_delete_files(req: BulkFileRequest, db: AsyncSession = Depends(get_async_db)):
+async def bulk_delete_files(
+    req: BulkFileRequest,
+    current_user: User = Depends(get_current_user_or_session),
+    db: AsyncSession = Depends(get_async_db)
+):
     """Bulk soft delete files to Recycle Bin."""
-    count = await storage_service.bulk_delete_files(db=db, file_ids=req.file_ids)
+    count = await storage_service.bulk_delete_files(db=db, file_ids=req.file_ids, user_id=current_user.id)
     return APIResponse(success=True, message=f"Moved {count} files to Recycle Bin", data={"count": count})
 
 
 @router.post("/bulk-download")
-async def bulk_download_files(req: BulkFileRequest, db: AsyncSession = Depends(get_async_db)):
+async def bulk_download_files(
+    req: BulkFileRequest,
+    current_user: User = Depends(get_current_user_or_session),
+    db: AsyncSession = Depends(get_async_db)
+):
     """Generate and stream a ZIP archive for bulk file download."""
-    zip_bytes = await storage_service.create_bulk_zip(db=db, file_ids=req.file_ids)
+    zip_bytes = await storage_service.create_bulk_zip(db=db, file_ids=req.file_ids, user_id=current_user.id)
     return Response(
         content=zip_bytes,
         media_type="application/zip",

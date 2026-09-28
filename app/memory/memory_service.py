@@ -211,15 +211,19 @@ class MemoryService:
             "messages_summarized": len(messages)
         }
 
-    async def delete_memory(self, db: AsyncSession, memory_id: str) -> bool:
+    async def delete_memory(self, db: AsyncSession, memory_id: str, user_id: Optional[str] = None) -> bool:
         """Delete memory from database."""
         try:
-            res = await db.execute(select(MemoryMetadata).where(MemoryMetadata.id == memory_id))
+            q = select(MemoryMetadata).where(MemoryMetadata.id == memory_id)
+            if user_id:
+                q = q.where(MemoryMetadata.user_id == user_id)
+            res = await db.execute(q)
             rec = res.scalar_one_or_none()
             if rec:
                 await db.delete(rec)
                 await db.commit()
-            return True
+                return True
+            return False
         except Exception:
             await db.rollback()
             return False

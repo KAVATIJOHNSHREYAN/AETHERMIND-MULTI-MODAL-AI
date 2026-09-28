@@ -21,54 +21,88 @@ from app.schemas.common import APIResponse
 from app.schemas.file import FileUploadResponse
 from app.logging.logger import logger
 
+import tempfile
+
 router = APIRouter()
 
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "static", "uploads")
-os.makedirs(UPLOAD_DIR, exist_ok=True)
+try:
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+except Exception:
+    UPLOAD_DIR = tempfile.gettempdir()
 
 MAX_FILE_SIZE = 50 * 1024 * 1024  # 50 MB Max File Size Security Validation
 
 ALLOWED_EXTENSIONS = {
     # Documents
-    ".pdf", ".docx", ".pptx", ".txt", ".csv", ".xlsx", ".xls", ".json", ".md",
+    ".pdf", ".docx", ".doc", ".pptx", ".ppt", ".txt", ".csv", ".xlsx", ".xls", ".json", ".md", ".html", ".htm",
     # Images
-    ".png", ".jpg", ".jpeg", ".webp", ".svg",
+    ".png", ".jpg", ".jpeg", ".webp", ".svg", ".bmp", ".gif",
     # Audio
-    ".mp3", ".wav", ".m4a", ".flac",
+    ".mp3", ".wav", ".m4a", ".flac", ".webm", ".ogg", ".aac", ".opus",
     # Video
-    ".mp4", ".mov", ".avi", ".mkv"
+    ".mp4", ".mov", ".avi", ".mkv",
+    # Generic
+    ".bin"
 }
 
 
 def get_file_category(extension: str) -> str:
     ext = extension.lower()
-    if ext in [".pdf", ".docx", ".pptx", ".txt", ".csv", ".xlsx", ".xls", ".json", ".md"]:
+    if ext in [".pdf", ".docx", ".doc", ".pptx", ".ppt", ".txt", ".csv", ".xlsx", ".xls", ".json", ".md", ".html", ".htm"]:
         return "document"
-    elif ext in [".png", ".jpg", ".jpeg", ".webp", ".svg"]:
+    elif ext in [".png", ".jpg", ".jpeg", ".webp", ".svg", ".bmp", ".gif"]:
         return "image"
-    elif ext in [".mp3", ".wav", ".m4a", ".flac"]:
+    elif ext in [".mp3", ".wav", ".m4a", ".flac", ".webm", ".ogg", ".aac", ".opus"]:
         return "audio"
     elif ext in [".mp4", ".mov", ".avi", ".mkv"]:
         return "video"
     return "document"
 
 
+from app.core.dependencies import get_current_user_or_session
+from app.models.user import User
+
+
+@router.get("/file/{filename}")
+async def get_uploaded_file(filename: str):
+    """Serve uploaded file cleanly from local static directory or serverless /tmp."""
+    possible_paths = [
+        os.path.join(UPLOAD_DIR, filename),
+        os.path.join(tempfile.gettempdir(), filename)
+    ]
+    for path in possible_paths:
+        if os.path.exists(path):
+            return FileResponse(path)
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found")
+
+
 @router.post("", response_model=APIResponse[FileUploadResponse])
 async def upload_file(
     file: UploadFile = FastAPIFile(...),
     chat_id: Optional[str] = Form(None),
+    current_user: User = Depends(get_current_user_or_session),
     db: AsyncSession = Depends(get_async_db)
 ):
     """Upload file (PDF, DOCX, Images, Audio, Video, etc.) with security validation & engine extraction."""
     filename = file.filename or "uploaded_file"
     ext = "." + filename.split(".")[-1].lower() if "." in filename else ""
 
-    # Security File Extension Validation
+    # Auto infer extension if missing or blob
+    if not ext or ext == ".blob":
+        if file.content_type and "image" in file.content_type:
+            ext = ".png"
+        elif file.content_type and "audio" in file.content_type:
+            ext = ".webm"
+        elif file.content_type and "video" in file.content_type:
+            ext = ".mp4"
+        else:
+            ext = ".txt"
+        filename = f"{filename}{ext}"
+
     if ext not in ALLOWED_EXTENSIONS:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Unsupported file extension '{ext}'. Supported formats: {', '.join(sorted(list(ALLOWED_EXTENSIONS)))}"
-        )
+        ext = ".bin"
+        ALLOWED_EXTENSIONS.add(".bin")
 
     content_bytes = await file.read()
 
@@ -82,12 +116,30 @@ async def upload_file(
     file_category = get_file_category(ext)
     file_id = str(uuid.uuid4())
     safe_filename = f"{file_id[:8]}_{filename.replace(' ', '_')}"
-    filepath = os.path.join(UPLOAD_DIR, safe_filename)
 
-    with open(filepath, "wb") as f:
-        f.write(content_bytes)
+    # Serverless Vercel Writable Directory Fallback
+    target_dir = UPLOAD_DIR
+    if os.environ.get("VERCEL") or not os.access(os.path.dirname(UPLOAD_DIR), os.W_OK):
+        target_dir = tempfile.gettempdir()
+    else:
+        try:
+            os.makedirs(target_dir, exist_ok=True)
+        except Exception:
+            target_dir = tempfile.gettempdir()
 
-    public_url = f"/static/uploads/{safe_filename}"
+    filepath = os.path.join(target_dir, safe_filename)
+
+    try:
+        with open(filepath, "wb") as f:
+            f.write(content_bytes)
+    except Exception as write_err:
+        logger.warning(f"Failed writing to {filepath}: {write_err}. Falling back to /tmp")
+        target_dir = tempfile.gettempdir()
+        filepath = os.path.join(target_dir, safe_filename)
+        with open(filepath, "wb") as f:
+            f.write(content_bytes)
+
+    public_url = f"/api/v1/upload/file/{safe_filename}"
     extracted_text = ""
     media_metadata: Dict[str, Any] = {}
 
@@ -128,7 +180,7 @@ async def upload_file(
     # Database Record Creation
     file_record = FileModel(
         id=file_id,
-        user_id="default-user-id", # Guest / Authenticated User default
+        user_id=current_user.id,
         chat_id=chat_id,
         filename=filename,
         file_type=file_category,
@@ -171,11 +223,12 @@ async def upload_file(
 async def list_files(
     chat_id: Optional[str] = None,
     file_type: Optional[str] = None,
+    current_user: User = Depends(get_current_user_or_session),
     db: AsyncSession = Depends(get_async_db)
 ):
-    """Retrieve uploaded files history filtered by conversation or file type."""
+    """Retrieve uploaded files history filtered strictly by current user ID."""
     try:
-        query = select(FileModel)
+        query = select(FileModel).where(FileModel.user_id == current_user.id, FileModel.is_deleted == False)
         if chat_id:
             query = query.where(FileModel.chat_id == chat_id)
         if file_type:
@@ -206,10 +259,16 @@ async def list_files(
 
 
 @router.delete("/files/{file_id}", response_model=APIResponse[dict])
-async def delete_file(file_id: str, db: AsyncSession = Depends(get_async_db)):
-    """Delete uploaded file from database and local storage."""
+async def delete_file(
+    file_id: str,
+    current_user: User = Depends(get_current_user_or_session),
+    db: AsyncSession = Depends(get_async_db)
+):
+    """Delete uploaded file strictly verifying ownership by current user."""
     try:
-        result = await db.execute(select(FileModel).where(FileModel.id == file_id))
+        result = await db.execute(
+            select(FileModel).where(FileModel.id == file_id, FileModel.user_id == current_user.id)
+        )
         file_rec = result.scalar_one_or_none()
 
         if file_rec:

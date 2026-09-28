@@ -15,7 +15,7 @@ class MemoryMetadata(Base):
     __tablename__ = "memory_metadata"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(String(255), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     memory_type = Column(String(50), default="persistent", index=True) # conversation, document, image, preference, pinned, temporary, persistent, session
     memory_key = Column(String(255), nullable=False)
     memory_value = Column(Text, nullable=False)
@@ -35,7 +35,7 @@ class KnowledgeCollection(Base):
     __tablename__ = "knowledge_collections"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(String(255), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     name = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
     tags = Column(JSON, default=list)
@@ -53,7 +53,7 @@ class KnowledgeDocument(Base):
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     collection_id = Column(String(36), ForeignKey("knowledge_collections.id", ondelete="CASCADE"), nullable=False, index=True)
-    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(String(255), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     file_id = Column(String(36), ForeignKey("files.id", ondelete="SET NULL"), nullable=True)
     title = Column(String(255), nullable=False)
     file_type = Column(String(50), nullable=False) # pdf, docx, md, txt
@@ -72,7 +72,7 @@ class EmbeddingReference(Base):
     __tablename__ = "embedding_references"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(String(255), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     entity_type = Column(String(50), nullable=False) # document_chunk, memory, message
     entity_id = Column(String(36), nullable=False, index=True)
     provider_name = Column(String(100), default="openai") # openai, gemini, cohere, local_synthetic
@@ -87,7 +87,7 @@ class RetrievalHistory(Base):
     __tablename__ = "retrieval_history"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(String(255), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     query = Column(Text, nullable=False)
     retrieved_chunks_count = Column(Integer, default=0)
     top_similarity_score = Column(Float, default=0.0)
@@ -101,7 +101,7 @@ class SearchHistory(Base):
     __tablename__ = "search_history"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(String(255), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     query = Column(Text, nullable=False)
     search_type = Column(String(50), default="semantic")
     results_count = Column(Integer, default=0)
@@ -114,6 +114,7 @@ class ContextHistory(Base):
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     chat_id = Column(String(36), ForeignKey("chats.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(String(255), ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
     context_summary = Column(Text, nullable=False)
     token_count = Column(Integer, default=0)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)

@@ -8,7 +8,7 @@ class Chat(Base):
     __tablename__ = "chats"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(String(255), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     project_id = Column(String(36), ForeignKey("projects.id", ondelete="SET NULL"), nullable=True, index=True)
     title = Column(String(255), default="New Conversation", nullable=False)
     is_pinned = Column(Boolean, default=False)
@@ -28,6 +28,7 @@ class ConversationMetadata(Base):
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     chat_id = Column(String(36), ForeignKey("chats.id", ondelete="CASCADE"), nullable=False, unique=True)
+    user_id = Column(String(255), ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
     total_tokens = Column(String(50), default="0")
     total_messages = Column(String(50), default="0")
     context_summary = Column(Text, nullable=True)

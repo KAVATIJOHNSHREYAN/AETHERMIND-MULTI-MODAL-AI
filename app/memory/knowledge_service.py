@@ -198,10 +198,12 @@ class KnowledgeService:
             logger.warning(f"Error listing collections: {e}")
             return []
 
-    async def list_documents(self, db: AsyncSession, collection_id: Optional[str] = None) -> List[Dict[str, Any]]:
+    async def list_documents(self, db: AsyncSession, collection_id: Optional[str] = None, user_id: Optional[str] = None) -> List[Dict[str, Any]]:
         """List documents in Knowledge Base."""
         try:
             q = select(KnowledgeDocument)
+            if user_id:
+                q = q.where(KnowledgeDocument.user_id == user_id)
             if collection_id:
                 q = q.where(KnowledgeDocument.collection_id == collection_id)
             q = q.order_by(KnowledgeDocument.created_at.desc())
@@ -224,15 +226,19 @@ class KnowledgeService:
             logger.warning(f"Error listing documents: {e}")
             return []
 
-    async def delete_document(self, db: AsyncSession, doc_id: str) -> bool:
+    async def delete_document(self, db: AsyncSession, doc_id: str, user_id: Optional[str] = None) -> bool:
         """Delete Knowledge document from database."""
         try:
-            res = await db.execute(select(KnowledgeDocument).where(KnowledgeDocument.id == doc_id))
+            q = select(KnowledgeDocument).where(KnowledgeDocument.id == doc_id)
+            if user_id:
+                q = q.where(KnowledgeDocument.user_id == user_id)
+            res = await db.execute(q)
             doc = res.scalar_one_or_none()
             if doc:
                 await db.delete(doc)
                 await db.commit()
-            return True
+                return True
+            return False
         except Exception:
             await db.rollback()
             return False

@@ -39,3 +39,5 @@ scratch_test_files/
 app/static/uploads/*
 !app/static/uploads/.gitkeep
 
+
+.vercel

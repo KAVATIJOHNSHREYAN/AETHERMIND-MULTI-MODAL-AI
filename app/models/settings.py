@@ -8,7 +8,7 @@ class UserSettings(Base):
     __tablename__ = "user_settings"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True)
+    user_id = Column(String(255), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True)
     theme = Column(String(20), default="dark", nullable=False)
     default_model = Column(String(100), default="gemini-2.0-flash", nullable=False)
     enable_memory = Column(Boolean, default=True)
@@ -25,7 +25,7 @@ class ProviderSettings(Base):
     __tablename__ = "provider_settings"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(String(255), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     provider_name = Column(String(100), nullable=False)
     api_key_encrypted = Column(String(1024), nullable=True)
     is_enabled = Column(Boolean, default=True)

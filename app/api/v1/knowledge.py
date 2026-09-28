@@ -22,15 +22,19 @@ class CreateCollectionRequest(BaseModel):
     tags: List[str] = []
 
 
+from app.core.dependencies import get_current_user_or_session
+from app.models.user import User
+
 @router.post("/collections", response_model=APIResponse[dict])
 async def create_knowledge_collection(
     req: CreateCollectionRequest,
+    current_user: User = Depends(get_current_user_or_session),
     db: AsyncSession = Depends(get_async_db)
 ):
     """Create a new Knowledge Base Collection for vector RAG documents."""
     res = await knowledge_service.create_collection(
         db=db,
-        user_id="default-user-id",
+        user_id=current_user.id,
         name=req.name,
         description=req.description,
         tags=req.tags
@@ -39,9 +43,12 @@ async def create_knowledge_collection(
 
 
 @router.get("/collections", response_model=APIResponse[List[dict]])
-async def list_knowledge_collections(db: AsyncSession = Depends(get_async_db)):
+async def list_knowledge_collections(
+    current_user: User = Depends(get_current_user_or_session),
+    db: AsyncSession = Depends(get_async_db)
+):
     """Retrieve all Knowledge Base Collections."""
-    cols = await knowledge_service.list_collections(db=db, user_id="default-user-id")
+    cols = await knowledge_service.list_collections(db=db, user_id=current_user.id)
     return APIResponse(success=True, data=cols, message="Knowledge Collections loaded")
 
 
@@ -50,6 +57,7 @@ async def ingest_knowledge_document(
     file: UploadFile = FastAPIFile(...),
     collection_id: Optional[str] = Form(None),
     tags: Optional[str] = Form(None),
+    current_user: User = Depends(get_current_user_or_session),
     db: AsyncSession = Depends(get_async_db)
 ):
     """Ingest document (PDF, Word, Markdown, Text) into Knowledge Base with automatic chunking and vector embedding."""
@@ -60,7 +68,7 @@ async def ingest_knowledge_document(
 
     res = await knowledge_service.ingest_document(
         db=db,
-        user_id="default-user-id",
+        user_id=current_user.id,
         collection_id=collection_id or "default_collection",
         filename=filename,
         content_bytes=content_bytes,
@@ -73,15 +81,20 @@ async def ingest_knowledge_document(
 @router.get("/documents", response_model=APIResponse[List[dict]])
 async def list_knowledge_documents(
     collection_id: Optional[str] = None,
+    current_user: User = Depends(get_current_user_or_session),
     db: AsyncSession = Depends(get_async_db)
 ):
     """Retrieve ingested Knowledge Base documents."""
-    docs = await knowledge_service.list_documents(db=db, collection_id=collection_id)
+    docs = await knowledge_service.list_documents(db=db, collection_id=collection_id, user_id=current_user.id)
     return APIResponse(success=True, data=docs, message="Knowledge Documents loaded")
 
 
 @router.delete("/documents/{doc_id}", response_model=APIResponse[dict])
-async def delete_knowledge_document(doc_id: str, db: AsyncSession = Depends(get_async_db)):
-    """Delete a document from Knowledge Base."""
-    success = await knowledge_service.delete_document(db=db, doc_id=doc_id)
+async def delete_knowledge_document(
+    doc_id: str,
+    current_user: User = Depends(get_current_user_or_session),
+    db: AsyncSession = Depends(get_async_db)
+):
+    """Delete a document from Knowledge Base strictly verifying ownership."""
+    success = await knowledge_service.delete_document(db=db, doc_id=doc_id, user_id=current_user.id)
     return APIResponse(success=success, message=f"Knowledge Document {doc_id} removed", data={"id": doc_id})

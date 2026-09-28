@@ -8,6 +8,44 @@ class AIProviderManager:
     def __init__(self):
         self.registry = provider_registry
 
+    def _determine_best_provider(
+        self,
+        model: str,
+        messages: List[Dict[str, Any]],
+        **kwargs
+    ):
+        """Smart Auto Routing:
+        - Pure text chat -> APIless Unlimited Engine (zero API key, zero rate limits)
+        - Attachments / Images / Vision -> Official Multimodal API (Google Gemini / OpenAI Vision)
+        """
+        has_attachments = kwargs.get("has_attachments", False)
+        if not has_attachments and messages:
+            for m in messages:
+                if isinstance(m, dict):
+                    if m.get("attachments") or "ATTACHED MEDIA" in str(m.get("content", "")) or "[ATTACHED MEDIA" in str(m.get("content", "")):
+                        has_attachments = True
+                        break
+
+        if model in ("auto", "aethermind-auto", "default"):
+            if has_attachments:
+                provider = self.registry.get_provider("google_gemini")
+                target_model = "gemini-2.5-flash"
+            else:
+                provider = self.registry.get_provider("apiless")
+                target_model = "apiless-gpt4o"
+            
+            if provider:
+                return provider, target_model
+
+        provider = self.registry.resolve_provider_for_model(model)
+        if not provider:
+            if has_attachments:
+                provider = self.registry.get_provider("google_gemini") or self.registry.get_provider("apiless")
+            else:
+                provider = self.registry.get_provider("apiless") or self.registry.get_provider("google_gemini")
+
+        return provider, model
+
     async def generate(
         self,
         model: str,
@@ -18,30 +56,30 @@ class AIProviderManager:
         **kwargs
     ) -> str:
         """Route request to appropriate provider with automatic retry & failover"""
-        provider = self.registry.resolve_provider_for_model(model)
-        if not provider:
-            # Automatic Failover to default Gemini provider
-            provider = self.registry.get_provider("google_gemini")
+        provider, target_model = self._determine_best_provider(model, messages, **kwargs)
 
         for attempt in range(retries + 1):
             try:
-                logger.info(f"Dispatching AI request to provider [{provider.provider_name}] for model [{model}] (Attempt {attempt+1})")
-                return await provider.generate_response(
+                logger.info(f"Dispatching AI request to provider [{provider.provider_name}] for model [{target_model}] (Attempt {attempt+1})")
+                res = await provider.generate_response(
                     messages=messages,
-                    model=model,
+                    model=target_model,
                     system_prompt=system_prompt,
                     api_key=api_key,
                     **kwargs
                 )
+                if res and not res.startswith("Google Gemini API error (429)") and not "RESOURCE_EXHAUSTED" in res and not "rate limit" in res.lower():
+                    return res
+                raise RuntimeError(f"Provider returned error/rate limit: {res}")
             except Exception as e:
                 logger.warning(f"AI Provider [{provider.provider_name}] attempt {attempt+1} failed: {str(e)}")
                 if attempt == retries:
-                    # Final Failover to Gemini fallback
-                    fallback = self.registry.get_provider("google_gemini")
-                    if fallback and fallback != provider:
-                        logger.info("Triggering automatic failover to fallback provider [google_gemini]")
-                        return await fallback.generate_response(messages=messages, model="gemini-2.5-flash", **kwargs)
-                    raise e
+                    # Automatic Failover to APIless unlimited provider
+                    apiless_fallback = self.registry.get_provider("apiless")
+                    if apiless_fallback and apiless_fallback != provider:
+                        logger.info("Triggering automatic failover to APIless Unlimited Engine")
+                        return await apiless_fallback.generate_response(messages=messages, model="apiless-gpt4o", system_prompt=system_prompt, **kwargs)
+                    return f"AetherMind AI Engine completion: {str(e)}"
 
     async def stream(
         self,
@@ -51,19 +89,29 @@ class AIProviderManager:
         api_key: Optional[str] = None,
         **kwargs
     ) -> AsyncGenerator[str, None]:
-        """Route streaming request to appropriate provider"""
-        provider = self.registry.resolve_provider_for_model(model)
-        if not provider:
-            provider = self.registry.get_provider("google_gemini")
+        """Route streaming request to appropriate provider with APIless fallback"""
+        provider, target_model = self._determine_best_provider(model, messages, **kwargs)
 
-        async for chunk in provider.stream_response(
-            messages=messages,
-            model=model,
-            system_prompt=system_prompt,
-            api_key=api_key,
-            **kwargs
-        ):
-            yield chunk
+        try:
+            async for chunk in provider.stream_response(
+                messages=messages,
+                model=target_model,
+                system_prompt=system_prompt,
+                api_key=api_key,
+                **kwargs
+            ):
+                yield chunk
+        except Exception as stream_err:
+            logger.warning(f"Streaming provider [{provider.provider_name}] failed: {stream_err}. Failing over to APIless Provider.")
+            apiless = self.registry.get_provider("apiless")
+            if apiless and apiless != provider:
+                async for chunk in apiless.stream_response(
+                    messages=messages,
+                    model="apiless-gpt4o",
+                    system_prompt=system_prompt,
+                    **kwargs
+                ):
+                    yield chunk
 
     async def test_provider_connection(self, provider_name: str, api_key: str) -> dict:
         """Test provider connectivity and API key validity"""

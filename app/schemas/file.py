@@ -18,13 +18,14 @@ class ImageGenerationRequest(BaseModel):
     negative_prompt: Optional[str] = None
     aspect_ratio: Optional[str] = "1:1" # '1:1', '16:9', '9:16'
     quality: Optional[str] = "standard"
-    model: Optional[str] = "gemini-2.5-flash"
+    model: Optional[str] = "auto"
 
 class ImageGenerationResponse(BaseModel):
     id: str
     prompt: str
     aspect_ratio: str
     image_url: str
+    model_name: Optional[str] = "AetherMind Flux"
     created_at: datetime
 
 class VisionAnalysisRequest(BaseModel):

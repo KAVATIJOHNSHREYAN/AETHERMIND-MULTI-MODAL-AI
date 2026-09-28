@@ -93,7 +93,7 @@ class ClerkAuthProvider:
 
         if not user:
             user = User(
-                id=str(uuid.uuid4()),
+                id=clerk_id,
                 clerk_id=clerk_id,
                 email=email,
                 full_name=full_name,
@@ -106,9 +106,11 @@ class ClerkAuthProvider:
             db.add(user)
             await db.flush()
 
-            # Create default settings and auth metadata
+            # Create default settings, auth metadata, and workspace metadata
+            from app.models.workspace import WorkspaceMetadata
             db.add(UserSettings(id=str(uuid.uuid4()), user_id=user.id))
             db.add(AuthMetadata(id=str(uuid.uuid4()), user_id=user.id, last_login_at=datetime.utcnow(), login_count=1))
+            db.add(WorkspaceMetadata(id=str(uuid.uuid4()), user_id=user.id))
             await db.commit()
             await db.refresh(user)
         else:

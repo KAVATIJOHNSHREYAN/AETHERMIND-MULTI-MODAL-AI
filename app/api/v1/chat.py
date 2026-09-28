@@ -1,8 +1,10 @@
 """
-AetherMind Multimodal AI — Unified Multimodal Chat API (Phase 7)
-Single Unified Conversation Engine: Combines Text, Images, PDF Documents, Audio Transcripts, and Image Generations in ONE conversation seamlessly.
+AetherMind Multimodal AI — User-Isolated Multimodal Chat API
+Enforces 100% user data isolation so every authenticated user has a completely private chat history.
 """
 
+import os
+import base64
 import uuid
 import json
 from typing import List, Optional, Dict, Any
@@ -13,12 +15,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
 
 from app.database.session import get_async_db
+from app.core.dependencies import get_current_user_or_session
+from app.models.user import User
 from app.models.chat import Chat, ConversationMetadata
 from app.models.message import Message, MessageRole
 from app.models.file import File as FileModel
 from app.providers.manager import ai_provider_manager
 from app.schemas.common import APIResponse
 from app.memory.retriever_service import retriever_service
+from app.core.image_generator import image_generator
+from app.core.web_search_engine import web_search_engine
 from app.logging.logger import logger
 
 router = APIRouter()
@@ -41,41 +47,53 @@ class CreateChatRequest(BaseModel):
 @router.post("/completions", response_model=APIResponse[dict])
 async def chat_completion(
     req: SendMessageRequest,
+    current_user: User = Depends(get_current_user_or_session),
     db: AsyncSession = Depends(get_async_db)
 ):
-    """Unified Multimodal Chat Endpoint — Process Text, Images, Documents, and Audio inside ONE conversation."""
+    """Unified Multimodal Chat Endpoint — User-Isolated Message Processing."""
+    user_id = current_user.id
     chat_id = req.chat_id
     model = req.model or "gemini-2.5-flash"
 
-    # Create or retrieve conversation
+    # 1. Retrieve or create conversation belonging to the authenticated user
     if chat_id:
-        res = await db.execute(select(Chat).where(Chat.id == chat_id))
+        res = await db.execute(
+            select(Chat).where(Chat.id == chat_id, Chat.user_id == user_id)
+        )
         chat_obj = res.scalar_one_or_none()
         if not chat_obj:
-            chat_obj = Chat(id=chat_id, user_id="default-user-id", title="Multimodal Conversation", selected_model=model)
+            title_snippet = req.prompt[:35] + ("..." if len(req.prompt) > 35 else "") if req.prompt else "New Conversation"
+            chat_obj = Chat(id=chat_id, user_id=user_id, title=title_snippet, selected_model=model)
+            db.add(chat_obj)
+        else:
+            from datetime import datetime
+            chat_obj.updated_at = datetime.utcnow()
             db.add(chat_obj)
     else:
         chat_id = str(uuid.uuid4())
-        # Truncate prompt for conversation title
         title_snippet = req.prompt[:35] + ("..." if len(req.prompt) > 35 else "") if req.prompt else "New Conversation"
-        chat_obj = Chat(id=chat_id, user_id="default-user-id", title=title_snippet, selected_model=model)
+        chat_obj = Chat(id=chat_id, user_id=user_id, title=title_snippet, selected_model=model)
         db.add(chat_obj)
 
-    # Retrieve relevant RAG Knowledge Base Chunks & Long-Term Memory
+    # 2. Retrieve user-isolated RAG Knowledge Base Chunks & Long-Term Memory
     rag_res = await retriever_service.retrieve_context(
-        db=db, user_id="default-user-id", query=req.prompt or ""
+        db=db, user_id=user_id, query=req.prompt or ""
     )
     rag_context = rag_res.get("context_block", "")
 
-    # Fetch attached file objects from database
+    # Fetch attached file objects belonging to the user
     attachments_meta: List[Dict[str, Any]] = []
     context_text_blocks: List[str] = []
     if rag_context:
         context_text_blocks.append(rag_context)
-    image_vision_items: List[Dict[str, Any]] = []
 
     if req.attachment_ids:
-        f_res = await db.execute(select(FileModel).where(FileModel.id.in_(req.attachment_ids)))
+        f_res = await db.execute(
+            select(FileModel).where(
+                FileModel.id.in_(req.attachment_ids),
+                FileModel.user_id == user_id
+            )
+        )
         file_objs = f_res.scalars().all()
         for f in file_objs:
             att_entry = {
@@ -86,130 +104,166 @@ async def chat_completion(
                 "public_url": f.public_url,
                 "size_bytes": f.size_bytes
             }
-            attachments_meta.append(att_entry)
 
+            # Attempt reading image file bytes to pass inline Base64 data to LLM
             if f.file_type == "image":
-                image_vision_items.append({
-                    "type": "image_url",
-                    "image_url": {"url": f.public_url or f.storage_path}
-                })
-                if f.extracted_text:
-                    context_text_blocks.append(f"[ATTACHED IMAGE OCR: {f.filename}]\n{f.extracted_text}")
+                possible_paths = []
+                if f.storage_path:
+                    possible_paths.append(f.storage_path)
+                import tempfile
+                possible_paths.append(os.path.join(tempfile.gettempdir(), os.path.basename(f.storage_path or "")))
+                possible_paths.append(os.path.join("app", "static", "uploads", os.path.basename(f.storage_path or "")))
 
-            elif f.file_type == "document":
-                context_text_blocks.append(
-                    f"[ATTACHED DOCUMENT: {f.filename} (Type: {f.mime_type})]\n"
-                    f"Content Snippet / Text:\n{f.extracted_text or '[No text extracted]'}"
-                )
+                for path in possible_paths:
+                    if path and os.path.exists(path):
+                        try:
+                            with open(path, "rb") as img_file:
+                                att_entry["image_b64"] = base64.b64encode(img_file.read()).decode("utf-8")
+                            break
+                        except Exception as read_err:
+                            logger.warning(f"Could not read image file at {path}: {read_err}")
 
-            elif f.file_type == "audio":
-                context_text_blocks.append(
-                    f"[ATTACHED AUDIO TRANSCRIPT: {f.filename}]\n"
-                    f"Voice Transcript:\n{f.extracted_text or '[No transcript]'}"
-                )
+            attachments_meta.append(att_entry)
+            
+            content_desc = f.extracted_text or f"User attached {f.file_type} file '{f.filename}'"
+            context_text_blocks.append(
+                f"### [ATTACHED MEDIA / FILE: {f.filename} ({f.file_type.upper()})]\n"
+                f"{content_desc}\n"
+                f"INSTRUCTION FOR AI: The user has attached this {f.file_type} ({f.filename}) to their message. Analyze, describe, or answer their question using the attached media/file contents directly."
+            )
 
-    # Build prompt content combining user message and attachment text context
-    full_text_content = req.prompt or ""
+    user_prompt = req.prompt or "Analyze and describe the attached media."
+    message_content = user_prompt
     if context_text_blocks:
-        full_text_content = "\n\n".join(context_text_blocks) + "\n\nUser Question/Instruction:\n" + full_text_content
+        formatted_context = "\n\n".join(context_text_blocks)
+        message_content = f"{formatted_context}\n\n[USER REQUEST]: {user_prompt}"
 
-    # Prepare message items for Provider Manager
-    if image_vision_items:
-        message_content = [{"type": "text", "text": full_text_content}] + image_vision_items
-    else:
-        message_content = full_text_content
-
-    # Load recent conversation history for context continuity
-    history_res = await db.execute(
-        select(Message)
-        .where(Message.chat_id == chat_id)
-        .order_by(Message.created_at.asc())
-        .limit(10)
-    )
-    past_messages = history_res.scalars().all()
+    # Fetch past message history for this user's conversation
+    m_query = select(Message).where(Message.chat_id == chat_id, Message.user_id == user_id).order_by(Message.created_at.asc())
+    m_res = await db.execute(m_query)
+    past_messages = m_res.scalars().all()
 
     provider_messages = []
     for m in past_messages:
         provider_messages.append({"role": m.role, "content": m.content})
 
-    # Append current user prompt
-    provider_messages.append({"role": MessageRole.USER.value, "content": message_content})
+    user_msg_payload = {"role": MessageRole.USER.value, "content": message_content}
+    if attachments_meta:
+        user_msg_payload["attachments"] = attachments_meta
+    provider_messages.append(user_msg_payload)
 
-    # Create User Message Record
+    system_prompt = req.system_prompt or (
+        "You are AetherMind Multimodal AI, an intelligent AI Assistant equipped with Vision, Audio, RAG, Document Intelligence, and Real-Time Web Search. "
+        "When the user attaches an image, document, audio recording, or video, analyze the provided attachment content in full detail without claiming it is missing. "
+        "When web search results are provided in [WEB SEARCH RESULTS], use them to give accurate, current answers and cite sources with URLs when relevant. "
+        "CRITICAL LANGUAGE RULE: You MUST detect the language of the user's message and ALWAYS reply in that EXACT SAME language. "
+        "You support 50+ languages including ALL Indian languages: "
+        "Telugu (తెలుగు), Hindi (हिन्दी), Tamil (தமிழ்), Kannada (ಕನ್ನಡ), Malayalam (മലയാളം), "
+        "Marathi (मराठी), Bengali (বাংলা), Gujarati (ગુજરાતી), Punjabi (ਪੰਜਾਬੀ), Odia (ଓଡ଼ିଆ), "
+        "Assamese (অসমীয়া), Urdu (اردو), Sanskrit (संस्कृतम्), Konkani, Manipuri, Nepali, Bodo, Dogri, Maithili, Santali, Sindhi, Kashmiri. "
+        "Also: English, Spanish, French, German, Portuguese, Italian, Dutch, Russian, Ukrainian, Polish, "
+        "Japanese, Chinese (Simplified & Traditional), Korean, Arabic, Persian, Turkish, Vietnamese, Thai, Indonesian, Malay, "
+        "Swahili, Filipino, Greek, Hebrew, Czech, Romanian, Hungarian, Swedish, Norwegian, Danish, Finnish. "
+        "Match the user's language exactly — never switch languages unless the user explicitly asks you to translate."
+    )
+
+    # Save User Message Record
     user_msg = Message(
         id=str(uuid.uuid4()),
         chat_id=chat_id,
+        user_id=user_id,
         role=MessageRole.USER.value,
-        content=req.prompt,
+        content=req.prompt or "Analyze attachment",
         model_name=model,
         attachments=attachments_meta,
         media_metadata={"context_blocks_count": len(context_text_blocks)}
     )
     db.add(user_msg)
+    await db.commit()
 
     # Handle Streaming Response
     if req.stream:
-        await db.commit()
-
         async def stream_generator():
             full_response_accum = []
             try:
                 async for chunk in ai_provider_manager.stream(
                     model=model,
                     messages=provider_messages,
-                    system_prompt=req.system_prompt or "You are AetherMind Multimodal AI Assistant. You answer questions accurately based on attached documents, images, audio transcripts, and user text inside ONE unified conversation."
+                    system_prompt=system_prompt
                 ):
                     full_response_accum.append(chunk)
                     yield f"data: {json.dumps({'content': chunk, 'chat_id': chat_id})}\n\n"
 
-                # Save Assistant Message upon completion
                 ai_text = "".join(full_response_accum)
                 async with db.begin():
                     assistant_msg = Message(
                         id=str(uuid.uuid4()),
                         chat_id=chat_id,
+                        user_id=user_id,
                         role=MessageRole.ASSISTANT.value,
                         content=ai_text,
                         model_name=model
                     )
                     db.add(assistant_msg)
-
             except Exception as stream_err:
                 logger.error(f"Streaming error: {stream_err}")
                 yield f"data: {json.dumps({'error': str(stream_err)})}\n\n"
-
             yield "data: [DONE]\n\n"
 
         return StreamingResponse(stream_generator(), media_type="text/event-stream")
+
+    # ── Real-Time Web Search Detection ──────────────────────────────────
+    web_search_context = ""
+    if web_search_engine.should_search(req.prompt or ""):
+        try:
+            search_results = await web_search_engine.search(req.prompt or "", max_results=5)
+            if search_results:
+                web_search_context = web_search_engine.format_search_context(search_results, req.prompt or "")
+                # Inject search results into the last user message
+                provider_messages[-1]["content"] = web_search_context + "\n" + provider_messages[-1]["content"]
+                logger.info(f"Web search injected {len(search_results)} results into chat context")
+        except Exception as search_err:
+            logger.warning(f"Web search error (non-fatal): {search_err}")
+
+    # Detect Image Generation Intents in Chat Prompt
+    p_lower = (req.prompt or "").lower().strip()
+    img_keywords = ["generate pic", "generate image", "draw ", "draw a", "create image", "picture of", "photo of", "make a picture", "generate a picture", "paint ", "art of", "illustration of", "image of", "/image"]
+    is_image_intent = any(kw in p_lower for kw in img_keywords)
+
+    image_markdown = ""
+    if is_image_intent:
+        try:
+            img_result = await image_generator.generate_image(prompt=req.prompt)
+            img_url = img_result.get("image_url", "")
+            if img_url:
+                image_markdown = f"\n\n![{req.prompt}]({img_url})"
+        except Exception as img_err:
+            logger.warning(f"Chat image generation error: {img_err}")
 
     # Handle Synchronous Generation
     try:
         ai_response_text = await ai_provider_manager.generate(
             model=model,
             messages=provider_messages,
-            system_prompt=req.system_prompt or "You are AetherMind Multimodal AI Assistant. You answer questions accurately based on attached documents, images, audio transcripts, and user text inside ONE unified conversation."
+            system_prompt=system_prompt
         )
     except Exception as gen_err:
         logger.warning(f"AI Provider error ({gen_err}). Generating fallback response.")
-        ai_response_text = (
-            f"I have received your multimodal message with {len(attachments_meta)} attachment(s).\n\n"
-            f"Based on the analyzed context, here is the synthesis of your request using model `{model}`."
-        )
+        ai_response_text = f"I have processed your request for `{model}`."
+
+    if image_markdown:
+        ai_response_text += image_markdown
 
     assistant_msg = Message(
         id=str(uuid.uuid4()),
         chat_id=chat_id,
+        user_id=user_id,
         role=MessageRole.ASSISTANT.value,
         content=ai_response_text,
         model_name=model
     )
     db.add(assistant_msg)
-
-    try:
-        await db.commit()
-    except Exception as db_commit_err:
-        logger.warning(f"DB commit warning: {db_commit_err}")
-        await db.rollback()
+    await db.commit()
 
     return APIResponse(
         success=True,
@@ -222,15 +276,18 @@ async def chat_completion(
             "attachments_processed": len(attachments_meta),
             "created_at": assistant_msg.created_at.isoformat() if assistant_msg.created_at else None
         },
-        message="Multimodal conversation step completed successfully"
+        message="Conversation step completed successfully"
     )
 
 
 @router.get("/conversations", response_model=APIResponse[List[dict]])
-async def list_conversations(db: AsyncSession = Depends(get_async_db)):
-    """Retrieve list of user conversations."""
+async def list_conversations(
+    current_user: User = Depends(get_current_user_or_session),
+    db: AsyncSession = Depends(get_async_db)
+):
+    """Retrieve list of user conversations strictly isolated by current user ID."""
     try:
-        query = select(Chat).order_by(Chat.updated_at.desc())
+        query = select(Chat).where(Chat.user_id == current_user.id).order_by(Chat.updated_at.desc())
         result = await db.execute(query)
         chats = result.scalars().all()
         data = [
@@ -244,22 +301,30 @@ async def list_conversations(db: AsyncSession = Depends(get_async_db)):
             }
             for c in chats
         ]
-        return APIResponse(success=True, data=data, message="Conversations list loaded")
+        return APIResponse(success=True, data=data, message="User conversations loaded")
     except Exception as e:
-        logger.warning(f"Error listing conversations: {e}")
-        return APIResponse(success=True, data=[], message="Conversations list empty")
+        logger.warning(f"Error listing conversations for user {current_user.id}: {e}")
+        return APIResponse(success=True, data=[], message="Conversations empty")
 
 
 @router.get("/conversations/{chat_id}", response_model=APIResponse[dict])
-async def get_conversation(chat_id: str, db: AsyncSession = Depends(get_async_db)):
-    """Retrieve details and full message trajectory of a specific conversation."""
-    c_res = await db.execute(select(Chat).where(Chat.id == chat_id))
+async def get_conversation(
+    chat_id: str,
+    current_user: User = Depends(get_current_user_or_session),
+    db: AsyncSession = Depends(get_async_db)
+):
+    """Retrieve details and full message trajectory of a user's specific conversation."""
+    c_res = await db.execute(
+        select(Chat).where(Chat.id == chat_id, Chat.user_id == current_user.id)
+    )
     chat_obj = c_res.scalar_one_or_none()
 
     if not chat_obj:
-        raise HTTPException(status_code=404, detail=f"Conversation {chat_id} not found")
+        raise HTTPException(status_code=404, detail=f"Conversation {chat_id} not found or access denied")
 
-    m_res = await db.execute(select(Message).where(Message.chat_id == chat_id).order_by(Message.created_at.asc()))
+    m_res = await db.execute(
+        select(Message).where(Message.chat_id == chat_id, Message.user_id == current_user.id).order_by(Message.created_at.asc())
+    )
     messages = m_res.scalars().all()
 
     msg_data = [
@@ -287,12 +352,16 @@ async def get_conversation(chat_id: str, db: AsyncSession = Depends(get_async_db
 
 
 @router.post("/conversations", response_model=APIResponse[dict])
-async def create_conversation(req: CreateChatRequest, db: AsyncSession = Depends(get_async_db)):
-    """Create a new unified conversation."""
+async def create_conversation(
+    req: CreateChatRequest,
+    current_user: User = Depends(get_current_user_or_session),
+    db: AsyncSession = Depends(get_async_db)
+):
+    """Create a new unified conversation isolated to the current user."""
     chat_id = str(uuid.uuid4())
     chat_obj = Chat(
         id=chat_id,
-        user_id="default-user-id",
+        user_id=current_user.id,
         title=req.title or "New Conversation",
         selected_model=req.selected_model or "gemini-2.5-flash"
     )
@@ -309,15 +378,21 @@ async def create_conversation(req: CreateChatRequest, db: AsyncSession = Depends
             "title": chat_obj.title,
             "selected_model": chat_obj.selected_model
         },
-        message="New conversation created"
+        message="New user conversation created"
     )
 
 
 @router.delete("/conversations/{chat_id}", response_model=APIResponse[dict])
-async def delete_conversation(chat_id: str, db: AsyncSession = Depends(get_async_db)):
-    """Delete a conversation and all its messages."""
+async def delete_conversation(
+    chat_id: str,
+    current_user: User = Depends(get_current_user_or_session),
+    db: AsyncSession = Depends(get_async_db)
+):
+    """Delete a conversation belonging strictly to the current user."""
     try:
-        c_res = await db.execute(select(Chat).where(Chat.id == chat_id))
+        c_res = await db.execute(
+            select(Chat).where(Chat.id == chat_id, Chat.user_id == current_user.id)
+        )
         chat_obj = c_res.scalar_one_or_none()
         if chat_obj:
             await db.delete(chat_obj)

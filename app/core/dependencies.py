@@ -47,7 +47,7 @@ async def get_current_user(
     user = None
     if payload and "sub" in payload:
         user_id = payload["sub"]
-        result = await db.execute(select(User).filter(User.id == user_id))
+        result = await db.execute(select(User).filter((User.id == user_id) | (User.clerk_id == user_id)))
         user = result.scalars().first()
 
     # 2. Try DB Session token lookup
@@ -88,6 +88,43 @@ async def get_optional_user(
         return await get_current_user(request, bearer_token, db)
     except HTTPException:
         return None
+
+async def get_current_user_or_session(
+    request: Request,
+    bearer_token: Optional[str] = Depends(oauth2_scheme),
+    db: AsyncSession = Depends(get_db)
+) -> User:
+    """
+    Returns the authenticated Clerk / JWT user.
+    If no token is provided, returns a session-isolated user scoped to the client.
+    """
+    user = await get_optional_user(request, bearer_token, db)
+    if user:
+        return user
+    
+    # Session-isolated fallback user (scoped per browser session cookie or header)
+    session_id = request.headers.get("X-Session-ID") or request.cookies.get("aethermind_session")
+    if not session_id:
+        import uuid
+        session_id = f"sess_guest_{uuid.uuid4().hex[:12]}"
+    
+    email = f"{session_id}@session.aethermind.ai"
+    result = await db.execute(select(User).filter(User.email == email))
+    user = result.scalars().first()
+    if not user:
+        user = User(
+            id=session_id,
+            email=email,
+            full_name="Guest User",
+            provider_type="session",
+            role="user",
+            is_active=True,
+            is_verified=True,
+        )
+        db.add(user)
+        await db.commit()
+        await db.refresh(user)
+    return user
 
 def require_role(allowed_roles: List[str]) -> Callable:
     """Role-based Access Control (RBAC) Dependency Builder"""
