@@ -208,38 +208,37 @@
                 </span>
             </div>
 
-            <!-- Topbar Right Control Actions (Search, Knowledge, Viewport Sizes) -->
-            <div class="flex items-center space-x-2">
-                <!-- Device Viewport Size Switcher -->
-                <div class="flex items-center space-x-1 p-1 rounded-xl bg-white/5 border border-white/10 text-xs shadow-inner">
-                    <button type="button" id="btn-size-desktop" class="px-2 py-1 rounded-lg bg-[#3ABEFF]/20 text-[#3ABEFF] border border-[#3ABEFF]/30 font-semibold text-[11px] hover:bg-[#3ABEFF]/30 transition flex items-center space-x-1" title="Desktop Viewport (100% Full Width)">
-                        <span>🖥️</span> <span class="hidden xl:inline">Desktop</span>
+            <!-- Topbar Right Control Actions (Device Viewport Sizes, Search, Knowledge, Memory) -->
+            <div class="flex items-center space-x-2 shrink-0">
+                <!-- Dedicated Device Viewport Controller -->
+                <div class="flex items-center space-x-1 p-1.5 rounded-2xl bg-[#0F1629]/90 border border-[#3ABEFF]/40 shadow-lg shadow-[#3ABEFF]/20 text-xs">
+                    <span class="text-[10px] uppercase font-mono tracking-wider text-[#3ABEFF] px-1 font-bold hidden sm:inline">Size:</span>
+                    <button type="button" id="btn-size-desktop" class="px-2.5 py-1 rounded-xl bg-[#3ABEFF]/25 text-[#3ABEFF] border border-[#3ABEFF]/40 font-bold text-[11px] hover:bg-[#3ABEFF]/40 transition flex items-center space-x-1" title="Desktop Viewport (100% Widescreen)">
+                        <span>🖥️</span> <span class="inline">Desktop</span>
                     </button>
-                    <button type="button" id="btn-size-laptop" class="px-2 py-1 rounded-lg text-slate-400 font-medium text-[11px] hover:text-white hover:bg-white/10 transition flex items-center space-x-1" title="Laptop Viewport (1280px)">
-                        <span>💻</span> <span class="hidden xl:inline">Laptop</span>
+                    <button type="button" id="btn-size-laptop" class="px-2.5 py-1 rounded-xl text-slate-300 font-semibold text-[11px] hover:text-white hover:bg-white/10 transition flex items-center space-x-1" title="Laptop Viewport (1280px)">
+                        <span>💻</span> <span class="inline">Laptop</span>
                     </button>
-                    <button type="button" id="btn-size-tablet" class="px-2 py-1 rounded-lg text-slate-400 font-medium text-[11px] hover:text-white hover:bg-white/10 transition flex items-center space-x-1" title="Tablet Viewport (768px)">
-                        <span>📱</span> <span class="hidden xl:inline">Tablet</span>
+                    <button type="button" id="btn-size-tablet" class="px-2.5 py-1 rounded-xl text-slate-300 font-semibold text-[11px] hover:text-white hover:bg-white/10 transition flex items-center space-x-1" title="Tablet Viewport (768px)">
+                        <span>📱</span> <span class="hidden md:inline">Tablet</span>
                     </button>
-                    <button type="button" id="btn-size-phone" class="px-2 py-1 rounded-lg text-slate-400 font-medium text-[11px] hover:text-white hover:bg-white/10 transition flex items-center space-x-1" title="Mobile Phone Viewport (390px)">
-                        <span>📱</span> <span class="hidden xl:inline">Phone</span>
+                    <button type="button" id="btn-size-phone" class="px-2.5 py-1 rounded-xl text-slate-300 font-semibold text-[11px] hover:text-white hover:bg-white/10 transition flex items-center space-x-1" title="Mobile Phone Viewport (390px)">
+                        <span>📱</span> <span class="hidden md:inline">Phone</span>
                     </button>
-                    <button type="button" id="btn-size-hybrid" class="px-2 py-1 rounded-lg text-slate-400 font-medium text-[11px] hover:text-white hover:bg-white/10 transition flex items-center space-x-1" title="Laptop + Phone Mix Viewport (480px Hybrid)">
-                        <span>💻📱</span> <span class="hidden xl:inline">Mix</span>
+                    <button type="button" id="btn-size-hybrid" class="px-2.5 py-1 rounded-xl text-purple-300 font-bold text-[11px] hover:text-white hover:bg-purple-500/20 border border-purple-500/30 transition flex items-center space-x-1" title="Phone + Laptop Mix Viewport (480px Hybrid)">
+                        <span>💻📱</span> <span class="inline">Mix</span>
                     </button>
                 </div>
 
                 <button id="open-global-search-btn" class="p-2 rounded-xl text-[#B7C2D8] hover:text-white hover:bg-white/5 transition flex items-center space-x-1 text-xs" title="Global Search">
                     <svg class="w-4 h-4 text-[#3ABEFF]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                    <span class="hidden sm:inline">Search</span>
                 </button>
                 <button id="open-knowledge-btn" class="p-2 rounded-xl text-[#B7C2D8] hover:text-white hover:bg-white/5 transition flex items-center space-x-1 text-xs" title="Knowledge Base">
                     <svg class="w-4 h-4 text-[#6D5DF6]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-                    <span class="hidden sm:inline">Knowledge</span>
                 </button>
                 <button id="btn-compress-memory" class="py-1.5 px-3 rounded-xl bg-[#6D5DF6]/20 hover:bg-[#6D5DF6]/30 text-[#6D5DF6] text-xs font-semibold transition flex items-center space-x-1 border border-[#6D5DF6]/30" title="Compress Memory">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                    <span>Compress Memory</span>
+                    <span class="hidden lg:inline">Compress Memory</span>
                 </button>
                 <button id="btn-clear-chat" class="p-2 rounded-xl text-[#7E8CA5] hover:text-[#EF4444] hover:bg-white/5 transition text-xs font-medium flex items-center space-x-1" title="Clear Chat">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
