@@ -770,12 +770,27 @@ document.addEventListener("DOMContentLoaded", () => {
         const tempId = "temp_" + Date.now();
         renderPendingChip({ id: tempId, filename: file.name, file_type: getCategoryFromMime(file.type, file.name), uploading: true });
 
+        let fileTextContent = "";
+        try {
+            fileTextContent = await file.text();
+        } catch(e) {}
+
         try {
             const res = await authenticatedFetch("/api/v1/upload", { method: "POST", body: formData });
             const data = await res.json();
             removePendingChip(tempId);
             if (data.success && data.data) {
-                pendingAttachments.push(data.data);
+                const item = data.data;
+                item.filename = file.name || item.filename;
+                if ((!item.extracted_text || item.extracted_text.includes("successfully processed")) && fileTextContent) {
+                    item.extracted_text = fileTextContent;
+                }
+                try {
+                    localStorage.setItem('aethermind_last_doc_name', item.filename);
+                    if (item.extracted_text) localStorage.setItem('aethermind_last_doc_text', item.extracted_text);
+                } catch(e) {}
+
+                pendingAttachments.push(item);
                 renderPendingTray();
                 showToast(`Attached ${file.name}`, "success");
             } else {
@@ -863,7 +878,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const res = await authenticatedFetch("/api/v1/chat/completions", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ prompt, chat_id: activeChatId, model: selectedModel, attachment_ids: attachmentIds })
+                    body: JSON.stringify({ prompt, chat_id: activeChatId, model: selectedModel, attachment_ids: attachmentIds, attachments: currentAtts })
                 });
                 const data = await res.json();
                 removeAssistantTyping(typingId);

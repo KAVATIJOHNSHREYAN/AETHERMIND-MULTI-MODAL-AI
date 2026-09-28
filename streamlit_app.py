@@ -194,26 +194,63 @@ def build_standalone_aethermind_html():
             }
         }
 
+        // Helper for file category
+        function getCategoryFromMime(mime, filename) {
+            const name = (filename || '').toLowerCase();
+            if ((mime && mime.includes("image")) || name.endsWith(".png") || name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".webp") || name.endsWith(".svg")) return "image";
+            if ((mime && mime.includes("audio")) || name.endsWith(".mp3") || name.endsWith(".wav") || name.endsWith(".m4a") || name.endsWith(".flac")) return "audio";
+            return "document";
+        }
+
         // File Upload Endpoint (/api/v1/upload)
         if (urlStr.includes('/api/v1/upload') && options.method === 'POST') {
             const attId = "att_" + Date.now();
+            let fileName = "Attached Document";
+            let fileType = "document";
+            let extractedText = "";
+
+            try {
+                if (options.body && options.body instanceof FormData) {
+                    const fileObj = options.body.get('file');
+                    if (fileObj) {
+                        fileName = fileObj.name || fileName;
+                        fileType = getCategoryFromMime(fileObj.type || '', fileName);
+                        try {
+                            extractedText = await fileObj.text();
+                        } catch (te) {}
+                    }
+                }
+            } catch (err) {
+                console.warn("Could not read uploaded file in mock upload:", err);
+            }
+
+            if (!extractedText || extractedText.trim().length === 0) {
+                extractedText = `Document '${fileName}' attached and indexed into Qdrant Vector Memory.`;
+            }
+
+            try {
+                localStorage.setItem('aethermind_last_doc_name', fileName);
+                localStorage.setItem('aethermind_last_doc_text', extractedText);
+            } catch (e) {}
+
             return new Response(JSON.stringify({
                 success: true,
                 data: {
                     id: attId,
-                    filename: "Attached Document",
-                    file_type: "document",
-                    extracted_text: "Attached file context successfully processed."
+                    filename: fileName,
+                    file_type: fileType,
+                    extracted_text: extractedText
                 }
             }), { status: 200, headers: { 'Content-Type': 'application/json' } });
         }
 
         // File Viewer Endpoint (/api/v1/files/)
         if (urlStr.includes('/api/v1/files/')) {
+            const storedText = localStorage.getItem('aethermind_last_doc_text') || "AetherMind Document Analysis Content: The uploaded document has been indexed into Qdrant Vector RAG.";
             return new Response(JSON.stringify({
                 success: true,
                 data: {
-                    extracted_text: "AetherMind Document Analysis Content: The uploaded document has been indexed into Qdrant Vector RAG."
+                    extracted_text: storedText
                 }
             }), { status: 200, headers: { 'Content-Type': 'application/json' } });
         }
@@ -227,7 +264,7 @@ def build_standalone_aethermind_html():
         }
 
         // Handle Chat Completion Endpoint (/api/v1/chat)
-        if (urlStr.includes('/api/v1/chat') && options.method === 'POST') {
+        if ((urlStr.includes('/api/v1/chat') || urlStr.includes('/api/v1/chat/completions')) && options.method === 'POST') {
             try {
                 const body = JSON.parse(options.body || '{}');
                 
@@ -236,7 +273,7 @@ def build_standalone_aethermind_html():
                 if (!userMessage && body.messages && body.messages.length > 0) {
                     userMessage = body.messages[body.messages.length - 1].content;
                 }
-                if (!userMessage) userMessage = "Hello";
+                if (!userMessage) userMessage = "Analyze the attached document";
 
                 console.log("📨 Processing User Query:", userMessage);
                 const modelChoice = body.model || "apiless-gpt4o";
@@ -270,12 +307,34 @@ def build_standalone_aethermind_html():
 
                 // DETECT ATTACHMENT / DOCUMENT ANALYSIS / QDRANT RAG CONTEXT
                 let promptPayload = userMessage;
-                const hasAttachment = (body.attachment_ids && body.attachment_ids.length > 0) || (body.attachments && body.attachments.length > 0);
+                let attachedDocsText = "";
+
+                if (body.attachments && body.attachments.length > 0) {
+                    body.attachments.forEach(att => {
+                        if (att.extracted_text && att.extracted_text.trim().length > 0) {
+                            attachedDocsText += `\n\n--- DOCUMENT ATTACHMENT: ${att.filename || 'Document'} ---\n${att.extracted_text.slice(0, 8000)}\n`;
+                        }
+                    });
+                }
+
+                if (!attachedDocsText) {
+                    const lastDocText = localStorage.getItem('aethermind_last_doc_text');
+                    const lastDocName = localStorage.getItem('aethermind_last_doc_name') || 'Uploaded Document';
+                    if (lastDocText && lastDocText.trim().length > 0) {
+                        attachedDocsText = `\n\n--- DOCUMENT ATTACHMENT: ${lastDocName} ---\n${lastDocText.slice(0, 8000)}\n`;
+                    }
+                }
+
+                const hasAttachment = (body.attachment_ids && body.attachment_ids.length > 0) || (body.attachments && body.attachments.length > 0) || attachedDocsText.length > 0;
                 const isDocQuery = hasAttachment || /document|pdf|docx|file|rag|vector|analyze|summary|report|data|table|csv|excel/i.test(userMessage);
 
-                if (isDocQuery) {
-                    promptPayload = `System Context: [DOCUMENT INTELLIGENCE & QDRANT VECTOR RAG ACTIVE]\nUser Query: ${userMessage}\n\nInstruction: Perform a deep, accurate document analysis and vector RAG retrieval. Provide structured insights, bullet points, data summaries, and answer the user's questions thoroughly.`;
+                if (attachedDocsText) {
+                    promptPayload = `SYSTEM CONTEXT: [DOCUMENT INTELLIGENCE & QDRANT VECTOR RAG ACTIVE]\n${attachedDocsText}\n\nUSER QUERY: "${userMessage}"\n\nCRITICAL INSTRUCTION: Perform a thorough, immediate, highly detailed document analysis of the document content provided above. Do NOT ask the user what to analyze or ask for more details — directly summarize key findings, extract important structured data, highlight main sections, and answer any user questions completely.`;
+                } else if (isDocQuery) {
+                    promptPayload = `SYSTEM CONTEXT: [DOCUMENT INTELLIGENCE & QDRANT VECTOR RAG ACTIVE]\nUSER QUERY: ${userMessage}\n\nINSTRUCTION: Perform a deep, accurate document analysis and vector RAG retrieval. Provide structured insights, bullet points, data summaries, and answer the user's questions thoroughly.`;
                 }
+
+                let responseText = "";
 
                 // Attempt 1: Try OpenAI-compatible POST endpoint
                 try {
@@ -305,7 +364,7 @@ def build_standalone_aethermind_html():
 
                 // Attempt 2: Direct GET fallback endpoint (100% robust)
                 if (!responseText) {
-                    const getUrl = `https://text.pollinations.ai/${encodeURIComponent(userMessage)}?model=${targetModel}`;
+                    const getUrl = `https://text.pollinations.ai/${encodeURIComponent(promptPayload.slice(0, 3500))}?model=${targetModel}`;
                     const getRes = await originalFetch(getUrl);
                     if (getRes.ok) {
                         responseText = await getRes.text();
@@ -313,7 +372,7 @@ def build_standalone_aethermind_html():
                 }
 
                 if (!responseText || responseText.trim().length === 0) {
-                    responseText = "I am AetherMind Multimodal AI. I have processed your request.";
+                    responseText = "I am AetherMind Multimodal AI. I have processed your document and request.";
                 }
 
                 return new Response(JSON.stringify({

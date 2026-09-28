@@ -36,6 +36,7 @@ class SendMessageRequest(BaseModel):
     model: Optional[str] = "gemini-2.5-flash"
     system_prompt: Optional[str] = None
     attachment_ids: List[str] = []
+    attachments: Optional[List[Dict[str, Any]]] = []
     stream: bool = False
 
 
@@ -167,6 +168,24 @@ async def chat_completion(
                 f"{content_desc}\n\n"
                 f"INSTRUCTION FOR AI: The user attached document '{f.filename}' to normal chat. Perform thorough document analysis, answer any questions, extract key structured information or data tables, and cite sections directly."
             )
+
+    if req.attachments:
+        for att in req.attachments:
+            if isinstance(att, dict) and att.get("extracted_text"):
+                fname = att.get("filename", "Attached Document")
+                dtext = att.get("extracted_text")
+                att_type = att.get("file_type", "document")
+                attachments_meta.append({
+                    "id": att.get("id", str(uuid.uuid4())),
+                    "filename": fname,
+                    "file_type": att_type,
+                    "extracted_text": dtext
+                })
+                context_text_blocks.append(
+                    f"### [DOCUMENT INTELLIGENCE & ANALYSIS: {fname} ({att_type.upper()})]\n"
+                    f"{dtext}\n\n"
+                    f"INSTRUCTION FOR AI: The user attached document '{fname}' to normal chat. Perform thorough document analysis, answer any questions, extract key structured information or data tables, and cite sections directly."
+                )
 
     user_prompt = req.prompt or "Analyze and describe the attached media."
     message_content = user_prompt
