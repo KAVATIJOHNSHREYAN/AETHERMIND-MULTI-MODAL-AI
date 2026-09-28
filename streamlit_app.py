@@ -112,6 +112,17 @@ def build_standalone_aethermind_html():
     <script>
     console.log("⚡ AetherMind Standalone Cloud Engine Bridge Active.");
 
+    function cleanImagePrompt(input) {
+        if (!input) return "delicious ice cream cone";
+        let p = input.trim();
+        p = p.replace(/^(can\s+you\s+)?(please\s+)?(generate|create|draw|make|show|give)(\s+me)?\s*(a|an|the)?\s*(hd|4k|8k|realistic|photo|picture|image|pic)?\s*(of|about|with|:|\s)+/i, '');
+        p = p.replace(/^(image|picture|photo|pic)\s*(of|:|\s)+/i, '');
+        p = p.replace(/^(give|show|make|draw)\s*(me)?\s*(a|an|the)?\s*(pic|picture|photo|image)?\s*(of|:|\s)+/i, '');
+        p = p.replace(/^:\s*/, '');
+        p = p.trim();
+        return p || input;
+    }
+
     const originalFetch = window.fetch;
     window.fetch = async function(url, options = {}) {
         const urlStr = typeof url === 'string' ? url : (url.url || '');
@@ -166,7 +177,8 @@ def build_standalone_aethermind_html():
         if (urlStr.includes('/api/v1/image/generate') && options.method === 'POST') {
             try {
                 const body = JSON.parse(options.body || '{}');
-                const imgPrompt = body.prompt || "futuristic AI artwork";
+                const rawPrompt = body.prompt || "futuristic AI artwork";
+                const imgPrompt = cleanImagePrompt(rawPrompt);
                 const seed = Math.floor(Math.random() * 1000000);
                 const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(imgPrompt)}?nologo=true&seed=${seed}`;
                 return new Response(JSON.stringify({
@@ -230,9 +242,9 @@ def build_standalone_aethermind_html():
                 const modelChoice = body.model || "apiless-gpt4o";
 
                 // DETECT IMAGE GENERATION INTENT IN CHAT PROMPT
-                const isImageGen = /generate.*image|draw|picture of|photo of|create.*image/i.test(userMessage);
+                const isImageGen = /generate.*image|draw|picture of|photo of|create.*image|give.*pic|show.*pic|pic of|photo of|image of/i.test(userMessage);
                 if (isImageGen) {
-                    const cleanPrompt = userMessage.replace(/^(generate|create|draw)(\s+\d+k\s+quality)?\s+(an?\s+)?(image|picture|photo)\s+of\s+/i, '').trim() || userMessage;
+                    const cleanPrompt = cleanImagePrompt(userMessage);
                     const seed = Math.floor(Math.random() * 1000000);
                     const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(cleanPrompt)}?nologo=true&seed=${seed}`;
                     const responseText = `Here is your generated artwork for **"${cleanPrompt}"**:\n\n![${cleanPrompt}](${imageUrl})`;

@@ -227,16 +227,22 @@ async def chat_completion(
 
     # Detect Image Generation Intents in Chat Prompt
     p_lower = (req.prompt or "").lower().strip()
-    img_keywords = ["generate pic", "generate image", "draw ", "draw a", "create image", "picture of", "photo of", "make a picture", "generate a picture", "paint ", "art of", "illustration of", "image of", "/image"]
+    img_keywords = [
+        "generate pic", "generate image", "draw ", "draw a", "create image", 
+        "picture of", "photo of", "make a picture", "generate a picture", 
+        "paint ", "art of", "illustration of", "image of", "give pic", "show pic", "pic of", "/image"
+    ]
     is_image_intent = any(kw in p_lower for kw in img_keywords)
 
     image_markdown = ""
     if is_image_intent:
         try:
-            img_result = await image_generator.generate_image(prompt=req.prompt)
+            from app.core.image_generator import clean_image_prompt
+            cleaned_p = clean_image_prompt(req.prompt or "")
+            img_result = await image_generator.generate_image(prompt=cleaned_p)
             img_url = img_result.get("image_url", "")
             if img_url:
-                image_markdown = f"\n\n![{req.prompt}]({img_url})"
+                image_markdown = f"\n\n![{cleaned_p}]({img_url})"
         except Exception as img_err:
             logger.warning(f"Chat image generation error: {img_err}")
 

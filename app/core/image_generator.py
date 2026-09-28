@@ -18,6 +18,29 @@ from app.logging.logger import logger
 from app.providers.manager import ai_provider_manager
 
 
+import re
+
+def clean_image_prompt(prompt: str) -> str:
+    """Clean conversational prefixes, colons, and noise from image prompts.
+    Example: 'Generate image: give pic of icecream' -> 'icecream'
+             'Draw a picture of a cat' -> 'cat'
+             'create photo: sunset over mountains' -> 'sunset over mountains'
+    """
+    if not prompt:
+        return "delicious ice cream cone"
+
+    p = prompt.strip()
+
+    # Strip prefixes like "generate image:", "create pic of", "give pic of", "show photo of", etc.
+    p = re.sub(r'^(can\s+you\s+)?(please\s+)?(generate|create|draw|make|show|give)(\s+me)?\s*(a|an|the)?\s*(hd|4k|8k|realistic|photo|picture|image|pic)?\s*(of|about|with|:|\s)+', '', p, flags=re.IGNORECASE)
+    p = re.sub(r'^(image|picture|photo|pic)\s*(of|:|\s)+', '', p, flags=re.IGNORECASE)
+    p = re.sub(r'^(give|show|make|draw)\s*(me)?\s*(a|an|the)?\s*(pic|picture|photo|image)?\s*(of|:|\s)+', '', p, flags=re.IGNORECASE)
+    p = re.sub(r'^:\s*', '', p)
+
+    cleaned = p.strip()
+    return cleaned if cleaned else prompt
+
+
 class ImageGeneratorEngine:
     """Image Generation Engine with Auto-Rotating API-less Models & synthetic canvas fallback"""
 
@@ -115,14 +138,17 @@ class ImageGeneratorEngine:
         filepath = os.path.join(self.upload_dir, filename)
         public_url = f"/static/uploads/{filename}"
 
+        # Clean conversational noise from prompt
+        cleaned_prompt = clean_image_prompt(prompt)
+
         # Auto-select the best model for this prompt
-        selected_model = self._auto_select_model(prompt)
+        selected_model = self._auto_select_model(cleaned_prompt)
         model_id = selected_model["id"]
         model_name = selected_model["name"]
         self._generation_count += 1
 
-        # Build the Pollinations API-less URL with the auto-selected model
-        encoded_prompt = urllib.parse.quote(prompt)
+        # Build the Pollinations API-less URL with the cleaned prompt
+        encoded_prompt = urllib.parse.quote(cleaned_prompt)
         seed = random.randint(1, 999999)
         pollination_url = (
             f"https://image.pollinations.ai/prompt/{encoded_prompt}"
