@@ -17,8 +17,10 @@ is_serverless = bool(os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME"
 
 if os.getenv("TESTING", "0") == "1":
     db_url = "sqlite+aiosqlite:///:memory:"
-elif is_serverless and ("localhost" in db_url or "127.0.0.1" in db_url or "postgres" in db_url):
-    db_url = get_sqlite_url()
+elif is_serverless:
+    # On Vercel, if default local postgres is configured, immediately switch to /tmp SQLite
+    if "localhost" in db_url or "127.0.0.1" in db_url or "postgres:password" in db_url:
+        db_url = get_sqlite_url()
 
 try:
     if "postgresql" in db_url:

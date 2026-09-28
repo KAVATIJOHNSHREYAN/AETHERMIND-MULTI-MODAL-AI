@@ -8,5 +8,5 @@ if root_dir not in sys.path:
 
 from app.main import app
 
-# Export handler for Vercel Serverless Function engine
+# Export FastAPI instance directly for Vercel Python Serverless ASGI Engine
 app = app
