@@ -2081,6 +2081,8 @@ AetherMind Multimodal AI OS is an enterprise-grade artificial intelligence opera
         try { localStorage.setItem("aethermind_device_size", mode); } catch(e) {}
     };
 
+    window.setDeviceViewport = setDeviceViewport;
+
     btnSizeDesktop?.addEventListener("click", () => setDeviceViewport("desktop"));
     btnSizeLaptop?.addEventListener("click", () => setDeviceViewport("laptop"));
     btnSizeTablet?.addEventListener("click", () => setDeviceViewport("tablet"));

@@ -79,8 +79,21 @@ def get_base64_data_uri(file_path):
         return f"data:{mime};base64,{b64}"
     return ""
 
-@st.cache_data
-def build_standalone_aethermind_html():
+def get_files_mtime_hash():
+    """Compute combined modification timestamp hash of index.html, styles.css, and app.js."""
+    paths = [
+        os.path.join(root_dir, "app", "templates", "index.html"),
+        os.path.join(root_dir, "app", "static", "css", "styles.css"),
+        os.path.join(root_dir, "app", "static", "js", "app.js")
+    ]
+    mtimes = []
+    for p in paths:
+        if os.path.exists(p):
+            mtimes.append(str(os.path.getmtime(p)))
+    return "_".join(mtimes)
+
+@st.cache_data(ttl=60)
+def build_standalone_aethermind_html(_cache_key=None):
     """Bundle index.html, styles.css, and app.js into a single standalone HTML package with inlined base64 images and API bridge."""
     index_path = os.path.join(root_dir, "app", "templates", "index.html")
     css_path = os.path.join(root_dir, "app", "static", "css", "styles.css")
@@ -443,5 +456,7 @@ def build_standalone_aethermind_html():
     return html_content
 
 # Build & Render Standalone HTML directly in Streamlit container
-standalone_html = build_standalone_aethermind_html()
-components.html(standalone_html, height=1000, scrolling=False)
+mtime_key = get_files_mtime_hash()
+standalone_html = build_standalone_aethermind_html(_cache_key=mtime_key)
+components.html(standalone_html, height=1000, scrolling=False, key=f"aethermind_v_{hash(standalone_html)}")
+
