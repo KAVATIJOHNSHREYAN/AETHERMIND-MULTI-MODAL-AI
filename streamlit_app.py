@@ -117,6 +117,23 @@ def build_standalone_aethermind_html():
     window.fetch = async function(url, options = {}) {
         const urlStr = typeof url === 'string' ? url : (url.url || '');
         
+        // Mock Auth Endpoints
+        if (urlStr.includes('/api/v1/auth/login') || urlStr.includes('/api/v1/auth/register') || urlStr.includes('/api/v1/auth/forgot-password')) {
+            return new Response(JSON.stringify({
+                success: true,
+                message: "Authentication successful",
+                data: {
+                    token: "token_aethermind_cloud_" + Date.now(),
+                    user: {
+                        id: "user_aethermind_cloud",
+                        email: "guest@aethermind.ai",
+                        full_name: "John Shreyan",
+                        avatar_url: "https://img.icons8.com/isometric/96/sparkles.png"
+                    }
+                }
+            }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+        }
+
         // Mock Auth Me / User Profile
         if (urlStr.includes('/api/v1/auth/me') || urlStr.includes('/api/v1/user/profile')) {
             return new Response(JSON.stringify({
