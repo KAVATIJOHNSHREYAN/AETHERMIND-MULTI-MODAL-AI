@@ -1840,12 +1840,12 @@ document.addEventListener("DOMContentLoaded", () => {
     // Modal Login Card Listeners
     const btnModalGuestLogin = document.getElementById("btn-modal-guest-login");
     const btnModalOauthGoogle = document.getElementById("btn-modal-oauth-google");
-    const btnModalOauthGithub = document.getElementById("btn-modal-oauth-github");
 
     if (btnModalGuestLogin) {
         btnModalGuestLogin.addEventListener("click", () => {
             document.cookie = "aethermind_token=token_guest_firebase; path=/; max-age=604800; SameSite=Lax";
             localStorage.setItem("aethermind_user_email", "guest@aethermind.ai");
+            localStorage.setItem("aethermind_user_name", "Guest User");
             showToast("⚡ Signed in as Guest!", "success");
             hideAllModals();
             setTimeout(() => { location.reload(); }, 300);
@@ -1856,17 +1856,8 @@ document.addEventListener("DOMContentLoaded", () => {
         btnModalOauthGoogle.addEventListener("click", () => {
             document.cookie = "aethermind_token=token_firebase_google; path=/; max-age=604800; SameSite=Lax";
             localStorage.setItem("aethermind_user_email", "google.user@aethermind.ai");
+            localStorage.setItem("aethermind_user_name", "Google User");
             showToast("Signed in with Google Auth!", "success");
-            hideAllModals();
-            setTimeout(() => { location.reload(); }, 300);
-        });
-    }
-
-    if (btnModalOauthGithub) {
-        btnModalOauthGithub.addEventListener("click", () => {
-            document.cookie = "aethermind_token=token_firebase_github; path=/; max-age=604800; SameSite=Lax";
-            localStorage.setItem("aethermind_user_email", "github.user@aethermind.ai");
-            showToast("Signed in with GitHub Auth!", "success");
             hideAllModals();
             setTimeout(() => { location.reload(); }, 300);
         });
@@ -1882,6 +1873,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (!email) return;
 
+            const userDisplayName = email.split('@')[0] || "User";
+            localStorage.setItem("aethermind_user_email", email);
+            localStorage.setItem("aethermind_user_name", userDisplayName);
+            document.cookie = `aethermind_token=token_user_${Date.now()}; path=/; max-age=604800; SameSite=Lax`;
+
             try {
                 const res = await authenticatedFetch("/api/v1/auth/login", {
                     method: "POST",
@@ -1889,20 +1885,21 @@ document.addEventListener("DOMContentLoaded", () => {
                     body: JSON.stringify({ email, password })
                 });
                 const data = await res.json();
-                
-                showToast(`Welcome back, ${email.split('@')[0]}!`, "success");
-                
-                // Update profile display name
-                const userDispName = document.getElementById("user-display-name");
-                const userDispRole = document.getElementById("user-display-role");
-                if (userDispName) userDispName.textContent = email.split('@')[0];
-                if (userDispRole) userDispRole.textContent = "Authenticated User";
+                if (data.success && data.data && data.data.user) {
+                    if (data.data.user.email) localStorage.setItem("aethermind_user_email", data.data.user.email);
+                    if (data.data.user.full_name) localStorage.setItem("aethermind_user_name", data.data.user.full_name);
+                }
+            } catch (err) {}
 
-                if (modalAuth) modalAuth.classList.add("hidden");
-            } catch (err) {
-                showToast("Signed in successfully", "success");
-                if (modalAuth) modalAuth.classList.add("hidden");
-            }
+            showToast(`Welcome back, ${userDisplayName}!`, "success");
+            
+            // Update profile display name
+            const userDispName = document.getElementById("user-display-name");
+            const userDispRole = document.getElementById("user-display-role");
+            if (userDispName) userDispName.textContent = userDisplayName;
+            if (userDispRole) userDispRole.textContent = "Authenticated User";
+
+            if (modalAuth) modalAuth.classList.add("hidden");
         });
     }
 

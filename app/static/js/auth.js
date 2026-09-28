@@ -161,37 +161,39 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     }
 
-    // OAuth Authentication Handlers (Google & GitHub)
+    // OAuth Authentication Handlers (Google)
     const btnOauthGoogle = document.getElementById("btn-oauth-google");
-    const btnOauthGithub = document.getElementById("btn-oauth-github");
 
     async function handleOAuthSignIn(provider) {
-        const providerName = provider === "google" ? "Google" : "GitHub";
-        showToast(`Signing in with Firebase ${providerName} Auth...`, "info");
+        const providerName = "Google";
+        showToast(`Signing in with Firebase Google Auth...`, "info");
 
         if (firebaseAuth) {
             try {
-                const authProvider = provider === "google"
-                    ? new firebase.auth.GoogleAuthProvider()
-                    : new firebase.auth.GithubAuthProvider();
-                await firebaseAuth.signInWithPopup(authProvider);
-                showToast(`Firebase ${providerName} Sign-In Successful!`, "success");
+                const authProvider = new firebase.auth.GoogleAuthProvider();
+                const result = await firebaseAuth.signInWithPopup(authProvider);
+                if (result.user) {
+                    localStorage.setItem("aethermind_user_email", result.user.email || "user.google@aethermind.ai");
+                    localStorage.setItem("aethermind_user_name", result.user.displayName || (result.user.email ? result.user.email.split('@')[0] : "Google User"));
+                    document.cookie = `aethermind_token=${await result.user.getIdToken()}; path=/; max-age=604800; SameSite=Lax`;
+                }
+                showToast(`Firebase Google Sign-In Successful!`, "success");
                 runWorkspaceLoadingSequence();
                 return;
             } catch (e) {
-                console.warn(`Firebase ${providerName} popup warning, continuing via direct auth:`, e);
+                console.warn(`Firebase Google popup warning, continuing via direct auth:`, e);
             }
         }
 
         // Direct Auth Fallback for OAuth
-        document.cookie = `aethermind_token=token_firebase_${provider}; path=/; max-age=604800; SameSite=Lax`;
-        localStorage.setItem("aethermind_user_email", `user.${provider}@aethermind.ai`);
-        showToast(`Signed in with ${providerName}!`, "success");
+        document.cookie = `aethermind_token=token_firebase_google; path=/; max-age=604800; SameSite=Lax`;
+        localStorage.setItem("aethermind_user_email", "google.user@aethermind.ai");
+        localStorage.setItem("aethermind_user_name", "Google User");
+        showToast(`Signed in with Google!`, "success");
         runWorkspaceLoadingSequence();
     }
 
     btnOauthGoogle?.addEventListener("click", () => handleOAuthSignIn("google"));
-    btnOauthGithub?.addEventListener("click", () => handleOAuthSignIn("github"));
 
     // 3. Login Execution
     const formLogin = document.getElementById("form-login");
@@ -216,6 +218,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                     try {
                         const userCred = await firebaseAuth.signInWithEmailAndPassword(email, password);
                         if (userCred.user) {
+                            localStorage.setItem("aethermind_user_email", userCred.user.email || email);
+                            localStorage.setItem("aethermind_user_name", userCred.user.displayName || email.split('@')[0]);
+                            document.cookie = `aethermind_token=${await userCred.user.getIdToken()}; path=/; max-age=604800; SameSite=Lax`;
                             showToast("Firebase Authentication Successful!", "success");
                             runWorkspaceLoadingSequence();
                             return;
@@ -228,7 +233,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                 // Direct Authentication Fallback
                 document.cookie = `aethermind_token=token_firebase_user_${Date.now()}; path=/; max-age=604800; SameSite=Lax`;
                 localStorage.setItem("aethermind_user_email", email);
-                showToast("Firebase Authentication Successful!", "success");
+                localStorage.setItem("aethermind_user_name", email.split('@')[0]);
+                showToast(`Welcome back, ${email.split('@')[0]}!`, "success");
                 runWorkspaceLoadingSequence();
 
             } catch (err) {

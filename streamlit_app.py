@@ -136,15 +136,29 @@ def build_standalone_aethermind_html():
         }
 
         if (urlStr.includes('/api/v1/auth/login') || urlStr.includes('/api/v1/auth/register') || urlStr.includes('/api/v1/auth/forgot-password')) {
+            let reqEmail = "user@aethermind.ai";
+            let reqName = "User";
+            try {
+                const reqBody = JSON.parse(options.body || '{}');
+                if (reqBody.email) reqEmail = reqBody.email.trim();
+                if (reqBody.full_name || reqBody.name) reqName = reqBody.full_name || reqBody.name;
+                else if (reqEmail) reqName = reqEmail.split('@')[0];
+            } catch(e) {}
+
+            try {
+                localStorage.setItem('aethermind_user_email', reqEmail);
+                localStorage.setItem('aethermind_user_name', reqName);
+            } catch(e) {}
+
             return new Response(JSON.stringify({
                 success: true,
                 message: "Authentication successful",
                 data: {
                     token: "token_aethermind_cloud_" + Date.now(),
                     user: {
-                        id: "user_aethermind_cloud",
-                        email: "guest@aethermind.ai",
-                        full_name: "John Shreyan",
+                        id: "user_" + Date.now(),
+                        email: reqEmail,
+                        full_name: reqName,
                         avatar_url: "https://img.icons8.com/isometric/96/sparkles.png"
                     }
                 }
@@ -153,12 +167,14 @@ def build_standalone_aethermind_html():
 
         // Mock Auth Me / User Profile
         if (urlStr.includes('/api/v1/auth/me') || urlStr.includes('/api/v1/user/profile')) {
+            const currentEmail = localStorage.getItem('aethermind_user_email') || "user@aethermind.ai";
+            const currentName = localStorage.getItem('aethermind_user_name') || currentEmail.split('@')[0] || "User";
             return new Response(JSON.stringify({
                 success: true,
                 data: {
                     id: "user_aethermind_cloud",
-                    email: "guest@aethermind.ai",
-                    full_name: "John Shreyan",
+                    email: currentEmail,
+                    full_name: currentName,
                     avatar_url: "https://img.icons8.com/isometric/96/sparkles.png"
                 }
             }), { status: 200, headers: { 'Content-Type': 'application/json' } });
