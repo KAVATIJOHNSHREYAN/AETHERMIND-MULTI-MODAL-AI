@@ -181,7 +181,7 @@
     <!-- =========================================================================
          2. MAIN UNIFIED MULTIMODAL CONVERSATION CANVAS
          ========================================================================= -->
-    <main class="flex-1 flex flex-col h-full relative overflow-hidden gap-3">
+    <main id="main-canvas" class="flex-1 flex flex-col h-full relative overflow-hidden gap-3 transition-all duration-300 mx-auto w-full">
         
         <!-- Floating Glass Top Navigation Bar -->
         <header class="h-16 glass-panel px-6 flex items-center justify-between z-20 shrink-0">
@@ -208,8 +208,24 @@
                 </span>
             </div>
 
-            <!-- Topbar Right Control Actions -->
+            <!-- Topbar Right Control Actions (Search, Knowledge, Viewport Sizes) -->
             <div class="flex items-center space-x-2">
+                <!-- Device Viewport Size Switcher -->
+                <div class="flex items-center space-x-1 p-1 rounded-xl bg-white/5 border border-white/10 text-xs shadow-inner">
+                    <button type="button" id="btn-size-desktop" class="px-2 py-1 rounded-lg bg-[#3ABEFF]/20 text-[#3ABEFF] border border-[#3ABEFF]/30 font-semibold text-[11px] hover:bg-[#3ABEFF]/30 transition flex items-center space-x-1" title="Desktop Viewport (100% Full Width)">
+                        <span>🖥️</span> <span class="hidden lg:inline">Desktop</span>
+                    </button>
+                    <button type="button" id="btn-size-laptop" class="px-2 py-1 rounded-lg text-slate-400 font-medium text-[11px] hover:text-white hover:bg-white/10 transition flex items-center space-x-1" title="Laptop Viewport (1280px)">
+                        <span>💻</span> <span class="hidden lg:inline">Laptop</span>
+                    </button>
+                    <button type="button" id="btn-size-tablet" class="px-2 py-1 rounded-lg text-slate-400 font-medium text-[11px] hover:text-white hover:bg-white/10 transition flex items-center space-x-1" title="Tablet Viewport (768px)">
+                        <span>📱</span> <span class="hidden lg:inline">Tablet</span>
+                    </button>
+                    <button type="button" id="btn-size-phone" class="px-2 py-1 rounded-lg text-slate-400 font-medium text-[11px] hover:text-white hover:bg-white/10 transition flex items-center space-x-1" title="Mobile Phone Viewport (390px)">
+                        <span>📱</span> <span class="hidden lg:inline">Phone</span>
+                    </button>
+                </div>
+
                 <button id="open-global-search-btn" class="p-2 rounded-xl text-[#B7C2D8] hover:text-white hover:bg-white/5 transition flex items-center space-x-1 text-xs" title="Global Search">
                     <svg class="w-4 h-4 text-[#3ABEFF]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                     <span class="hidden sm:inline">Search</span>

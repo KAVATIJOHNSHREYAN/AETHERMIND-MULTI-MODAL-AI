@@ -1896,6 +1896,63 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // Device Viewport Size Switcher (Desktop, Laptop, Tablet, Phone)
+    const btnSizeDesktop = document.getElementById("btn-size-desktop");
+    const btnSizeLaptop = document.getElementById("btn-size-laptop");
+    const btnSizeTablet = document.getElementById("btn-size-tablet");
+    const btnSizePhone = document.getElementById("btn-size-phone");
+    const mainCanvas = document.getElementById("main-canvas");
+
+    const setDeviceViewport = (mode) => {
+        if (!mainCanvas) return;
+
+        const allButtons = [btnSizeDesktop, btnSizeLaptop, btnSizeTablet, btnSizePhone];
+        allButtons.forEach(btn => {
+            if (btn) {
+                btn.className = "px-2 py-1 rounded-lg text-slate-400 font-medium text-[11px] hover:text-white hover:bg-white/10 transition flex items-center space-x-1";
+            }
+        });
+
+        const activeClass = "px-2 py-1 rounded-lg bg-[#3ABEFF]/20 text-[#3ABEFF] border border-[#3ABEFF]/30 font-semibold text-[11px] hover:bg-[#3ABEFF]/30 transition flex items-center space-x-1 shadow-md";
+
+        if (mode === "phone") {
+            mainCanvas.style.maxWidth = "390px";
+            mainCanvas.style.margin = "0 auto";
+            mainCanvas.style.borderRadius = "24px";
+            mainCanvas.style.border = "1px solid rgba(56, 189, 248, 0.3)";
+            mainCanvas.style.boxShadow = "0 0 50px rgba(56, 189, 248, 0.2)";
+            if (btnSizePhone) btnSizePhone.className = activeClass;
+        } else if (mode === "tablet") {
+            mainCanvas.style.maxWidth = "768px";
+            mainCanvas.style.margin = "0 auto";
+            mainCanvas.style.borderRadius = "20px";
+            mainCanvas.style.border = "1px solid rgba(56, 189, 248, 0.2)";
+            mainCanvas.style.boxShadow = "0 0 35px rgba(56, 189, 248, 0.15)";
+            if (btnSizeTablet) btnSizeTablet.className = activeClass;
+        } else if (mode === "laptop") {
+            mainCanvas.style.maxWidth = "1280px";
+            mainCanvas.style.margin = "0 auto";
+            mainCanvas.style.borderRadius = "16px";
+            mainCanvas.style.border = "none";
+            mainCanvas.style.boxShadow = "none";
+            if (btnSizeLaptop) btnSizeLaptop.className = activeClass;
+        } else {
+            mainCanvas.style.maxWidth = "100%";
+            mainCanvas.style.margin = "0";
+            mainCanvas.style.borderRadius = "0px";
+            mainCanvas.style.border = "none";
+            mainCanvas.style.boxShadow = "none";
+            if (btnSizeDesktop) btnSizeDesktop.className = activeClass;
+        }
+
+        try { localStorage.setItem("aethermind_device_size", mode); } catch(e) {}
+    };
+
+    btnSizeDesktop?.addEventListener("click", () => setDeviceViewport("desktop"));
+    btnSizeLaptop?.addEventListener("click", () => setDeviceViewport("laptop"));
+    btnSizeTablet?.addEventListener("click", () => setDeviceViewport("tablet"));
+    btnSizePhone?.addEventListener("click", () => setDeviceViewport("phone"));
+
     // Initialize User Session & Sync Auth State
     async function initUserSession() {
         const savedEmail = localStorage.getItem("aethermind_user_email");
@@ -1905,6 +1962,9 @@ document.addEventListener("DOMContentLoaded", () => {
         const userDispEmail = document.getElementById("user-display-email");
         if (savedName && userDispName) userDispName.textContent = savedName;
         if (savedEmail && userDispEmail) userDispEmail.textContent = savedEmail;
+
+        const savedDeviceSize = localStorage.getItem("aethermind_device_size") || "desktop";
+        setDeviceViewport(savedDeviceSize);
 
         loadConversationsHistory();
 
