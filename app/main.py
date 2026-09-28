@@ -70,10 +70,13 @@ app.include_router(api_router, prefix=settings.API_V1_STR)
 templates_dir = os.path.join(os.path.dirname(__file__), "templates")
 static_dir = os.path.join(os.path.dirname(__file__), "static")
 
-if not os.path.exists(static_dir):
-    os.makedirs(static_dir, exist_ok=True)
-if not os.path.exists(templates_dir):
-    os.makedirs(templates_dir, exist_ok=True)
+try:
+    if not os.path.exists(static_dir):
+        os.makedirs(static_dir, exist_ok=True)
+    if not os.path.exists(templates_dir):
+        os.makedirs(templates_dir, exist_ok=True)
+except Exception as dir_err:
+    logger.warning(f"Static/templates directory creation skipped: {dir_err}")
 
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 templates = Jinja2Templates(directory=templates_dir)
