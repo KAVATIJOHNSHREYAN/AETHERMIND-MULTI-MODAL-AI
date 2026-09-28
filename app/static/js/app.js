@@ -2021,12 +2021,13 @@ AetherMind Multimodal AI OS is an enterprise-grade artificial intelligence opera
     const btnSizeLaptop = document.getElementById("btn-size-laptop");
     const btnSizeTablet = document.getElementById("btn-size-tablet");
     const btnSizePhone = document.getElementById("btn-size-phone");
+    const btnSizeHybrid = document.getElementById("btn-size-hybrid");
     const mainCanvas = document.getElementById("main-canvas");
 
     const setDeviceViewport = (mode) => {
         if (!mainCanvas) return;
 
-        const allButtons = [btnSizeDesktop, btnSizeLaptop, btnSizeTablet, btnSizePhone];
+        const allButtons = [btnSizeDesktop, btnSizeLaptop, btnSizeTablet, btnSizePhone, btnSizeHybrid];
         allButtons.forEach(btn => {
             if (btn) {
                 btn.className = "px-2 py-1 rounded-lg text-slate-400 font-medium text-[11px] hover:text-white hover:bg-white/10 transition flex items-center space-x-1";
@@ -2040,7 +2041,14 @@ AetherMind Multimodal AI OS is an enterprise-grade artificial intelligence opera
         mainCanvas.style.flexDirection = "column";
         mainCanvas.style.overflow = "hidden";
 
-        if (mode === "phone") {
+        if (mode === "hybrid" || mode === "mix") {
+            mainCanvas.style.maxWidth = "480px";
+            mainCanvas.style.margin = "0 auto";
+            mainCanvas.style.borderRadius = "22px";
+            mainCanvas.style.border = "1px solid rgba(109, 93, 246, 0.4)";
+            mainCanvas.style.boxShadow = "0 0 45px rgba(109, 93, 246, 0.25)";
+            if (btnSizeHybrid) btnSizeHybrid.className = activeClass;
+        } else if (mode === "phone") {
             mainCanvas.style.maxWidth = "390px";
             mainCanvas.style.margin = "0 auto";
             mainCanvas.style.borderRadius = "24px";
@@ -2077,6 +2085,7 @@ AetherMind Multimodal AI OS is an enterprise-grade artificial intelligence opera
     btnSizeLaptop?.addEventListener("click", () => setDeviceViewport("laptop"));
     btnSizeTablet?.addEventListener("click", () => setDeviceViewport("tablet"));
     btnSizePhone?.addEventListener("click", () => setDeviceViewport("phone"));
+    btnSizeHybrid?.addEventListener("click", () => setDeviceViewport("hybrid"));
 
     // Initialize User Session & Sync Auth State
     async function initUserSession() {
