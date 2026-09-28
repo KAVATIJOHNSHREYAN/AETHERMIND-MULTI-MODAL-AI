@@ -442,9 +442,24 @@
             <div class="h-14 px-6 border-b border-white/10 flex items-center justify-between shrink-0 bg-[#0F1220]">
                 <div class="flex items-center space-x-3">
                     <svg class="w-5 h-5 text-[#6D5DF6]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                    <h3 class="font-heading font-bold text-white text-base">Media Gallery (Images & AI Artwork)</h3>
+                    <h3 class="font-heading font-bold text-white text-base">Media Gallery & AI Studio</h3>
                 </div>
                 <button id="close-media-btn" class="p-2 text-[#7E8CA5] hover:text-white">✕</button>
+            </div>
+            <!-- Media Action Header -->
+            <div class="px-6 py-3 border-b border-white/10 bg-white/5 flex flex-wrap items-center justify-between gap-3 shrink-0 text-xs">
+                <div class="flex items-center space-x-2 flex-1 min-w-[200px]">
+                    <input type="text" id="media-gallery-search" placeholder="Search artwork & photos..." class="w-full glass-input px-3 py-1.5 text-xs">
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button type="button" onclick="openModal('modal-image-gen')" class="py-1.5 px-3.5 btn-primary font-bold text-xs flex items-center space-x-1.5">
+                        <span>✨ Generate AI Image</span>
+                    </button>
+                    <label class="py-1.5 px-3.5 btn-secondary font-bold text-xs cursor-pointer flex items-center space-x-1.5">
+                        <span>🖼️ Upload Image</span>
+                        <input type="file" id="media-upload-input" accept="image/*" class="hidden">
+                    </label>
+                </div>
             </div>
             <div class="p-6 overflow-y-auto space-y-4 flex-1 text-xs">
                 <div id="media-gallery-grid" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
@@ -464,6 +479,21 @@
                 </div>
                 <button id="close-doc-lib-btn" class="p-2 text-[#7E8CA5] hover:text-white">✕</button>
             </div>
+            <!-- Document Action Header -->
+            <div class="px-6 py-3 border-b border-white/10 bg-white/5 flex flex-wrap items-center justify-between gap-3 shrink-0 text-xs">
+                <div class="flex items-center space-x-2 flex-1 min-w-[200px]">
+                    <input type="text" id="doc-lib-search" placeholder="Filter documents by title or extension..." class="w-full glass-input px-3 py-1.5 text-xs">
+                </div>
+                <div class="flex items-center space-x-2">
+                    <label class="py-1.5 px-3.5 btn-cyan font-bold text-xs cursor-pointer flex items-center space-x-1.5">
+                        <span>⚡ Upload Document</span>
+                        <input type="file" id="doc-lib-upload-input" accept=".pdf,.docx,.txt,.csv,.json,.md,.pptx" class="hidden">
+                    </label>
+                    <button type="button" id="btn-load-sample-docs" class="py-1.5 px-3.5 btn-secondary font-bold text-xs flex items-center space-x-1.5">
+                        <span>📄 Load Sample Specs</span>
+                    </button>
+                </div>
+            </div>
             <div class="p-6 overflow-y-auto space-y-3 flex-1 text-xs" id="doc-library-list"></div>
         </div>
     </div>
@@ -479,6 +509,21 @@
                     <h3 class="font-heading font-bold text-white text-base">Audio & Voice Studio</h3>
                 </div>
                 <button id="close-audio-lib-btn" class="p-2 text-[#7E8CA5] hover:text-white">✕</button>
+            </div>
+            <!-- Audio Action Header -->
+            <div class="px-6 py-3 border-b border-white/10 bg-white/5 flex flex-wrap items-center justify-between gap-3 shrink-0 text-xs">
+                <div class="flex items-center space-x-2 flex-1 min-w-[200px]">
+                    <input type="text" id="audio-lib-search" placeholder="Search recordings & voice clips..." class="w-full glass-input px-3 py-1.5 text-xs">
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button type="button" id="btn-modal-record-voice" class="py-1.5 px-3.5 btn-danger font-bold text-xs flex items-center space-x-1.5">
+                        <span>🎙️ Record Voice</span>
+                    </button>
+                    <label class="py-1.5 px-3.5 btn-secondary font-bold text-xs cursor-pointer flex items-center space-x-1.5">
+                        <span>🎵 Upload Audio</span>
+                        <input type="file" id="audio-lib-upload-input" accept="audio/*" class="hidden">
+                    </label>
+                </div>
             </div>
             <div class="p-6 overflow-y-auto space-y-3 flex-1 text-xs" id="audio-library-list"></div>
         </div>

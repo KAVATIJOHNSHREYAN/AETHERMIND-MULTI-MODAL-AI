@@ -1476,8 +1476,30 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const renderMediaGallery = (items) => {
         mediaGalleryGrid.innerHTML = "";
-        if (items.length === 0) {
-            mediaGalleryGrid.innerHTML = `<div class="text-slate-400 col-span-3 text-center py-6">No images found in gallery.</div>`;
+        if (!items || items.length === 0) {
+            mediaGalleryGrid.innerHTML = `
+                <div class="col-span-full flex flex-col items-center justify-center py-10 px-6 text-center space-y-5 bg-gradient-to-b from-white/5 via-white/[0.02] to-transparent rounded-3xl border border-white/10 my-auto">
+                    <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#FF007A] to-[#7928CA] flex items-center justify-center text-white text-3xl shadow-lg shadow-[#FF007A]/30">
+                        🖼️
+                    </div>
+                    <div class="max-w-md space-y-1.5">
+                        <h4 class="font-heading text-base font-bold text-white tracking-wide">Media & Image Gallery is Empty</h4>
+                        <p class="text-slate-400 text-xs leading-relaxed">
+                            Generate AI artwork with Pollinations AI or upload photos from your device to analyze visual content.
+                        </p>
+                    </div>
+                    
+                    <div class="flex flex-wrap items-center justify-center gap-3 pt-2">
+                        <button type="button" onclick="openModal('modal-image-gen')" class="py-2 px-4 btn-primary font-bold text-xs flex items-center space-x-2">
+                            <span>✨ Generate AI Image</span>
+                        </button>
+                        <label class="py-2 px-4 btn-secondary font-bold text-xs cursor-pointer flex items-center space-x-2">
+                            <span>🖼️ Upload Image</span>
+                            <input type="file" accept="image/*" class="hidden" onchange="if(this.files.length) uploadFileToApi(this.files[0]).then(()=>loadMediaGallery())">
+                        </label>
+                    </div>
+                </div>
+            `;
             return;
         }
 
@@ -1501,6 +1523,27 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     // D. DOCUMENT LIBRARY
+    const loadSampleDocsHandler = async () => {
+        showToast("Generating sample architecture specs...", "info");
+        const sampleText = `# AetherMind Enterprise AI Architecture Specification
+Created by: Kavati John Shreyan
+
+## Overview
+AetherMind Multimodal AI OS is an enterprise-grade artificial intelligence operating system featuring real-time document analysis, Qdrant vector retrieval-augmented generation (RAG), voice audio transcription, and high-performance multimodal completion engines.
+
+## Core Systems
+1. Multimodal Document Intelligence Engine (PDF, DOCX, CSV, TXT, JSON, MD)
+2. Qdrant Hybrid Vector Store & Semantic Embeddings
+3. Firebase Authentication & User State Management
+4. Adaptive Multi-Device Viewport Engine (Desktop, Laptop, Tablet, Mobile)
+`;
+        const blob = new Blob([sampleText], { type: "text/markdown" });
+        const sampleFile = new File([blob], "AetherMind_Enterprise_AI_Architecture.md", { type: "text/markdown" });
+        await uploadFileToApi(sampleFile);
+        showToast("Sample specification loaded!", "success");
+        loadDocLibrary();
+    };
+
     const loadDocLibrary = async () => {
         if (!docLibraryList) return;
         try {
@@ -1514,26 +1557,67 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const renderDocLibrary = (items) => {
         docLibraryList.innerHTML = "";
-        if (items.length === 0) {
-            docLibraryList.innerHTML = `<div class="text-slate-400 text-center py-6">No documents found in library.</div>`;
+        if (!items || items.length === 0) {
+            docLibraryList.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-10 px-6 text-center space-y-5 bg-gradient-to-b from-white/5 via-white/[0.02] to-transparent rounded-3xl border border-white/10 my-auto">
+                    <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#00F2FE] to-[#4FACFE] flex items-center justify-center text-slate-950 text-3xl shadow-lg shadow-[#00F2FE]/40">
+                        📄
+                    </div>
+                    <div class="max-w-md space-y-1.5">
+                        <h4 class="font-heading text-base font-bold text-white tracking-wide">Document Intelligence Library is Ready</h4>
+                        <p class="text-slate-400 text-xs leading-relaxed">
+                            Upload PDFs, Word docs, Spreadsheets, or Code files to extract intelligence, run RAG vector search, and chat directly with your files.
+                        </p>
+                    </div>
+                    
+                    <div class="flex flex-wrap items-center justify-center gap-3 pt-2">
+                        <label class="py-2.5 px-5 btn-cyan font-bold text-xs cursor-pointer flex items-center space-x-2 shadow-lg">
+                            <span>⚡ Upload Document</span>
+                            <input type="file" accept=".pdf,.docx,.txt,.csv,.json,.md,.pptx" class="hidden" onchange="if(this.files.length) uploadFileToApi(this.files[0]).then(()=>loadDocLibrary())">
+                        </label>
+                        <button type="button" id="btn-load-sample-docs-hero" class="py-2.5 px-5 btn-secondary font-bold text-xs flex items-center space-x-2">
+                            <span>📄 Load Sample Specs</span>
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 w-full pt-4 border-t border-white/10 text-left">
+                        <div class="p-3 rounded-xl bg-white/5 border border-white/10 space-y-1">
+                            <div class="font-bold text-cyan-300 flex items-center space-x-1.5"><span>📄</span><span>PDF & DOCX Reader</span></div>
+                            <div class="text-[11px] text-slate-400">Deep structural extraction & multi-page document intelligence.</div>
+                        </div>
+                        <div class="p-3 rounded-xl bg-white/5 border border-white/10 space-y-1">
+                            <div class="font-bold text-purple-300 flex items-center space-x-1.5"><span>🔍</span><span>Qdrant RAG Vector DB</span></div>
+                            <div class="text-[11px] text-slate-400">Indexed for instant semantic similarity retrieval.</div>
+                        </div>
+                        <div class="p-3 rounded-xl bg-white/5 border border-white/10 space-y-1">
+                            <div class="font-bold text-emerald-300 flex items-center space-x-1.5"><span>💬</span><span>Multimodal Chat OS</span></div>
+                            <div class="text-[11px] text-slate-400">Ask any question or type "analyze document" in chat.</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            setTimeout(() => {
+                const sampleBtn = document.getElementById("btn-load-sample-docs-hero");
+                if (sampleBtn) sampleBtn.onclick = loadSampleDocsHandler;
+            }, 50);
             return;
         }
 
         items.forEach(item => {
             const div = document.createElement("div");
-            div.className = "p-3 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between text-xs hover:border-cyan-500/30 transition";
+            div.className = "p-3.5 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between text-xs hover:border-cyan-500/40 transition shadow-sm";
             div.innerHTML = `
                 <div class="flex items-center space-x-3 truncate">
-                    <span class="text-cyan-400 text-base">📄</span>
+                    <span class="text-cyan-400 text-lg">📄</span>
                     <div>
                         <div class="font-semibold text-white truncate max-w-[240px]">${escapeHtml(item.filename)}</div>
-                        <div class="text-[10px] text-slate-400">${item.size_formatted} • ${item.chunk_count ? item.chunk_count + ' indexed chunks' : 'Uploaded doc'}</div>
+                        <div class="text-[10px] text-slate-400">${item.size_formatted} • ${item.chunk_count ? item.chunk_count + ' indexed chunks' : 'Uploaded document'}</div>
                     </div>
                 </div>
                 <div class="flex items-center space-x-2">
-                    <button type="button" class="px-2.5 py-1 rounded-lg bg-cyan-500/20 text-cyan-300 font-medium hover:bg-cyan-500/30" onclick="openDocumentViewer('${item.id}', '${escapeHtml(item.filename)}')">View</button>
-                    <button type="button" class="text-yellow-400 hover:text-yellow-300 p-1" onclick="toggleStarFile('${item.id}', event)">${item.is_starred ? '★' : '☆'}</button>
-                    <button type="button" class="text-rose-400 hover:text-rose-300 p-1" onclick="softDeleteFile('${item.id}', event)">🗑️</button>
+                    <button type="button" class="px-3 py-1 rounded-lg bg-cyan-500/20 text-cyan-300 font-bold hover:bg-cyan-500/30 border border-cyan-500/30" onclick="openDocumentViewer('${item.id}', '${escapeHtml(item.filename)}')">View</button>
+                    <button type="button" class="text-yellow-400 hover:text-yellow-300 p-1 text-sm" onclick="toggleStarFile('${item.id}', event)">${item.is_starred ? '★' : '☆'}</button>
+                    <button type="button" class="text-rose-400 hover:text-rose-300 p-1 text-sm" onclick="softDeleteFile('${item.id}', event)">🗑️</button>
                 </div>
             `;
             docLibraryList.appendChild(div);
@@ -1554,8 +1638,34 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const renderAudioLibrary = (items) => {
         audioLibraryList.innerHTML = "";
-        if (items.length === 0) {
-            audioLibraryList.innerHTML = `<div class="text-slate-400 text-center py-6">No audio recordings or uploads found.</div>`;
+        if (!items || items.length === 0) {
+            audioLibraryList.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-10 px-6 text-center space-y-5 bg-gradient-to-b from-white/5 via-white/[0.02] to-transparent rounded-3xl border border-white/10 my-auto">
+                    <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#EF4444] to-[#F97316] flex items-center justify-center text-white text-3xl shadow-lg shadow-[#EF4444]/30">
+                        🎙️
+                    </div>
+                    <div class="max-w-md space-y-1.5">
+                        <h4 class="font-heading text-base font-bold text-white tracking-wide">Audio & Voice Studio is Empty</h4>
+                        <p class="text-slate-400 text-xs leading-relaxed">
+                            Record voice memos directly with your microphone or upload audio files for AI transcription.
+                        </p>
+                    </div>
+                    
+                    <div class="flex flex-wrap items-center justify-center gap-3 pt-2">
+                        <button type="button" id="btn-empty-record-voice" class="py-2.5 px-5 btn-danger font-bold text-xs flex items-center space-x-2">
+                            <span>🎙️ Record Voice Note</span>
+                        </button>
+                        <label class="py-2.5 px-5 btn-secondary font-bold text-xs cursor-pointer flex items-center space-x-2">
+                            <span>🎵 Upload Audio File</span>
+                            <input type="file" accept="audio/*" class="hidden" onchange="if(this.files.length) uploadFileToApi(this.files[0]).then(()=>loadAudioLibrary())">
+                        </label>
+                    </div>
+                </div>
+            `;
+            setTimeout(() => {
+                const recBtn = document.getElementById("btn-empty-record-voice");
+                if (recBtn) recBtn.onclick = () => { if (typeof startVoiceRecording === "function") startVoiceRecording(); };
+            }, 50);
             return;
         }
 
@@ -1590,8 +1700,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const renderRecycleBin = (items) => {
         recycleBinList.innerHTML = "";
-        if (items.length === 0) {
-            recycleBinList.innerHTML = `<div class="text-slate-400 text-center py-6">Recycle bin is completely empty.</div>`;
+        if (!items || items.length === 0) {
+            recycleBinList.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-10 px-6 text-center space-y-4 bg-gradient-to-b from-white/5 to-transparent rounded-3xl border border-white/10 my-auto">
+                    <div class="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center text-slate-300 text-2xl">
+                        🗑️
+                    </div>
+                    <div class="space-y-1">
+                        <h4 class="font-heading text-base font-bold text-white">Recycle Bin is Empty</h4>
+                        <p class="text-slate-400 text-xs">Deleted files will appear here before permanent deletion.</p>
+                    </div>
+                </div>
+            `;
             return;
         }
 
@@ -1968,12 +2088,45 @@ document.addEventListener("DOMContentLoaded", () => {
 
         loadConversationsHistory();
 
-        // Restore last active conversation on page load/refresh
-        const savedChatId = localStorage.getItem('aethermind_active_chat');
-        if (savedChatId) {
-            setTimeout(() => {
-                switchConversation(savedChatId);
-            }, 500);
+        // Bind Modal Action Bar Listeners
+        const btnLoadSampleDocs = document.getElementById("btn-load-sample-docs");
+        if (btnLoadSampleDocs) btnLoadSampleDocs.onclick = loadSampleDocsHandler;
+
+        const docLibUploadInput = document.getElementById("doc-lib-upload-input");
+        if (docLibUploadInput) {
+            docLibUploadInput.onchange = async (e) => {
+                if (e.target.files.length) {
+                    await uploadFileToApi(e.target.files[0]);
+                    loadDocLibrary();
+                }
+            };
+        }
+
+        const mediaUploadInput = document.getElementById("media-upload-input");
+        if (mediaUploadInput) {
+            mediaUploadInput.onchange = async (e) => {
+                if (e.target.files.length) {
+                    await uploadFileToApi(e.target.files[0]);
+                    loadMediaGallery();
+                }
+            };
+        }
+
+        const audioLibUploadInput = document.getElementById("audio-lib-upload-input");
+        if (audioLibUploadInput) {
+            audioLibUploadInput.onchange = async (e) => {
+                if (e.target.files.length) {
+                    await uploadFileToApi(e.target.files[0]);
+                    loadAudioLibrary();
+                }
+            };
+        }
+
+        const btnModalRecordVoice = document.getElementById("btn-modal-record-voice");
+        if (btnModalRecordVoice) {
+            btnModalRecordVoice.onclick = () => {
+                if (typeof startVoiceRecording === "function") startVoiceRecording();
+            };
         }
     }
 
