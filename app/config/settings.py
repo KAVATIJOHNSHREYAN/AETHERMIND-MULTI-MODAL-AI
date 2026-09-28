@@ -23,8 +23,8 @@ class Settings(BaseSettings):
 
     # Database
     DATABASE_URL: str = Field(
-        default="postgresql+asyncpg://postgres:password@localhost:5432/aethermind_v3",
-        description="Async PostgreSQL connection string"
+        default="sqlite+aiosqlite:///./aethermind.db",
+        description="Async Database connection string (SQLite fallback or PostgreSQL)"
     )
 
     # JWT & Authentication Security
