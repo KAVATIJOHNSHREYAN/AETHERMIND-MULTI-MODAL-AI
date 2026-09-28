@@ -5,6 +5,7 @@ Native Standalone Streamlit Cloud Web Runner
 
 import os
 import sys
+import base64
 import streamlit as st
 import streamlit.components.v1 as components
 
@@ -54,12 +55,28 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+def get_base64_data_uri(file_path):
+    """Convert binary asset into base64 Data URI."""
+    if os.path.exists(file_path):
+        with open(file_path, "rb") as f:
+            b64 = base64.b64encode(f.read()).decode("utf-8")
+        ext = file_path.split(".")[-1].lower()
+        mime = "image/png" if ext == "png" else ("image/jpeg" if ext in ["jpg", "jpeg"] else "image/x-icon")
+        return f"data:{mime};base64,{b64}"
+    return ""
+
 @st.cache_data
 def build_standalone_aethermind_html():
-    """Bundle index.html, styles.css, and app.js into a single standalone HTML package with client-side Pollinations AI & Web Search engine."""
+    """Bundle index.html, styles.css, and app.js into a single standalone HTML package with inlined base64 images and API bridge."""
     index_path = os.path.join(root_dir, "app", "templates", "index.html")
     css_path = os.path.join(root_dir, "app", "static", "css", "styles.css")
     js_path = os.path.join(root_dir, "app", "static", "js", "app.js")
+
+    # Inlined Base64 Image Assets
+    app_icon_b64 = get_base64_data_uri(os.path.join(root_dir, "app", "static", "img", "app-icon.png"))
+    favicon_b64 = get_base64_data_uri(os.path.join(root_dir, "app", "static", "img", "favicon.png"))
+    apple_icon_b64 = get_base64_data_uri(os.path.join(root_dir, "app", "static", "img", "apple-touch-icon.png"))
+    bg_img_b64 = get_base64_data_uri(os.path.join(root_dir, "app", "static", "img", "bg-futuristic.png"))
 
     with open(index_path, "r", encoding="utf-8") as f:
         html_content = f.read()
@@ -72,6 +89,19 @@ def build_standalone_aethermind_html():
 
     # Replace Clerk template variable
     html_content = html_content.replace("{{ clerk_publishable_key }}", "pk_test_mock_clerk_publishable_key")
+
+    # Inlined Base64 Image Replacements
+    if app_icon_b64:
+        html_content = html_content.replace("/static/img/app-icon.png?v=circular_a_v10", app_icon_b64)
+        html_content = html_content.replace("/static/img/app-icon.png", app_icon_b64)
+    if favicon_b64:
+        html_content = html_content.replace("/static/img/favicon.png", favicon_b64)
+        html_content = html_content.replace("/static/favicon.ico", favicon_b64)
+    if apple_icon_b64:
+        html_content = html_content.replace("/static/img/apple-touch-icon.png", apple_icon_b64)
+    if bg_img_b64:
+        css_content = css_content.replace("/static/img/bg-futuristic.png", bg_img_b64)
+        css_content = css_content.replace("/static/img/bg-futuristic.jpg", bg_img_b64)
 
     # Injected Standalone Client API Bridge (Pollinations AI + DuckDuckGo Web Search + Multi-Language)
     api_bridge_script = """
@@ -90,7 +120,7 @@ def build_standalone_aethermind_html():
                 data: {
                     id: "user_aethermind_cloud",
                     email: "guest@aethermind.ai",
-                    full_name: "AetherMind User",
+                    full_name: "John Shreyan",
                     avatar_url: "https://img.icons8.com/isometric/96/sparkles.png"
                 }
             }), { status: 200, headers: { 'Content-Type': 'application/json' } });
@@ -172,7 +202,7 @@ def build_standalone_aethermind_html():
     </script>
     """
 
-    # Inline CSS & JS using plain string replacement (safe against regex escapes)
+    # Inline CSS & JS using plain string replacement
     css_tag = f"<style>\n{css_content}\n</style>"
     js_tag = f"{api_bridge_script}\n<script>\n{js_content}\n</script>"
 
