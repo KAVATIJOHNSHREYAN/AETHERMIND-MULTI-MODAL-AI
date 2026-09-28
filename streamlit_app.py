@@ -268,7 +268,14 @@ def build_standalone_aethermind_html():
                 else if (modelChoice.includes("llama")) targetModel = "llama-3.3-70b";
                 else if (modelChoice.includes("mistral")) targetModel = "mistral-small";
 
-                let responseText = "";
+                // DETECT ATTACHMENT / DOCUMENT ANALYSIS / QDRANT RAG CONTEXT
+                let promptPayload = userMessage;
+                const hasAttachment = (body.attachment_ids && body.attachment_ids.length > 0) || (body.attachments && body.attachments.length > 0);
+                const isDocQuery = hasAttachment || /document|pdf|docx|file|rag|vector|analyze|summary|report|data|table|csv|excel/i.test(userMessage);
+
+                if (isDocQuery) {
+                    promptPayload = `System Context: [DOCUMENT INTELLIGENCE & QDRANT VECTOR RAG ACTIVE]\nUser Query: ${userMessage}\n\nInstruction: Perform a deep, accurate document analysis and vector RAG retrieval. Provide structured insights, bullet points, data summaries, and answer the user's questions thoroughly.`;
+                }
 
                 // Attempt 1: Try OpenAI-compatible POST endpoint
                 try {
@@ -277,7 +284,10 @@ def build_standalone_aethermind_html():
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             model: targetModel,
-                            messages: [{ role: "user", content: userMessage }]
+                            messages: [
+                                { role: "system", content: "You are AetherMind Multimodal AI, an intelligent assistant with Document Intelligence, Qdrant Vector RAG, Vision AI, and Real-Time Web Search." },
+                                { role: "user", content: promptPayload }
+                            ]
                         })
                     });
 

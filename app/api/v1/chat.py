@@ -105,6 +105,42 @@ async def chat_completion(
                 "size_bytes": f.size_bytes
             }
 
+            # If attachment is a document, extract text & auto-ingest into Qdrant RAG
+            doc_text = f.extracted_text or ""
+            if not doc_text and f.storage_path:
+                possible_doc_paths = [
+                    f.storage_path,
+                    os.path.join("app", "static", "uploads", os.path.basename(f.storage_path or "")),
+                ]
+                for p_path in possible_doc_paths:
+                    if p_path and os.path.exists(p_path):
+                        try:
+                            with open(p_path, "rb") as df:
+                                file_bytes = df.read()
+                                from app.documents.rag_engine import document_engine
+                                parsed_doc = await document_engine.parse_document(f.filename, file_bytes)
+                                doc_text = parsed_doc.get("extracted_text", "")
+                                if doc_text:
+                                    f.extracted_text = doc_text
+                                    db.add(f)
+                                    await db.commit()
+                                    
+                                    try:
+                                        from app.memory.knowledge_service import knowledge_service
+                                        await knowledge_service.ingest_document(
+                                            db=db,
+                                            user_id=user_id,
+                                            collection_id="default_chat_rag",
+                                            filename=f.filename,
+                                            content_bytes=file_bytes,
+                                            file_id=f.id
+                                        )
+                                    except Exception as ingest_err:
+                                        logger.warning(f"Qdrant RAG auto-ingest warning for {f.filename}: {ingest_err}")
+                            break
+                        except Exception as read_err:
+                            logger.warning(f"Could not read document file at {p_path}: {read_err}")
+
             # Attempt reading image file bytes to pass inline Base64 data to LLM
             if f.file_type == "image":
                 possible_paths = []
@@ -125,11 +161,11 @@ async def chat_completion(
 
             attachments_meta.append(att_entry)
             
-            content_desc = f.extracted_text or f"User attached {f.file_type} file '{f.filename}'"
+            content_desc = doc_text or f"User attached {f.file_type} file '{f.filename}'"
             context_text_blocks.append(
-                f"### [ATTACHED MEDIA / FILE: {f.filename} ({f.file_type.upper()})]\n"
-                f"{content_desc}\n"
-                f"INSTRUCTION FOR AI: The user has attached this {f.file_type} ({f.filename}) to their message. Analyze, describe, or answer their question using the attached media/file contents directly."
+                f"### [DOCUMENT INTELLIGENCE & ANALYSIS: {f.filename} ({f.file_type.upper()})]\n"
+                f"{content_desc}\n\n"
+                f"INSTRUCTION FOR AI: The user attached document '{f.filename}' to normal chat. Perform thorough document analysis, answer any questions, extract key structured information or data tables, and cite sections directly."
             )
 
     user_prompt = req.prompt or "Analyze and describe the attached media."
