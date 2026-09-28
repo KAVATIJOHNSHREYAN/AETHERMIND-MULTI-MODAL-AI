@@ -241,6 +241,17 @@ def build_standalone_aethermind_html(_cache_key=None):
             return "document";
         }
 
+        // Storage Database Helpers
+        function getStoredItems(key) {
+            try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch(e) { return []; }
+        }
+        function saveStoredItem(key, item) {
+            const list = getStoredItems(key);
+            list.unshift(item);
+            try { localStorage.setItem(key, JSON.stringify(list)); } catch(e) {}
+            return list;
+        }
+
         // File Upload Endpoint (/api/v1/upload)
         if (urlStr.includes('/api/v1/upload') && options.method === 'POST') {
             const attId = "att_" + Date.now();
@@ -267,6 +278,21 @@ def build_standalone_aethermind_html(_cache_key=None):
                 extractedText = `Document '${fileName}' attached and indexed into Qdrant Vector Memory.`;
             }
 
+            const item = {
+                id: attId,
+                filename: fileName,
+                file_name: fileName,
+                name: fileName,
+                file_type: fileType,
+                category: fileType,
+                file_size: 154200,
+                extracted_text: extractedText,
+                created_at: new Date().toISOString(),
+                url: fileType === "image" ? `https://image.pollinations.ai/prompt/${encodeURIComponent(fileName)}?nologo=true` : ""
+            };
+
+            saveStoredItem('aethermind_stored_files', item);
+
             try {
                 localStorage.setItem('aethermind_last_doc_name', fileName);
                 localStorage.setItem('aethermind_last_doc_text', extractedText);
@@ -274,12 +300,7 @@ def build_standalone_aethermind_html(_cache_key=None):
 
             return new Response(JSON.stringify({
                 success: true,
-                data: {
-                    id: attId,
-                    filename: fileName,
-                    file_type: fileType,
-                    extracted_text: extractedText
-                }
+                data: item
             }), { status: 200, headers: { 'Content-Type': 'application/json' } });
         }
 
@@ -294,24 +315,136 @@ def build_standalone_aethermind_html(_cache_key=None):
             }), { status: 200, headers: { 'Content-Type': 'application/json' } });
         }
 
+        // Document Library / Documents Endpoints
+        if (urlStr.includes('/api/v1/workspace/doc-library') || urlStr.includes('/api/v1/documents')) {
+            const allFiles = getStoredItems('aethermind_stored_files');
+            let docs = allFiles.filter(f => f.file_type === 'document' || !f.file_type || f.file_type === 'file');
+            if (docs.length === 0) {
+                docs = [
+                    { id: 'doc_sample_1', filename: 'Enterprise_AI_System_Specs.pdf', file_name: 'Enterprise_AI_System_Specs.pdf', file_type: 'document', category: 'document', created_at: new Date().toISOString(), extracted_text: 'AetherMind Enterprise AI Operating System Specifications & RAG Architecture.' },
+                    { id: 'doc_sample_2', filename: 'Qdrant_Vector_RAG_Architecture.docx', file_name: 'Qdrant_Vector_RAG_Architecture.docx', file_type: 'document', category: 'document', created_at: new Date().toISOString(), extracted_text: 'Qdrant Vector Database Integration & RAG Pipeline Specifications.' }
+                ];
+            }
+            return new Response(JSON.stringify({ success: true, data: docs }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+        }
+
+        // Media Gallery / Images Endpoints
+        if (urlStr.includes('/api/v1/media') || urlStr.includes('/api/v1/image/gallery')) {
+            const allFiles = getStoredItems('aethermind_stored_files');
+            let images = allFiles.filter(f => f.file_type === 'image');
+            if (images.length === 0) {
+                images = [
+                    { id: 'img_sample_1', filename: 'Futuristic_AI_Cortex.png', file_name: 'Futuristic_AI_Cortex.png', file_type: 'image', category: 'image', created_at: new Date().toISOString(), url: 'https://image.pollinations.ai/prompt/futuristic%20cyberpunk%20ai%20cortex%20brain?nologo=true' },
+                    { id: 'img_sample_2', filename: 'Quantum_Neural_Network.png', file_name: 'Quantum_Neural_Network.png', file_type: 'image', category: 'image', created_at: new Date().toISOString(), url: 'https://image.pollinations.ai/prompt/quantum%20neural%20network%20data%20stream?nologo=true' }
+                ];
+            }
+            return new Response(JSON.stringify({ success: true, data: images }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+        }
+
+        // Audio & Voice Lab Endpoints
+        if (urlStr.includes('/api/v1/audio')) {
+            const allFiles = getStoredItems('aethermind_stored_files');
+            let audios = allFiles.filter(f => f.file_type === 'audio');
+            if (audios.length === 0) {
+                audios = [
+                    { id: 'aud_sample_1', filename: 'Voice_Memo_Strategy.mp3', file_name: 'Voice_Memo_Strategy.mp3', file_type: 'audio', category: 'audio', created_at: new Date().toISOString() }
+                ];
+            }
+            return new Response(JSON.stringify({ success: true, data: audios }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+        }
+
+        // Projects & Spaces Endpoints
+        if (urlStr.includes('/api/v1/projects') || urlStr.includes('/api/v1/workspace/projects')) {
+            if (options.method === 'POST') {
+                try {
+                    const body = JSON.parse(options.body || '{}');
+                    const newProj = {
+                        id: "proj_" + Date.now(),
+                        name: body.name || "New Project Space",
+                        description: body.description || "Enterprise workspace project space",
+                        color: body.color || "#3abeff",
+                        created_at: new Date().toISOString()
+                    };
+                    saveStoredItem('aethermind_stored_projects', newProj);
+                    return new Response(JSON.stringify({ success: true, data: newProj }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+                } catch(e) {}
+            }
+            let projs = getStoredItems('aethermind_stored_projects');
+            if (projs.length === 0) {
+                projs = [
+                    { id: 'proj_1', name: 'Enterprise Multimodal RAG', description: 'Deep document intelligence and Qdrant RAG pipeline.', color: '#3abeff', created_at: new Date().toISOString() },
+                    { id: 'proj_2', name: 'Vision & Creative Studio', description: 'Autonomous image generation and vision AI laboratory.', color: '#a855f7', created_at: new Date().toISOString() }
+                ];
+            }
+            return new Response(JSON.stringify({ success: true, data: projs }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+        }
+
+        // Memory & Knowledge Base Endpoints
+        if (urlStr.includes('/api/v1/memory') || urlStr.includes('/api/v1/knowledge')) {
+            if (options.method === 'POST') {
+                try {
+                    const body = JSON.parse(options.body || '{}');
+                    const newMem = {
+                        id: "mem_" + Date.now(),
+                        title: body.title || "Stored Knowledge Item",
+                        content: body.content || body.text || "Indexed knowledge item in vector memory.",
+                        category: body.category || "General",
+                        created_at: new Date().toISOString()
+                    };
+                    saveStoredItem('aethermind_stored_memories', newMem);
+                    return new Response(JSON.stringify({ success: true, data: newMem }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+                } catch(e) {}
+            }
+            let mems = getStoredItems('aethermind_stored_memories');
+            if (mems.length === 0) {
+                mems = [
+                    { id: 'mem_1', title: 'Qdrant RAG Vector Collection', content: 'Enterprise vector index configuration with 1536-dimensional embeddings.', category: 'Vector RAG', created_at: new Date().toISOString() },
+                    { id: 'mem_2', title: 'Multimodal Cortex Engine', content: 'Auto routing across DeepSeek R1, GPT-4o Vision, and Gemini 2.5.', category: 'AI OS', created_at: new Date().toISOString() }
+                ];
+            }
+            return new Response(JSON.stringify({ success: true, data: mems }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+        }
+
         // Dashboard Overview Endpoint
         if (urlStr.includes('/api/v1/dashboard')) {
+            const allFiles = getStoredItems('aethermind_stored_files');
+            const allProjs = getStoredItems('aethermind_stored_projects');
+            const allChats = getStoredItems('aethermind_saved_chats');
+
+            const totalFiles = allFiles.length || 3;
+            const totalProjs = allProjs.length || 2;
+            const totalChats = allChats.length || 5;
+
             return new Response(JSON.stringify({
                 success: true,
                 data: {
-                    overview: { total_files: 3, total_projects: 2, total_conversations: 5 },
-                    storage: { used_mb: "14.2", quota_gb: 50, used_percentage: "0.1" },
-                    recent_uploads: [],
-                    timeline: []
+                    overview: {
+                        total_files: totalFiles,
+                        total_projects: totalProjs,
+                        total_conversations: totalChats,
+                        total_chats: totalChats
+                    },
+                    stats: {
+                        total_files: totalFiles,
+                        total_projects: totalProjs,
+                        total_conversations: totalChats
+                    },
+                    storage: {
+                        used_mb: (totalFiles * 2.5).toFixed(1),
+                        quota_gb: 50,
+                        used_percentage: ((totalFiles * 2.5) / 500).toFixed(2)
+                    },
+                    storage_breakdown: {
+                        used_mb: (totalFiles * 2.5).toFixed(1),
+                        quota_gb: 50,
+                        used_percentage: ((totalFiles * 2.5) / 500).toFixed(2)
+                    },
+                    recent_uploads: allFiles.slice(0, 5),
+                    timeline: [
+                        { action: "Document Indexed", entity_type: "Qdrant RAG", target_name: "Enterprise Specs", timestamp: new Date().toISOString() },
+                        { action: "Workspace Initialized", entity_type: "System", target_name: "Cortex OS v4.0", timestamp: new Date().toISOString() }
+                    ]
                 }
-            }), { status: 200, headers: { 'Content-Type': 'application/json' } });
-        }
-
-        // Knowledge / Memory / Workspace Endpoints
-        if (urlStr.includes('/api/v1/knowledge') || urlStr.includes('/api/v1/memory') || urlStr.includes('/api/v1/workspace') || urlStr.includes('/api/v1/projects') || urlStr.includes('/api/v1/media') || urlStr.includes('/api/v1/documents') || urlStr.includes('/api/v1/audio') || urlStr.includes('/api/v1/recycle-bin')) {
-            return new Response(JSON.stringify({
-                success: true,
-                data: []
             }), { status: 200, headers: { 'Content-Type': 'application/json' } });
         }
 
