@@ -12,11 +12,11 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 [![Tests](https://img.shields.io/badge/Tests-37%2F37_Passing-22C55E?style=for-the-badge&logo=pytest&logoColor=white)](#-testing-suite)
 
-**One Unified Multimodal Engine. Firebase Identity Authentication. Zero Key Hassles.**
+**One Unified Multimodal Engine. Firebase Identity Authentication. Zero API Key Hassles.**
 
 Chat with AI, analyze images, generate HD artwork, transcribe voice, maintain long-term vector memory, organize projects, and search across everything — all in one seamless enterprise application powered by intelligent auto-routing.
 
-[🌐 Live Streamlit Cloud Application](https://aethermind-multi-modal-ai-fwt8jmcqdbbmoahwveobze.streamlit.app/) • [🔥 Firebase Setup Guide](./FIREBASE_AUTHENTICATION_GUIDE.md) • [Features](#-core-features) • [Architecture](#-system-architecture) • [Quickstart](#-quickstart--installation)
+[🌐 Live Streamlit Cloud Application](https://aethermind-multi-modal-ai-fwt8jmcqdbbmoahwveobze.streamlit.app/) • [🔥 Firebase Setup Guide](./FIREBASE_AUTHENTICATION_GUIDE.md) • [Features](#-core-features) • [Architecture](#-system-architecture) • [API Reference](#-api-endpoints-reference) • [Quickstart](#-quickstart--installation)
 
 </div>
 
@@ -24,44 +24,45 @@ Chat with AI, analyze images, generate HD artwork, transcribe voice, maintain lo
 
 ## 🌟 What Is AetherMind?
 
-**AetherMind Multimodal AI** is a full-stack, production-grade AI operating system that unifies text chat, image generation, vision analysis, voice transcription, document intelligence, and workspace management into a single dark glassmorphism web interface.
+**AetherMind Multimodal AI** is a full-stack, production-grade AI operating system that unifies text chat, image generation, vision analysis, voice transcription, document intelligence, and workspace management into a single dark glassmorphism web application.
 
-The core features include:
+### Key Highlights
 1. **Firebase 10.0 Authentication Engine**: Full support for Email/Password, 1-Click Instant Guest Sign-In, and Google / GitHub OAuth.
 2. **Dedicated Login (`/login`) & Logout (`/logout`) Portals**: Full-screen authentication views and in-app login modals.
 3. **AetherMind Auto-Routing AI Engine**: Intelligent API-less routing for text chat and image generation, alongside API support for premium models.
 4. **Real-Time Web Search**: DuckDuckGo API-less live web integration with citations.
-5. **Qdrant Vector RAG & Memory**: Long-term contextual memory and document retrieval.
+5. **Multi-Language Engine**: Auto-detects 50+ world languages including all 22 official Indian languages.
+6. **Qdrant Vector RAG & Memory**: Long-term contextual memory and document retrieval.
 
 ---
 
 ## ⚡ Core Features
 
-### 1. 🔐 Firebase Identity & Session Management
+### 🔐 1. Firebase Identity & Session Management
 - **Firebase Auth v10 SDK**: Enterprise email/password auth, token revocation, and secure session management.
 - **Instant Guest Sign-In**: 1-click anonymous authentication without registration.
 - **OAuth Providers**: Integrated Google & GitHub social authentication.
 - **Dedicated Login (`/login`) & Logout (`/logout`) Pages**: Complete security status reporting, token revocation, and session clearing.
 - **Firebase Setup Guide**: Complete step-by-step setup documentation in [`FIREBASE_AUTHENTICATION_GUIDE.md`](./FIREBASE_AUTHENTICATION_GUIDE.md).
 
-### 2. 💬 Unified AI Chat Engine (Auto-Routing)
+### 💬 2. Unified AI Chat Engine (Auto-Routing)
 - **Smart Auto-Router**: Automatically dispatches requests to free API-less models (Pollinations) for text chat and image generation.
 - **Multi-Model Provider Support**: APIless (Pollinations), Google Gemini, OpenAI GPT-4o, Groq, DeepSeek, Mistral, and local providers.
 - **Automatic Failover**: Automatic retries and failovers if a provider is unavailable.
 
-### 3. 🌍 Real-Time Web Search & Multi-Language
+### 🌍 3. Real-Time Web Search & Multi-Language Support
 - **DuckDuckGo Live Search**: Real-time web retrieval with automatic intent detection.
-- **50+ Languages Supported**: Automatic language detection supporting all 22 official Indian languages and global languages.
+- **50+ Languages Supported**: Automatic language detection supporting all 22 official Indian languages (Telugu, Hindi, Tamil, Kannada, Malayalam, Marathi, Bengali, etc.) and global languages.
 
-### 4. 🎨 AI Image Generation & Vision AI
+### 🎨 4. AI Image Generation & Vision AI
 - **Pollinations AI Flux/Realism/Anime Engines**: High-resolution image synthesis from text prompts or chat triggers.
 - **Vision AI & Document OCR**: Extract text and analyze scenes from uploaded media.
 
-### 5. 🎙️ Voice & Audio Processing Studio
+### 🎙️ 5. Voice & Audio Processing Studio
 - **Web Audio Recorder**: Real-time voice recording with live waveform display.
 - **Speech-to-Text**: Audio file upload and automated transcription.
 
-### 6. 🧠 Qdrant Vector RAG & Knowledge Memory
+### 🧠 6. Qdrant Vector RAG & Knowledge Memory
 - **Vector Document Storage**: Semantic document indexing and retrieval Q&A.
 - **Long-Term Memory Dashboard**: Automatic memory extraction and preference pinning.
 
@@ -102,6 +103,23 @@ graph TD
     B --> K
     B --> L
 ```
+
+---
+
+## 📡 API Endpoints Reference
+
+| Method | Endpoint | Description | Auth Required |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/login` | Serves full-screen Firebase authentication portal | No |
+| `GET` | `/logout` | Serves dedicated logout portal & clears cookies | No |
+| `POST` | `/api/v1/auth/login` | Authenticates user credentials & returns JWT | No |
+| `POST` | `/api/v1/auth/register` | Registers a new user account | No |
+| `POST` | `/api/v1/auth/logout` | Revokes current user session token | Yes |
+| `POST` | `/api/v1/chat` | Main multimodal chat completion endpoint | Yes |
+| `POST` | `/api/v1/image/generate` | Generates AI images via Flux/Pollinations | Yes |
+| `POST` | `/api/v1/upload` | Uploads and indexes documents into Qdrant | Yes |
+| `GET` | `/api/v1/memory` | Retrieves long-term extracted user memories | Yes |
+| `GET` | `/api/v1/knowledge` | Lists vector knowledge collections | Yes |
 
 ---
 
