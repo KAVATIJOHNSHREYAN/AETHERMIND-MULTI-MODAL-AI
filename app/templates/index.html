@@ -34,6 +34,11 @@
     </div>
 
     <!-- =========================================================================
+         UNIFIED APP DEVICE WRAPPER FOR MULTI-DEVICE VIEWPORTS
+         ========================================================================= -->
+    <div id="app-device-wrapper" class="flex flex-1 h-full w-full gap-3 transition-all duration-300 mx-auto overflow-hidden relative">
+
+    <!-- =========================================================================
          1. FLOATING GLASS SIDEBAR NAVIGATION (280px)
          ========================================================================= -->
     <aside id="sidebar" class="w-[280px] h-full glass-panel flex flex-col transition-all duration-300 z-30 shrink-0 relative overflow-hidden">
@@ -210,23 +215,22 @@
 
             <!-- Topbar Right Control Actions (Device Viewport Sizes, Search, Knowledge, Memory) -->
             <div class="flex items-center space-x-2 shrink-0">
-                <!-- Dedicated Device Viewport Controller -->
-                <div class="flex items-center space-x-1 p-1.5 rounded-2xl bg-[#0F1629]/90 border border-[#3ABEFF]/40 shadow-lg shadow-[#3ABEFF]/20 text-xs">
-                    <span class="text-[10px] uppercase font-mono tracking-wider text-[#3ABEFF] px-1 font-bold hidden sm:inline">Size:</span>
-                    <button type="button" id="btn-size-desktop" class="px-2.5 py-1 rounded-xl bg-[#3ABEFF]/25 text-[#3ABEFF] border border-[#3ABEFF]/40 font-bold text-[11px] hover:bg-[#3ABEFF]/40 transition flex items-center space-x-1" title="Desktop Viewport (100% Widescreen)">
-                        <span>🖥️</span> <span class="inline">Desktop</span>
+                <!-- Compact Device Viewport Icon Controller -->
+                <div class="flex items-center space-x-1 p-1 rounded-xl bg-[#0F1629]/90 border border-[#3ABEFF]/40 shadow-md shadow-[#3ABEFF]/10 text-xs">
+                    <button type="button" id="btn-size-desktop" class="px-2 py-1 rounded-lg bg-[#3ABEFF]/25 text-[#3ABEFF] border border-[#3ABEFF]/40 font-bold text-xs hover:bg-[#3ABEFF]/40 transition flex items-center justify-center cursor-pointer" title="Desktop Viewport (100% Fullscreen)">
+                        <span class="text-xs">🖥️</span>
                     </button>
-                    <button type="button" id="btn-size-laptop" class="px-2.5 py-1 rounded-xl text-slate-300 font-semibold text-[11px] hover:text-white hover:bg-white/10 transition flex items-center space-x-1" title="Laptop Viewport (1280px)">
-                        <span>💻</span> <span class="inline">Laptop</span>
+                    <button type="button" id="btn-size-laptop" class="px-2 py-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition flex items-center justify-center cursor-pointer" title="Laptop Viewport (1280px)">
+                        <span class="text-xs">💻</span>
                     </button>
-                    <button type="button" id="btn-size-tablet" class="px-2.5 py-1 rounded-xl text-slate-300 font-semibold text-[11px] hover:text-white hover:bg-white/10 transition flex items-center space-x-1" title="Tablet Viewport (768px)">
-                        <span>📱</span> <span class="hidden md:inline">Tablet</span>
+                    <button type="button" id="btn-size-tablet" class="px-2 py-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition flex items-center justify-center cursor-pointer" title="Tablet Viewport (768px)">
+                        <span class="text-xs">📱</span>
                     </button>
-                    <button type="button" id="btn-size-phone" class="px-2.5 py-1 rounded-xl text-slate-300 font-semibold text-[11px] hover:text-white hover:bg-white/10 transition flex items-center space-x-1" title="Mobile Phone Viewport (390px)">
-                        <span>📱</span> <span class="hidden md:inline">Phone</span>
+                    <button type="button" id="btn-size-phone" class="px-2 py-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition flex items-center justify-center cursor-pointer" title="Mobile Phone Viewport (390px)">
+                        <span class="text-xs">📱</span>
                     </button>
-                    <button type="button" id="btn-size-hybrid" class="px-2.5 py-1 rounded-xl text-purple-300 font-bold text-[11px] hover:text-white hover:bg-purple-500/20 border border-purple-500/30 transition flex items-center space-x-1" title="Phone + Laptop Mix Viewport (480px Hybrid)">
-                        <span>💻📱</span> <span class="inline">Mix</span>
+                    <button type="button" id="btn-size-hybrid" class="px-2 py-1 rounded-lg text-purple-300 hover:text-white hover:bg-purple-500/20 border border-purple-500/30 transition flex items-center justify-center cursor-pointer" title="Laptop + Phone Mix Viewport (480px Hybrid)">
+                        <span class="text-xs">💻📱</span>
                     </button>
                 </div>
 
@@ -332,6 +336,7 @@
             </form>
         </div>
     </main>
+    </div> <!-- End #app-device-wrapper -->
 
     <!-- =========================================================================
          4. MODAL: WORKSPACE DASHBOARD

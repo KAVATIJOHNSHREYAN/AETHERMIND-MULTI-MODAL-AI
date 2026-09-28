@@ -2022,59 +2022,68 @@ AetherMind Multimodal AI OS is an enterprise-grade artificial intelligence opera
     const btnSizeTablet = document.getElementById("btn-size-tablet");
     const btnSizePhone = document.getElementById("btn-size-phone");
     const btnSizeHybrid = document.getElementById("btn-size-hybrid");
-    const mainCanvas = document.getElementById("main-canvas");
+    const appDeviceWrapper = document.getElementById("app-device-wrapper") || mainCanvas;
 
     const setDeviceViewport = (mode) => {
-        if (!mainCanvas) return;
+        const targetElement = document.getElementById("app-device-wrapper") || mainCanvas;
+        if (!targetElement) return;
 
         const allButtons = [btnSizeDesktop, btnSizeLaptop, btnSizeTablet, btnSizePhone, btnSizeHybrid];
         allButtons.forEach(btn => {
             if (btn) {
-                btn.className = "px-2 py-1 rounded-lg text-slate-400 font-medium text-[11px] hover:text-white hover:bg-white/10 transition flex items-center space-x-1";
+                btn.className = "px-2 py-1 rounded-lg text-slate-400 font-medium text-xs hover:text-white hover:bg-white/10 transition flex items-center justify-center cursor-pointer";
             }
         });
 
-        const activeClass = "px-2 py-1 rounded-lg bg-[#3ABEFF]/20 text-[#3ABEFF] border border-[#3ABEFF]/30 font-semibold text-[11px] hover:bg-[#3ABEFF]/30 transition flex items-center space-x-1 shadow-md";
+        const activeClass = "px-2 py-1 rounded-lg bg-[#3ABEFF]/25 text-[#3ABEFF] border border-[#3ABEFF]/40 font-bold text-xs hover:bg-[#3ABEFF]/40 transition flex items-center justify-center cursor-pointer shadow-md";
+        const activeHybridClass = "px-2 py-1 rounded-lg bg-gradient-to-r from-purple-500/30 to-pink-500/30 text-purple-300 border border-purple-400/50 font-bold text-xs transition flex items-center justify-center cursor-pointer shadow-lg";
 
-        mainCanvas.style.height = "100%";
-        mainCanvas.style.display = "flex";
-        mainCanvas.style.flexDirection = "column";
-        mainCanvas.style.overflow = "hidden";
+        targetElement.style.height = "100%";
+        targetElement.style.display = "flex";
+        targetElement.style.overflow = "hidden";
+        targetElement.style.transition = "all 0.3s ease-in-out";
+
+        const sidebarElement = document.getElementById("sidebar");
 
         if (mode === "hybrid" || mode === "mix") {
-            mainCanvas.style.maxWidth = "480px";
-            mainCanvas.style.margin = "0 auto";
-            mainCanvas.style.borderRadius = "22px";
-            mainCanvas.style.border = "1px solid rgba(109, 93, 246, 0.4)";
-            mainCanvas.style.boxShadow = "0 0 45px rgba(109, 93, 246, 0.25)";
-            if (btnSizeHybrid) btnSizeHybrid.className = activeClass;
+            targetElement.style.maxWidth = "480px";
+            targetElement.style.margin = "0 auto";
+            targetElement.style.borderRadius = "28px";
+            targetElement.style.border = "2px solid rgba(168, 85, 247, 0.6)";
+            targetElement.style.boxShadow = "0 0 60px rgba(168, 85, 247, 0.35)";
+            if (sidebarElement) sidebarElement.classList.add("hidden");
+            if (btnSizeHybrid) btnSizeHybrid.className = activeHybridClass;
         } else if (mode === "phone") {
-            mainCanvas.style.maxWidth = "390px";
-            mainCanvas.style.margin = "0 auto";
-            mainCanvas.style.borderRadius = "24px";
-            mainCanvas.style.border = "1px solid rgba(56, 189, 248, 0.4)";
-            mainCanvas.style.boxShadow = "0 0 50px rgba(56, 189, 248, 0.25)";
+            targetElement.style.maxWidth = "390px";
+            targetElement.style.margin = "0 auto";
+            targetElement.style.borderRadius = "28px";
+            targetElement.style.border = "2px solid rgba(56, 189, 248, 0.6)";
+            targetElement.style.boxShadow = "0 0 60px rgba(56, 189, 248, 0.3)";
+            if (sidebarElement) sidebarElement.classList.add("hidden");
             if (btnSizePhone) btnSizePhone.className = activeClass;
         } else if (mode === "tablet") {
-            mainCanvas.style.maxWidth = "768px";
-            mainCanvas.style.margin = "0 auto";
-            mainCanvas.style.borderRadius = "20px";
-            mainCanvas.style.border = "1px solid rgba(56, 189, 248, 0.3)";
-            mainCanvas.style.boxShadow = "0 0 35px rgba(56, 189, 248, 0.2)";
+            targetElement.style.maxWidth = "768px";
+            targetElement.style.margin = "0 auto";
+            targetElement.style.borderRadius = "22px";
+            targetElement.style.border = "1px solid rgba(56, 189, 248, 0.4)";
+            targetElement.style.boxShadow = "0 0 45px rgba(56, 189, 248, 0.2)";
+            if (sidebarElement) sidebarElement.classList.remove("hidden");
             if (btnSizeTablet) btnSizeTablet.className = activeClass;
         } else if (mode === "laptop") {
-            mainCanvas.style.maxWidth = "1280px";
-            mainCanvas.style.margin = "0 auto";
-            mainCanvas.style.borderRadius = "16px";
-            mainCanvas.style.border = "1px solid rgba(255, 255, 255, 0.1)";
-            mainCanvas.style.boxShadow = "0 10px 40px rgba(0,0,0,0.5)";
+            targetElement.style.maxWidth = "1280px";
+            targetElement.style.margin = "0 auto";
+            targetElement.style.borderRadius = "18px";
+            targetElement.style.border = "1px solid rgba(255, 255, 255, 0.15)";
+            targetElement.style.boxShadow = "0 10px 50px rgba(0, 0, 0, 0.7)";
+            if (sidebarElement) sidebarElement.classList.remove("hidden");
             if (btnSizeLaptop) btnSizeLaptop.className = activeClass;
         } else {
-            mainCanvas.style.maxWidth = "100%";
-            mainCanvas.style.margin = "0";
-            mainCanvas.style.borderRadius = "0px";
-            mainCanvas.style.border = "none";
-            mainCanvas.style.boxShadow = "none";
+            targetElement.style.maxWidth = "100%";
+            targetElement.style.margin = "0";
+            targetElement.style.borderRadius = "0px";
+            targetElement.style.border = "none";
+            targetElement.style.boxShadow = "none";
+            if (sidebarElement) sidebarElement.classList.remove("hidden");
             if (btnSizeDesktop) btnSizeDesktop.className = activeClass;
         }
 
