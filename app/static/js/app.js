@@ -1335,6 +1335,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const stats = data.data.overview || data.data.stats || {};
                 const storage = data.data.storage || data.data.storage_breakdown || {};
                 const recent_uploads = data.data.recent_uploads || [];
+                const timeline = data.data.timeline || data.data.activity_timeline || [];
 
                 document.getElementById("dash-total-files").textContent = stats.total_files || 0;
                 document.getElementById("dash-total-storage").textContent = storage.used_mb ? `${storage.used_mb} MB / ${storage.quota_gb || 50} GB (${storage.used_percentage || 0}%)` : "0 B";

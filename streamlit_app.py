@@ -294,6 +294,19 @@ def build_standalone_aethermind_html(_cache_key=None):
             }), { status: 200, headers: { 'Content-Type': 'application/json' } });
         }
 
+        // Dashboard Overview Endpoint
+        if (urlStr.includes('/api/v1/dashboard')) {
+            return new Response(JSON.stringify({
+                success: true,
+                data: {
+                    overview: { total_files: 3, total_projects: 2, total_conversations: 5 },
+                    storage: { used_mb: "14.2", quota_gb: 50, used_percentage: "0.1" },
+                    recent_uploads: [],
+                    timeline: []
+                }
+            }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+        }
+
         // Knowledge / Memory / Workspace Endpoints
         if (urlStr.includes('/api/v1/knowledge') || urlStr.includes('/api/v1/memory') || urlStr.includes('/api/v1/workspace') || urlStr.includes('/api/v1/projects') || urlStr.includes('/api/v1/media') || urlStr.includes('/api/v1/documents') || urlStr.includes('/api/v1/audio') || urlStr.includes('/api/v1/recycle-bin')) {
             return new Response(JSON.stringify({
