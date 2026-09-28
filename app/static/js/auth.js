@@ -47,12 +47,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // 1. Initialize Firebase App & Auth
     const firebaseConfig = {
-        apiKey: "AIzaSyAetherMindMockFirebaseKey_v4",
-        authDomain: "aethermind-multimodal-ai.firebaseapp.com",
-        projectId: "aethermind-multimodal-ai",
-        storageBucket: "aethermind-multimodal-ai.appspot.com",
-        messagingSenderId: "109876543210",
-        appId: "1:109876543210:web:aethermindosv40"
+        apiKey: "AIzaSyCdemmCjPLZpOjyi9kahAE19TmKmkpFABs",
+        authDomain: "aethermind-multi-modal-ai.firebaseapp.com",
+        projectId: "aethermind-multi-modal-ai",
+        storageBucket: "aethermind-multi-modal-ai.firebasestorage.app",
+        messagingSenderId: "471859893946",
+        appId: "1:471859893946:web:561069de250f2606ec9483",
+        measurementId: "G-BWG2NJMMFK"
     };
 
     let firebaseAuth = null;

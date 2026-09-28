@@ -89,9 +89,9 @@ document.addEventListener("DOMContentLoaded", () => {
             options.headers["X-Session-ID"] = clientSid;
         }
 
-        if (window.Clerk && window.Clerk.session) {
+        if (window.firebase && window.firebase.auth && window.firebase.auth().currentUser) {
             try {
-                const token = await window.Clerk.session.getToken();
+                const token = await window.firebase.auth().currentUser.getIdToken();
                 if (token) {
                     if (options.headers instanceof Headers) {
                         options.headers.set("Authorization", `Bearer ${token}`);
@@ -103,7 +103,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     document.cookie = `aethermind_token=${token}; path=/; max-age=604800; SameSite=Lax`;
                 }
             } catch (err) {
-                console.warn("[Auth Fetch Warning] Unable to attach Clerk session token:", err);
+                console.warn("[Firebase Fetch Warning] Unable to attach session token:", err);
             }
         }
         return fetch(url, options);
@@ -1771,13 +1771,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     console.warn("Firebase sign out warning:", fbErr);
                 }
             }
-            if (window.Clerk) {
-                try {
-                    await window.Clerk.signOut();
-                } catch (cErr) {
-                    console.warn("Clerk sign out warning:", cErr);
-                }
-            }
             try {
                 await authenticatedFetch("/api/v1/auth/logout", { method: "POST" });
             } catch (apiErr) {
@@ -1905,28 +1898,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Initialize User Session & Sync Auth State
     async function initUserSession() {
-        if (window.Clerk) {
-            try {
-                if (!window.Clerk.isReady && typeof window.Clerk.load === "function") {
-                    await window.Clerk.load();
-                }
-                if (window.Clerk.user) {
-                    const user = window.Clerk.user;
-                    const token = await window.Clerk.session?.getToken();
-                    if (token) {
-                        document.cookie = `aethermind_token=${token}; path=/; max-age=604800; SameSite=Lax`;
-                    }
-                    const userDispName = document.getElementById("user-display-name");
-                    const userDispEmail = document.getElementById("user-display-email");
-                    const userAvatarImg = document.getElementById("user-avatar-img");
-                    if (userDispName) userDispName.textContent = user.fullName || user.firstName || user.primaryEmailAddress?.emailAddress || "Authenticated User";
-                    if (userDispEmail) userDispEmail.textContent = user.primaryEmailAddress?.emailAddress || "";
-                    if (userAvatarImg && user.imageUrl) userAvatarImg.src = user.imageUrl;
-                }
-            } catch (err) {
-                console.warn("[Clerk Init Warning]:", err);
-            }
-        }
+        const savedEmail = localStorage.getItem("aethermind_user_email");
+        const savedName = localStorage.getItem("aethermind_user_name");
+        
+        const userDispName = document.getElementById("user-display-name");
+        const userDispEmail = document.getElementById("user-display-email");
+        if (savedName && userDispName) userDispName.textContent = savedName;
+        if (savedEmail && userDispEmail) userDispEmail.textContent = savedEmail;
+
         loadConversationsHistory();
 
         // Restore last active conversation on page load/refresh
