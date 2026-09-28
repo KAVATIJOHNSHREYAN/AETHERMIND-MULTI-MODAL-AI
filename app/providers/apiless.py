@@ -175,3 +175,11 @@ class APIlessProvider(BaseAIProvider):
         for i in range(0, len(words), 3):
             chunk = " ".join(words[i:i+3]) + (" " if i + 3 < len(words) else "")
             yield chunk
+
+    # Alias for streaming response
+    generate_stream = stream_response
+
+
+# Export default provider instance
+apiless_provider = APIlessProvider()
+
