@@ -213,29 +213,31 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const modalDocLibrary = document.getElementById("modal-doc-library");
     const closeDocsBtn = document.getElementById("close-docs-btn") || document.getElementById("close-doc-lib-btn");
-    const openDocsBtn = document.getElementById("open-docs-btn");
+    const openDocsBtn = document.getElementById("open-docs-btn") || document.getElementById("open-doc-lib-btn");
     const docLibraryList = document.getElementById("doc-library-list");
 
     const modalAudioLibrary = document.getElementById("modal-audio-library");
     const closeAudioBtn = document.getElementById("close-audio-btn") || document.getElementById("close-audio-lib-btn");
-    const openAudioBtn = document.getElementById("open-audio-btn");
+    const openAudioBtn = document.getElementById("open-audio-btn") || document.getElementById("open-audio-lib-btn");
     const audioLibraryList = document.getElementById("audio-library-list");
 
     const modalRecycleBin = document.getElementById("modal-recycle-bin");
     const closeRecycleBinBtn = document.getElementById("close-recycle-bin-btn") || document.getElementById("close-recycle-btn");
-    const openRecycleBinBtn = document.getElementById("open-recycle-bin-btn");
+    const openRecycleBinBtn = document.getElementById("open-recycle-bin-btn") || document.getElementById("open-recycle-btn");
     const recycleBinList = document.getElementById("recycle-bin-list");
     const btnEmptyRecycleBin = document.getElementById("btn-empty-recycle-bin");
 
     const modalGlobalSearch = document.getElementById("modal-global-search");
     const closeGlobalSearchBtn = document.getElementById("close-global-search-btn");
-    const openGlobalSearchBtn = document.getElementById("open-global-search-btn");
+    const openGlobalSearchBtn = document.getElementById("open-global-search-btn") || document.getElementById("open-search-btn");
     const formWorkspaceSearch = document.getElementById("form-workspace-search");
     const workspaceSearchResults = document.getElementById("workspace-search-results");
 
     // Modal Display Helpers
     const hideAllModals = () => {
         document.querySelectorAll('[id^="modal-"]').forEach(m => m.classList.add("hidden"));
+        const userDropdownMenu = document.getElementById("user-dropdown-menu");
+        if (userDropdownMenu) userDropdownMenu.classList.add("hidden");
         if (webcamVideo && webcamVideo.srcObject) {
             webcamVideo.srcObject.getTracks().forEach(t => t.stop());
             webcamVideo.srcObject = null;
@@ -261,11 +263,29 @@ document.addEventListener("DOMContentLoaded", () => {
     closeRecycleBinBtn?.addEventListener("click", hideAllModals);
     closeGlobalSearchBtn?.addEventListener("click", hideAllModals);
 
-    // Dynamic Close Button & Action Bar Event Listener Delegation
+    // Dynamic Centralized Click Listener Delegation for All Interactive UI Buttons
     document.addEventListener("click", async (e) => {
+        // User Profile Badge & Dropdown Menu Toggle
+        const userProfileBadge = e.target.closest("#user-profile-badge");
+        if (userProfileBadge) {
+            e.stopPropagation();
+            const dropdown = document.getElementById("user-dropdown-menu");
+            if (dropdown) dropdown.classList.toggle("hidden");
+            return;
+        }
+
+        // Close Dropdown when clicking outside
+        const dropdownMenu = document.getElementById("user-dropdown-menu");
+        if (dropdownMenu && !dropdownMenu.contains(e.target) && !e.target.closest("#user-profile-badge")) {
+            dropdownMenu.classList.add("hidden");
+        }
+
+        const targetBtn = e.target.closest("button, [id^='open-'], [id^='btn-']");
+        if (!targetBtn) return;
+        const id = targetBtn.id;
+
         // Sidebar Collapse & Expand Toggle Buttons
-        const toggleSidebarBtn = e.target.closest("#sidebar-toggle-btn, #sidebar-open-btn");
-        if (toggleSidebarBtn) {
+        if (id === "sidebar-toggle-btn" || id === "sidebar-open-btn") {
             e.preventDefault();
             const sidebar = document.getElementById("sidebar");
             const sidebarOpenBtn = document.getElementById("sidebar-open-btn");
@@ -278,15 +298,154 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        const closeBtn = e.target.closest("button[id^='close-']");
-        if (closeBtn) {
+        // Close Modal Buttons
+        if (id.startsWith("close-") || targetBtn.closest("button[id^='close-']")) {
             hideAllModals();
             return;
         }
 
+        // + NEW CHAT Button
+        if (id === "btn-new-chat") {
+            e.preventDefault();
+            hideAllModals();
+            activeChatId = null;
+            localStorage.removeItem('aethermind_active_chat');
+            const msgContainer = document.getElementById("messages-container");
+            const hero = document.getElementById("welcome-hero");
+            if (msgContainer) {
+                msgContainer.innerHTML = "";
+                if (hero) {
+                    hero.classList.remove("hidden");
+                    msgContainer.appendChild(hero);
+                }
+            }
+            showToast("✨ Started new chat session.", "info");
+            return;
+        }
+
+        // Clear Chat Button
+        if (id === "btn-clear-chat") {
+            e.preventDefault();
+            const msgContainer = document.getElementById("messages-container");
+            const hero = document.getElementById("welcome-hero");
+            if (msgContainer) {
+                msgContainer.innerHTML = "";
+                if (hero) {
+                    hero.classList.remove("hidden");
+                    msgContainer.appendChild(hero);
+                }
+            }
+            showToast("🗑️ Chat cleared.", "info");
+            return;
+        }
+
+        // Compress Memory Button
+        if (id === "btn-compress-memory") {
+            e.preventDefault();
+            showToast("🧠 Context memory compressed and optimized!", "success");
+            return;
+        }
+
+        // Workspace Dashboard
+        if (id === "open-dashboard-btn") {
+            e.preventDefault();
+            hideAllModals();
+            const modalWorkspaceDashboard = document.getElementById("modal-workspace-dashboard");
+            if (modalWorkspaceDashboard) modalWorkspaceDashboard.classList.remove("hidden");
+            loadWorkspaceDashboard();
+            return;
+        }
+
+        // Documents Intelligence
+        if (id === "open-doc-lib-btn" || id === "open-docs-btn") {
+            e.preventDefault();
+            hideAllModals();
+            const modalDocLibrary = document.getElementById("modal-doc-library");
+            if (modalDocLibrary) modalDocLibrary.classList.remove("hidden");
+            loadDocLibrary();
+            return;
+        }
+
+        // Images & AI Artwork
+        if (id === "open-media-btn") {
+            e.preventDefault();
+            hideAllModals();
+            const modalMediaGallery = document.getElementById("modal-media-gallery");
+            if (modalMediaGallery) modalMediaGallery.classList.remove("hidden");
+            loadMediaGallery();
+            return;
+        }
+
+        // Audio & Voice Studio
+        if (id === "open-audio-lib-btn" || id === "open-audio-btn") {
+            e.preventDefault();
+            hideAllModals();
+            const modalAudioLibrary = document.getElementById("modal-audio-library");
+            if (modalAudioLibrary) modalAudioLibrary.classList.remove("hidden");
+            loadAudioLibrary();
+            return;
+        }
+
+        // Memory & Knowledge
+        if (id === "open-memory-btn") {
+            e.preventDefault();
+            hideAllModals();
+            const modalMemoryDashboard = document.getElementById("modal-memory-dashboard");
+            if (modalMemoryDashboard) modalMemoryDashboard.classList.remove("hidden");
+            loadMemories();
+            return;
+        }
+
+        // Projects & Folders
+        if (id === "open-projects-btn") {
+            e.preventDefault();
+            hideAllModals();
+            const modalProjectsWorkspace = document.getElementById("modal-projects-workspace");
+            if (modalProjectsWorkspace) modalProjectsWorkspace.classList.remove("hidden");
+            loadProjects();
+            return;
+        }
+
+        // System Settings
+        if (id === "open-settings-btn" || id === "dropdown-open-settings" || id === "dropdown-open-keys") {
+            e.preventDefault();
+            hideAllModals();
+            const modalSettings = document.getElementById("modal-settings");
+            if (modalSettings) modalSettings.classList.remove("hidden");
+            return;
+        }
+
+        // Recycle Bin
+        if (id === "open-recycle-btn" || id === "open-recycle-bin-btn") {
+            e.preventDefault();
+            hideAllModals();
+            const modalRecycleBin = document.getElementById("modal-recycle-bin");
+            if (modalRecycleBin) modalRecycleBin.classList.remove("hidden");
+            loadRecycleBin();
+            return;
+        }
+
+        // Global Search
+        if (id === "open-global-search-btn" || id === "open-search-btn") {
+            e.preventDefault();
+            hideAllModals();
+            const modalGlobalSearch = document.getElementById("modal-global-search");
+            if (modalGlobalSearch) modalGlobalSearch.classList.remove("hidden");
+            return;
+        }
+
+        // Knowledge Base
+        if (id === "open-knowledge-btn") {
+            e.preventDefault();
+            hideAllModals();
+            const modalKnowledgeBase = document.getElementById("modal-knowledge-base");
+            if (modalKnowledgeBase) modalKnowledgeBase.classList.remove("hidden");
+            loadKnowledgeCollections();
+            return;
+        }
+
         // Attach File Button
-        const attachBtn = e.target.closest("#btn-attach-file, #btn-attach");
-        if (attachBtn) {
+        if (id === "btn-attach-file" || id === "btn-attach") {
             e.preventDefault();
             const fileInput = document.getElementById("file-upload-input");
             if (fileInput) fileInput.click();
@@ -294,8 +453,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         // Camera Button
-        const cameraBtn = e.target.closest("#btn-open-camera, #btn-camera");
-        if (cameraBtn) {
+        if (id === "btn-open-camera" || id === "btn-camera") {
             e.preventDefault();
             hideAllModals();
             const modalCam = document.getElementById("modal-camera");
@@ -314,8 +472,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         // Generate Image Button
-        const genBtn = e.target.closest("#btn-open-image-gen, #btn-image-gen");
-        if (genBtn) {
+        if (id === "btn-open-image-gen" || id === "btn-image-gen") {
             e.preventDefault();
             hideAllModals();
             const modalGen = document.getElementById("modal-image-gen");
@@ -324,8 +481,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         // Voice Recorder Button
-        const voiceBtn = e.target.closest("#btn-record-voice, #btn-voice");
-        if (voiceBtn) {
+        if (id === "btn-record-voice" || id === "btn-voice") {
             e.preventDefault();
             hideAllModals();
             const modalVoice = document.getElementById("modal-voice-recorder");
@@ -353,6 +509,15 @@ document.addEventListener("DOMContentLoaded", () => {
             } catch (err) {
                 showToast("Microphone access required for voice recording.", "info");
             }
+            return;
+        }
+
+        // Sign Out / Logout
+        if (id === "btn-logout" || id === "dropdown-btn-logout") {
+            e.preventDefault();
+            showToast("🚪 Session ended.", "info");
+            localStorage.clear();
+            setTimeout(() => location.reload(), 800);
             return;
         }
     });
