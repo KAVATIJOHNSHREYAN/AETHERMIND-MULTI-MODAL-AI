@@ -12,8 +12,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/styles.css">
-    <!-- Official Clerk JS SDK CDN -->
-    <script async crossorigin="anonymous" data-clerk-publishable-key="{{ clerk_publishable_key }}" src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js" type="text/javascript"></script>
+    <!-- Firebase Authentication SDK v10 -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <style>
         .auth-view { transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
         .auth-view.hidden { display: none !important; opacity: 0; transform: scale(0.97); }
@@ -71,7 +72,7 @@
             <div class="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
                 <div id="splash-progress" class="bg-gradient-to-r from-[#38BDF8] to-[#EC4899] h-full w-0 transition-all duration-1000 ease-out"></div>
             </div>
-            <p id="splash-status-text" class="text-xs text-slate-400 font-mono">Initializing Clerk Security Engine...</p>
+            <p id="splash-status-text" class="text-xs text-slate-400 font-mono">Initializing Firebase Authentication Engine...</p>
         </div>
 
         <!-- ===================================================================
@@ -89,7 +90,7 @@
                     </div>
                 </div>
 
-                <!-- Clerk Error Alert -->
+                <!-- Error Alert -->
                 <div id="login-error-box" class="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs hidden"></div>
 
                 <form id="form-login" class="space-y-4">
@@ -117,7 +118,7 @@
                     </div>
 
                     <button type="submit" id="btn-login-submit" class="w-full py-3 btn-primary font-bold text-xs uppercase tracking-wider rounded-xl transition shadow-lg shadow-[#38BDF8]/20">
-                        Sign In with Clerk
+                        Sign In with Firebase
                     </button>
 
                     <button type="button" id="btn-guest-login" class="w-full py-3 bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 font-bold text-xs uppercase tracking-wider rounded-xl transition shadow-lg text-white flex items-center justify-center space-x-2">
@@ -147,7 +148,7 @@
             <!-- Right Side: AI Visual Card -->
             <div class="md:col-span-5 bg-gradient-to-br from-[#0F172A] to-[#1E1B4B] p-8 md:p-10 flex flex-col justify-between border-l border-white/10 relative overflow-hidden hidden md:flex">
                 <div class="space-y-4 relative z-10">
-                    <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#EC4899]/20 text-[#EC4899] border border-[#EC4899]/40">CLERK AUTH 3.0</span>
+                    <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#EC4899]/20 text-[#EC4899] border border-[#EC4899]/40">FIREBASE AUTH 10.0</span>
                     <h3 class="text-2xl font-heading font-extrabold text-white leading-tight">Next-Gen Multimodal AI Platform</h3>
                     <p class="text-xs text-slate-300 leading-relaxed">Experience unified conversations, document intelligence, DALL-E image generation, and voice synthesis in one seamless workspace.</p>
                 </div>
@@ -156,7 +157,7 @@
                     <div class="flex items-center space-x-2 text-xs font-bold text-cyan-300">
                         <span>🛡️ Enterprise Security</span>
                     </div>
-                    <p class="text-[11px] text-slate-300">Protected by Clerk JWT tokens, multi-factor authentication, and encrypted local memory state.</p>
+                    <p class="text-[11px] text-slate-300">Protected by Firebase Auth, JWT security tokens, and encrypted local memory state.</p>
                 </div>
             </div>
         </div>
@@ -218,7 +219,7 @@
                 </label>
 
                 <button type="submit" id="btn-register-submit" class="w-full py-3 btn-primary font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-[#38BDF8]/20">
-                    Create Clerk Account
+                    Create Firebase Account
                 </button>
             </form>
 
@@ -233,7 +234,7 @@
         <div id="view-forgot-password" class="auth-view glass-auth-panel rounded-3xl p-8 md:p-10 max-w-md mx-auto space-y-6 hidden">
             <div>
                 <h2 class="text-2xl font-heading font-bold text-white">Reset Password</h2>
-                <p class="text-xs text-slate-400 mt-1">Enter your email address to receive a Clerk password reset link.</p>
+                <p class="text-xs text-slate-400 mt-1">Enter your email address to receive a Firebase password reset link.</p>
             </div>
 
             <div id="forgot-error-box" class="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs hidden"></div>

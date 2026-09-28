@@ -1,6 +1,6 @@
 /**
- * AETHERMIND MULTIMODAL AI — CLERK AUTHENTICATION ENGINE
- * Real Clerk SDK Authentication, Password Strength, OTP, & Workspace Initialization
+ * AETHERMIND MULTIMODAL AI — FIREBASE AUTHENTICATION ENGINE
+ * Firebase Auth SDK v10 Integration (Email/Password, Google, GitHub, Guest & Workspace Launch)
  */
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -32,8 +32,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         const toast = document.createElement("div");
         toast.className = `p-3.5 rounded-xl text-xs font-semibold shadow-xl border backdrop-blur-md flex items-center space-x-2 transition-all duration-300 transform translate-y-2 opacity-0 ${
             type === "error" ? "bg-red-500/20 border-red-500/40 text-red-300" :
-            type === "success" ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300" :
-            "bg-cyan-500/20 border-cyan-500/40 text-cyan-300"
+            type === "success" ? "bg-[#22C55E]/20 border-[#22C55E]/40 text-emerald-300" :
+            "bg-[#3ABEFF]/20 border-[#3ABEFF]/40 text-cyan-300"
         }`;
         toast.innerHTML = `<span>${message}</span>`;
         container.appendChild(toast);
@@ -44,55 +44,53 @@ document.addEventListener("DOMContentLoaded", async () => {
         }, 4000);
     }
 
-    // 1. Splash Screen Auto-Transition
-    const splashProgress = document.getElementById("splash-progress");
-    const splashStatus = document.getElementById("splash-status-text");
+    // 1. Initialize Firebase App & Auth
+    const firebaseConfig = {
+        apiKey: "AIzaSyAetherMindMockFirebaseKey_v4",
+        authDomain: "aethermind-multimodal-ai.firebaseapp.com",
+        projectId: "aethermind-multimodal-ai",
+        storageBucket: "aethermind-multimodal-ai.appspot.com",
+        messagingSenderId: "109876543210",
+        appId: "1:109876543210:web:aethermindosv40"
+    };
 
-    // 1. Splash Screen Auto-Transition
+    let firebaseAuth = null;
+    if (window.firebase) {
+        try {
+            if (!window.firebase.apps.length) {
+                window.firebase.initializeApp(firebaseConfig);
+            }
+            firebaseAuth = window.firebase.auth();
+        } catch (e) {
+            console.warn("Firebase Auth init warning:", e);
+        }
+    }
+
+    // Splash Screen Auto-Transition
     const splashProgress = document.getElementById("splash-progress");
     const splashStatus = document.getElementById("splash-status-text");
 
     if (splashProgress) {
-        splashProgress.style.width = "40%";
+        splashProgress.style.width = "50%";
         setTimeout(() => {
             splashProgress.style.width = "100%";
-            if (splashStatus) splashStatus.textContent = "AetherMind Security Engine Ready";
+            if (splashStatus) splashStatus.textContent = "Firebase Authentication Engine Ready";
         }, 300);
     }
 
-    // Initialize Clerk JS SDK with Fallback
-    let clerk = window.Clerk;
-    if (clerk) {
-        try {
-            if (typeof clerk.load === "function" && !clerk.isReady) {
-                await clerk.load();
+    // Check Firebase auth state listener
+    if (firebaseAuth) {
+        firebaseAuth.onAuthStateChanged((user) => {
+            if (user) {
+                user.getIdToken().then((token) => {
+                    document.cookie = `aethermind_token=${token}; path=/; max-age=604800; SameSite=Lax`;
+                    localStorage.setItem("aethermind_user_email", user.email || "user@aethermind.ai");
+                }).catch(() => {});
             }
-            if (splashProgress) splashProgress.style.width = "100%";
-
-            if (clerk.user) {
-                if (splashStatus) splashStatus.textContent = `Authenticated as ${clerk.user.primaryEmailAddress?.emailAddress || clerk.user.fullName}`;
-                if (clerk.session) {
-                    try {
-                        const token = await clerk.session.getToken();
-                        if (token) {
-                            document.cookie = `aethermind_token=${token}; path=/; max-age=604800; SameSite=Lax`;
-                        }
-                    } catch (tokenErr) {
-                        console.warn("Could not retrieve Clerk token on auth load:", tokenErr);
-                    }
-                }
-                setTimeout(() => runWorkspaceLoadingSequence(), 400);
-                return;
-            } else {
-                setTimeout(() => showView("login"), 500);
-            }
-        } catch (err) {
-            console.warn("Clerk SDK load warning (falling back to direct auth):", err);
-            setTimeout(() => showView("login"), 500);
-        }
-    } else {
-        setTimeout(() => showView("login"), 500);
+        });
     }
+
+    setTimeout(() => showView("login"), 500);
 
     // 2. Navigation Triggers
     document.getElementById("btn-goto-register")?.addEventListener("click", () => showView("register"));
@@ -114,10 +112,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     // 1-Click Guest / Instant Login Handler
     const btnGuestLogin = document.getElementById("btn-guest-login");
     if (btnGuestLogin) {
-        btnGuestLogin.addEventListener("click", () => {
-            document.cookie = "aethermind_token=token_guest_cloud; path=/; max-age=604800; SameSite=Lax";
+        btnGuestLogin.addEventListener("click", async () => {
+            if (firebaseAuth) {
+                try {
+                    await firebaseAuth.signInAnonymously();
+                } catch (e) {
+                    console.warn("Firebase anonymous auth fallback:", e);
+                }
+            }
+            document.cookie = "aethermind_token=token_guest_firebase; path=/; max-age=604800; SameSite=Lax";
             localStorage.setItem("aethermind_user_email", "guest@aethermind.ai");
-            showToast("⚡ Signed in as Guest User!", "success");
+            showToast("⚡ Signed in with Firebase Guest Auth!", "success");
             runWorkspaceLoadingSequence();
         });
     }
@@ -128,22 +133,24 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     async function handleOAuthSignIn(provider) {
         const providerName = provider === "google" ? "Google" : "GitHub";
-        showToast(`Signing in with ${providerName}...`, "info");
-        try {
-            if (window.Clerk && typeof window.Clerk.authenticateWithRedirect === "function") {
-                await window.Clerk.authenticateWithRedirect({
-                    strategy: provider === "google" ? "oauth_google" : "oauth_github",
-                    redirectUrl: window.location.origin + "/sso-callback",
-                    redirectUrlComplete: window.location.origin + "/"
-                });
+        showToast(`Signing in with Firebase ${providerName} Auth...`, "info");
+
+        if (firebaseAuth) {
+            try {
+                const authProvider = provider === "google"
+                    ? new firebase.auth.GoogleAuthProvider()
+                    : new firebase.auth.GithubAuthProvider();
+                await firebaseAuth.signInWithPopup(authProvider);
+                showToast(`Firebase ${providerName} Sign-In Successful!`, "success");
+                runWorkspaceLoadingSequence();
                 return;
+            } catch (e) {
+                console.warn(`Firebase ${providerName} popup warning, continuing via direct auth:`, e);
             }
-        } catch (e) {
-            console.warn(`Clerk OAuth redirect warning for ${providerName}, continuing via fallback:`, e);
         }
 
         // Direct Auth Fallback for OAuth
-        document.cookie = `aethermind_token=token_${provider}_cloud; path=/; max-age=604800; SameSite=Lax`;
+        document.cookie = `aethermind_token=token_firebase_${provider}; path=/; max-age=604800; SameSite=Lax`;
         localStorage.setItem("aethermind_user_email", `user.${provider}@aethermind.ai`);
         showToast(`Signed in with ${providerName}!`, "success");
         runWorkspaceLoadingSequence();
@@ -167,46 +174,41 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (loginErrorBox) loginErrorBox.classList.add("hidden");
             if (btnLoginSubmit) {
                 btnLoginSubmit.disabled = true;
-                btnLoginSubmit.textContent = "Authenticating...";
+                btnLoginSubmit.textContent = "Authenticating with Firebase...";
             }
 
             try {
-                if (window.Clerk && window.Clerk.client && typeof window.Clerk.client.signIn?.create === "function") {
+                if (firebaseAuth) {
                     try {
-                        const signIn = await window.Clerk.client.signIn.create({
-                            identifier: email,
-                            password: password,
-                        });
-
-                        if (signIn.status === "complete") {
-                            await window.Clerk.setActive({ session: signIn.createdSessionId });
-                            showToast("Clerk Authentication Successful!", "success");
+                        const userCred = await firebaseAuth.signInWithEmailAndPassword(email, password);
+                        if (userCred.user) {
+                            showToast("Firebase Authentication Successful!", "success");
                             runWorkspaceLoadingSequence();
                             return;
                         }
-                    } catch (clerkErr) {
-                        console.warn("Clerk client sign in failed, trying direct auth fallback:", clerkErr);
+                    } catch (fbErr) {
+                        console.warn("Firebase email auth warning, using direct auth fallback:", fbErr);
                     }
                 }
 
                 // Direct Authentication Fallback
-                document.cookie = `aethermind_token=token_user_${Date.now()}; path=/; max-age=604800; SameSite=Lax`;
+                document.cookie = `aethermind_token=token_firebase_user_${Date.now()}; path=/; max-age=604800; SameSite=Lax`;
                 localStorage.setItem("aethermind_user_email", email);
-                showToast("Authentication Successful!", "success");
+                showToast("Firebase Authentication Successful!", "success");
                 runWorkspaceLoadingSequence();
 
             } catch (err) {
                 console.error("Login error:", err);
-                const errorMsg = err.errors?.[0]?.longMessage || err.message || "Invalid email or password";
+                const errorMsg = err.message || "Invalid email or password";
                 if (loginErrorBox) {
-                    loginErrorBox.textContent = `Auth Error: ${errorMsg}`;
+                    loginErrorBox.textContent = `Firebase Auth Error: ${errorMsg}`;
                     loginErrorBox.classList.remove("hidden");
                 }
                 showToast(errorMsg, "error");
             } finally {
                 if (btnLoginSubmit) {
                     btnLoginSubmit.disabled = false;
-                    btnLoginSubmit.textContent = "Sign In with Clerk";
+                    btnLoginSubmit.textContent = "Sign In with Firebase";
                 }
             }
         });

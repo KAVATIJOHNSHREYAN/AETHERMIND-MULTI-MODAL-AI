@@ -95,8 +95,7 @@ def build_standalone_aethermind_html():
     with open(js_path, "r", encoding="utf-8") as f:
         js_content = f.read()
 
-    # Replace Clerk template variable
-    html_content = html_content.replace("{{ clerk_publishable_key }}", "pk_test_mock_clerk_publishable_key")
+    # Firebase App Configuration Ready
 
     # Inlined Base64 Image Replacements (using regex to cleanly strip query parameters like ?v=...)
     if app_icon_b64:
