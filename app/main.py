@@ -85,11 +85,22 @@ templates = Jinja2Templates(directory=templates_dir)
 @app.get("/auth", include_in_schema=False)
 @app.get("/sso-callback", include_in_schema=False)
 async def serve_auth(request: Request):
-    """Serve Full-Screen Clerk Authentication Page"""
+    """Serve Full-Screen Authentication Page"""
     try:
         return templates.TemplateResponse("auth.html", {"request": request, "clerk_publishable_key": settings.CLERK_PUBLISHABLE_KEY})
     except Exception:
         return templates.TemplateResponse(request=request, name="auth.html", context={"clerk_publishable_key": settings.CLERK_PUBLISHABLE_KEY})
+
+@app.get("/logout", include_in_schema=False)
+async def serve_logout(request: Request):
+    """Serve Full-Screen Dedicated Logout Page and clear session cookies"""
+    try:
+        response = templates.TemplateResponse("auth.html", {"request": request, "view": "logout", "clerk_publishable_key": settings.CLERK_PUBLISHABLE_KEY})
+    except Exception:
+        response = templates.TemplateResponse(request=request, name="auth.html", context={"view": "logout", "clerk_publishable_key": settings.CLERK_PUBLISHABLE_KEY})
+    response.delete_cookie("aethermind_token")
+    response.delete_cookie("aethermind_session")
+    return response
 
 @app.get("/", include_in_schema=False)
 async def serve_ui(request: Request):

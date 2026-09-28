@@ -12,6 +12,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         forgot: document.getElementById("view-forgot-password"),
         otp: document.getElementById("view-otp-2fa"),
         loading: document.getElementById("view-loading-screen"),
+        logout: document.getElementById("view-logout"),
     };
 
     function showView(targetKey) {
@@ -70,16 +71,32 @@ document.addEventListener("DOMContentLoaded", async () => {
     const splashProgress = document.getElementById("splash-progress");
     const splashStatus = document.getElementById("splash-status-text");
 
+    const urlParams = new URLSearchParams(window.location.search);
+    const isLogoutPage = window.location.pathname.includes("/logout") || urlParams.get("view") === "logout";
+
+    if (isLogoutPage) {
+        // Enforce cleanup on dedicated logout page
+        document.cookie = "aethermind_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
+        document.cookie = "aethermind_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
+        localStorage.removeItem("aethermind_active_chat");
+        localStorage.removeItem("aethermind_user_email");
+        if (firebaseAuth) {
+            firebaseAuth.signOut().catch(() => {});
+        }
+    }
+
     if (splashProgress) {
         splashProgress.style.width = "50%";
         setTimeout(() => {
             splashProgress.style.width = "100%";
-            if (splashStatus) splashStatus.textContent = "Firebase Authentication Engine Ready";
+            if (splashStatus) {
+                splashStatus.textContent = isLogoutPage ? "Session Revocation Complete" : "Firebase Authentication Engine Ready";
+            }
         }, 300);
     }
 
     // Check Firebase auth state listener
-    if (firebaseAuth) {
+    if (firebaseAuth && !isLogoutPage) {
         firebaseAuth.onAuthStateChanged((user) => {
             if (user) {
                 user.getIdToken().then((token) => {
@@ -90,13 +107,30 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     }
 
-    setTimeout(() => showView("login"), 500);
+    setTimeout(() => {
+        showView(isLogoutPage ? "logout" : "login");
+    }, 500);
 
     // 2. Navigation Triggers
     document.getElementById("btn-goto-register")?.addEventListener("click", () => showView("register"));
     document.getElementById("btn-goto-login")?.addEventListener("click", () => showView("login"));
     document.getElementById("btn-goto-forgot")?.addEventListener("click", () => showView("forgot"));
     document.getElementById("btn-forgot-back")?.addEventListener("click", () => showView("login"));
+    document.getElementById("btn-logout-relogin")?.addEventListener("click", () => showView("login"));
+    document.getElementById("btn-logout-register")?.addEventListener("click", () => showView("register"));
+    document.getElementById("btn-logout-guest")?.addEventListener("click", async () => {
+        if (firebaseAuth) {
+            try {
+                await firebaseAuth.signInAnonymously();
+            } catch (e) {
+                console.warn("Firebase anonymous auth fallback:", e);
+            }
+        }
+        document.cookie = "aethermind_token=token_guest_firebase; path=/; max-age=604800; SameSite=Lax";
+        localStorage.setItem("aethermind_user_email", "guest@aethermind.ai");
+        showToast("⚡ Signed in as Guest!", "success");
+        runWorkspaceLoadingSequence();
+    });
 
     // Password Visibility Toggle
     const togglePassBtn = document.getElementById("toggle-login-password");

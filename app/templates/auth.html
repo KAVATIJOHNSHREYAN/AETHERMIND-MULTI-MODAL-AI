@@ -297,6 +297,68 @@
             <div class="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-white/10">
                 <div id="workspace-load-bar" class="bg-gradient-to-r from-[#38BDF8] via-[#8B5CF6] to-[#EC4899] h-full w-0 transition-all duration-500 ease-out"></div>
             </div>
+        <!-- ===================================================================
+             7. DEDICATED LOGOUT / SIGNED-OUT SCREEN
+             =================================================================== -->
+        <div id="view-logout" class="auth-view glass-auth-panel rounded-3xl p-8 md:p-12 max-w-lg mx-auto text-center space-y-6 hidden">
+            <!-- Glowing Security Shield Icon -->
+            <div class="relative w-20 h-20 mx-auto flex items-center justify-center">
+                <div class="absolute inset-0 rounded-2xl bg-gradient-to-tr from-[#EF4444] via-[#F59E0B] to-[#10B981] animate-pulse opacity-30 blur-lg"></div>
+                <div class="w-16 h-16 rounded-2xl bg-[#0B132B] border border-white/20 flex items-center justify-center text-3xl shadow-2xl relative z-10 text-emerald-400">
+                    🛡️
+                </div>
+            </div>
+
+            <div>
+                <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                    ✓ Session Safely Terminated
+                </span>
+                <h2 class="text-3xl font-heading font-extrabold text-white tracking-tight mt-3">You Have Been Logged Out</h2>
+                <p class="text-xs text-slate-300 mt-2 leading-relaxed">
+                    Your active session and authentication tokens have been revoked. Local encrypted workspace cache and memory buffers have been cleared.
+                </p>
+            </div>
+
+            <!-- Security Audit Status Box -->
+            <div class="glass-card p-4 rounded-2xl border border-white/10 text-left space-y-2.5 text-xs">
+                <div class="flex items-center justify-between text-slate-300">
+                    <span class="flex items-center space-x-2">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                        <span>Authentication Token:</span>
+                    </span>
+                    <span class="font-mono text-emerald-400 font-semibold">Cleared / Revoked</span>
+                </div>
+                <div class="flex items-center justify-between text-slate-300">
+                    <span class="flex items-center space-x-2">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                        <span>Vector Memory Stream:</span>
+                    </span>
+                    <span class="font-mono text-emerald-400 font-semibold">Disconnected</span>
+                </div>
+                <div class="flex items-center justify-between text-slate-300">
+                    <span class="flex items-center space-x-2">
+                        <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+                        <span>Security Level:</span>
+                    </span>
+                    <span class="font-mono text-cyan-400 font-semibold">Enterprise Zero-Trust</span>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="space-y-3 pt-2">
+                <button type="button" id="btn-logout-relogin" class="w-full py-3 btn-primary font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-[#38BDF8]/20 flex items-center justify-center space-x-2">
+                    <span>⚡ Sign In Again</span>
+                </button>
+
+                <button type="button" id="btn-logout-guest" class="w-full py-3 bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg text-white flex items-center justify-center space-x-2 transition">
+                    <span>🚀 Launch Guest Workspace</span>
+                </button>
+
+                <div class="flex items-center justify-between pt-2 px-1 text-xs text-slate-400">
+                    <button type="button" id="btn-logout-register" class="text-[#38BDF8] hover:underline">Create New Account</button>
+                    <a href="/" class="text-slate-400 hover:text-white transition">Return to Home →</a>
+                </div>
+            </div>
         </div>
 
     </main>

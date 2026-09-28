@@ -117,6 +117,13 @@ def build_standalone_aethermind_html():
         const urlStr = typeof url === 'string' ? url : (url.url || '');
         
         // Mock Auth Endpoints
+        if (urlStr.includes('/api/v1/auth/logout')) {
+            return new Response(JSON.stringify({
+                success: true,
+                message: "Session successfully terminated"
+            }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+        }
+
         if (urlStr.includes('/api/v1/auth/login') || urlStr.includes('/api/v1/auth/register') || urlStr.includes('/api/v1/auth/forgot-password')) {
             return new Response(JSON.stringify({
                 success: true,

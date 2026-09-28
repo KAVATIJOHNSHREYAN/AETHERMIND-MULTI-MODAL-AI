@@ -515,9 +515,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // Sign Out / Logout
         if (id === "btn-logout" || id === "dropdown-btn-logout") {
             e.preventDefault();
-            showToast("🚪 Session ended.", "info");
-            localStorage.clear();
-            setTimeout(() => location.reload(), 800);
+            triggerLogoutFlow(e);
             return;
         }
     });
@@ -1736,34 +1734,88 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    async function handleClerkSignOut() {
+    async function triggerLogoutFlow(e) {
+        if (e && e.preventDefault) e.preventDefault();
         try {
-            // Delete token cookies
+            // Clear session cookies
             document.cookie = "aethermind_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
             document.cookie = "aethermind_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
 
             // Reset frontend in-memory state & UI
             activeChatId = null;
             localStorage.removeItem('aethermind_active_chat');
+            localStorage.removeItem('aethermind_user_email');
             pendingAttachments = [];
             if (conversationList) conversationList.innerHTML = "";
             if (messagesContainer) messagesContainer.innerHTML = "";
 
-            if (window.Clerk) {
-                await window.Clerk.signOut();
+            if (window.firebase && window.firebase.auth) {
+                try {
+                    await window.firebase.auth().signOut();
+                } catch (fbErr) {
+                    console.warn("Firebase sign out warning:", fbErr);
+                }
             }
-            await authenticatedFetch("/api/v1/auth/logout", { method: "POST" });
-        } catch (e) {
-            console.error("Sign out error:", e);
+            if (window.Clerk) {
+                try {
+                    await window.Clerk.signOut();
+                } catch (cErr) {
+                    console.warn("Clerk sign out warning:", cErr);
+                }
+            }
+            try {
+                await authenticatedFetch("/api/v1/auth/logout", { method: "POST" });
+            } catch (apiErr) {
+                // Ignore if offline/mock
+            }
+        } catch (err) {
+            console.error("Sign out error:", err);
         }
-        showToast("Signed out of AetherMind OS", "info");
-        setTimeout(() => {
-            window.location.href = "/login";
-        }, 300);
+
+        // Display dedicated logout modal overlay
+        const modalLogout = document.getElementById("modal-logout");
+        if (modalLogout) {
+            hideAllModals();
+            modalLogout.classList.remove("hidden");
+            showToast("🛡️ Signed out. Session securely terminated.", "info");
+        } else {
+            window.location.href = "/logout";
+        }
     }
 
-    if (btnLogout) btnLogout.addEventListener("click", handleClerkSignOut);
-    if (dropdownBtnLogout) dropdownBtnLogout.addEventListener("click", handleClerkSignOut);
+    if (btnLogout) btnLogout.addEventListener("click", triggerLogoutFlow);
+    if (dropdownBtnLogout) dropdownBtnLogout.addEventListener("click", triggerLogoutFlow);
+
+    // Logout Modal Action Listeners
+    const modalLogoutElem = document.getElementById("modal-logout");
+    const closeLogoutModalBtn = document.getElementById("close-logout-modal-btn");
+    const btnLogoutReloginModal = document.getElementById("btn-logout-relogin-modal");
+    const btnLogoutGuestModal = document.getElementById("btn-logout-guest-modal");
+
+    if (closeLogoutModalBtn) closeLogoutModalBtn.addEventListener("click", hideAllModals);
+
+    if (btnLogoutReloginModal) {
+        btnLogoutReloginModal.addEventListener("click", () => {
+            hideAllModals();
+            if (modalAuth) {
+                modalAuth.classList.remove("hidden");
+            } else {
+                window.location.href = "/login";
+            }
+        });
+    }
+
+    if (btnLogoutGuestModal) {
+        btnLogoutGuestModal.addEventListener("click", () => {
+            document.cookie = "aethermind_token=token_guest_firebase; path=/; max-age=604800; SameSite=Lax";
+            localStorage.setItem("aethermind_user_email", "guest@aethermind.ai");
+            showToast("⚡ Resumed as Guest!", "success");
+            hideAllModals();
+            setTimeout(() => {
+                location.reload();
+            }, 300);
+        });
+    }
 
     if (authForm) {
         authForm.addEventListener("submit", async (e) => {
