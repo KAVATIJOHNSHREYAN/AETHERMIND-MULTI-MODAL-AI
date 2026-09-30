@@ -377,7 +377,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         },
 
-        toggleOfflineMode(forceState) {
+        toggleOfflineMode(forceState, suppressToast = false) {
             if (typeof forceState === "boolean") {
                 this.offlinePrivacyMode = forceState;
             } else {
@@ -390,9 +390,9 @@ document.addEventListener("DOMContentLoaded", () => {
             if (this.offlinePrivacyMode) {
                 const modelSelect = document.getElementById("model-select");
                 if (modelSelect) modelSelect.value = "local-webgpu";
-                if (window.showToast) window.showToast("🔒 Offline Privacy Mode Activated. Runs 100% in browser!", "success");
+                if (window.showToast && !suppressToast) window.showToast("🔒 Offline Privacy Mode Activated. Runs 100% in browser!", "success");
             } else {
-                if (window.showToast) window.showToast("🌐 Offline Privacy Mode Disabled. Cloud AI providers enabled.", "info");
+                if (window.showToast && !suppressToast) window.showToast("🌐 Offline Privacy Mode Disabled. Cloud AI providers enabled.", "info");
             }
         },
 
@@ -432,12 +432,11 @@ document.addEventListener("DOMContentLoaded", () => {
             let responseText = `${systemNote}\n\n`;
             const lowerPrompt = prompt.toLowerCase();
 
-            if (lowerPrompt.includes("generate pic") || lowerPrompt.includes("generate image") || lowerPrompt.includes("generate photo") || lowerPrompt.includes("draw") || lowerPrompt.includes("picture of") || lowerPrompt.includes("photo of") || lowerPrompt.includes("image of")) {
-                if (navigator.onLine && window.generateImageFromPrompt) {
-                    responseText += `🎨 Image generation intent detected! Dispatching prompt to **Pollinations AI Artwork Engine**...\n\nI am triggering the AI Image Generator for: *"${prompt}"*`;
-                    setTimeout(() => {
-                        window.generateImageFromPrompt(prompt);
-                    }, 400);
+            if (lowerPrompt.includes("generate pic") || lowerPrompt.includes("generate image") || lowerPrompt.includes("generate photo") || lowerPrompt.includes("draw") || lowerPrompt.includes("picture of") || lowerPrompt.includes("photo of") || lowerPrompt.includes("image of") || lowerPrompt.includes("chubby teddy panda")) {
+                if (navigator.onLine) {
+                    const encodedPrompt = encodeURIComponent(prompt.replace(/[^a-zA-Z0-9\s,]/g, ' ').trim());
+                    const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&model=flux&nologo=true&seed=${Math.floor(Math.random() * 1000000)}`;
+                    responseText += `🎨 **AI Artwork Generated**\n\n![${prompt}](${imageUrl})`;
                 } else {
                     responseText += `🎨 **Offline AI Canvas Render**\n\nGenerated local artwork representation for: *"${prompt}"*\n\n\`\`\`xml\n<svg width="400" height="250" viewBox="0 0 400 250" xmlns="http://www.w3.org/2000/svg">\n  <defs>\n    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">\n      <stop offset="0%" stop-color="#38BDF8"/>\n      <stop offset="50%" stop-color="#8B5CF6"/>\n      <stop offset="100%" stop-color="#EC4899"/>\n    </linearGradient>\n  </defs>\n  <rect width="100%" height="100%" fill="#0F172A" rx="16"/>\n  <circle cx="200" cy="125" r="70" fill="url(#g)" opacity="0.85"/>\n  <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="bold">${prompt.slice(0, 30)}</text>\n</svg>\n\`\`\`\n\n*(Note: Cloud AI image generation is active when connected to the internet)*`;
                 }
@@ -570,7 +569,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 // If offline mode was auto-triggered due to network loss, switch back to Cloud AI
                 if (window.LocalAIEngine && window.LocalAIEngine._autoTriggeredOffline) {
                     window.LocalAIEngine._autoTriggeredOffline = false;
-                    window.LocalAIEngine.toggleOfflineMode(false);
+                    window.LocalAIEngine.toggleOfflineMode(false, true);
                     const modelSelect = document.getElementById("model-select");
                     if (modelSelect && modelSelect.value === "local-webgpu") {
                         modelSelect.value = "auto";
@@ -588,7 +587,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 // Automatically switch to Local AI Offline Mode when internet disconnects
                 if (window.LocalAIEngine && !window.LocalAIEngine.offlinePrivacyMode) {
                     window.LocalAIEngine._autoTriggeredOffline = true;
-                    window.LocalAIEngine.toggleOfflineMode(true);
+                    window.LocalAIEngine.toggleOfflineMode(true, true);
                     const modelSelect = document.getElementById("model-select");
                     if (modelSelect) modelSelect.value = "local-webgpu";
                     if (window.showToast) window.showToast("📡 Internet Disconnected. Automatically switched to Local AI (Offline WebGPU)!", "info");
@@ -602,7 +601,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 setTimeout(() => {
                     if (window.LocalAIEngine && !window.LocalAIEngine.offlinePrivacyMode) {
                         window.LocalAIEngine._autoTriggeredOffline = true;
-                        window.LocalAIEngine.toggleOfflineMode(true);
+                        window.LocalAIEngine.toggleOfflineMode(true, true);
                         const modelSelect = document.getElementById("model-select");
                         if (modelSelect) modelSelect.value = "local-webgpu";
                     }
