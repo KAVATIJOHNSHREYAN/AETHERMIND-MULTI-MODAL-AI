@@ -35,6 +35,7 @@ def clean_image_prompt(prompt: str) -> str:
     p = re.sub(r'^(can\s+you\s+)?(please\s+)?(generate|create|draw|make|show|give)(\s+me)?\s*(a|an|the)?\s*(hd|4k|8k|realistic|photo|picture|image|pic)?\s*(of|about|with|:|\s)+', '', p, flags=re.IGNORECASE)
     p = re.sub(r'^(image|picture|photo|pic)\s*(of|:|\s)+', '', p, flags=re.IGNORECASE)
     p = re.sub(r'^(give|show|make|draw)\s*(me)?\s*(a|an|the)?\s*(pic|picture|photo|image)?\s*(of|:|\s)+', '', p, flags=re.IGNORECASE)
+    p = re.sub(r'^(generate|create|draw|make|show|give)\s+', '', p, flags=re.IGNORECASE)
     p = re.sub(r'^:\s*', '', p)
 
     cleaned = p.strip()

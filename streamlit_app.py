@@ -136,11 +136,12 @@ def build_standalone_aethermind_html(_cache_key=None):
     console.log("⚡ AetherMind Standalone Cloud Engine Bridge Active.");
 
     function cleanImagePrompt(input) {
-        if (!input) return "delicious ice cream cone";
+        if (!input) return "futuristic AI artwork";
         let p = input.trim();
         p = p.replace(/^(can\s+you\s+)?(please\s+)?(generate|create|draw|make|show|give)(\s+me)?\s*(a|an|the)?\s*(hd|4k|8k|realistic|photo|picture|image|pic)?\s*(of|about|with|:|\s)+/i, '');
         p = p.replace(/^(image|picture|photo|pic)\s*(of|:|\s)+/i, '');
         p = p.replace(/^(give|show|make|draw)\s*(me)?\s*(a|an|the)?\s*(pic|picture|photo|image)?\s*(of|:|\s)+/i, '');
+        p = p.replace(/^(generate|create|draw|make|show|give)\s+/i, '');
         p = p.replace(/^:\s*/, '');
         p = p.trim();
         return p || input;
@@ -533,11 +534,11 @@ def build_standalone_aethermind_html(_cache_key=None):
                 };
 
                 // DETECT IMAGE GENERATION INTENT IN CHAT PROMPT
-                const isImageGen = /generate.*image|draw|picture of|photo of|create.*image|give.*pic|show.*pic|pic of|photo of|image of/i.test(userMessage);
+                const isImageGen = /generate.*(image|pic|photo|artwork|drawing|map)|draw|picture of|photo of|create.*(image|pic|photo)|give.*pic|show.*pic|pic of|image of|\/image/i.test(userMessage);
                 if (isImageGen) {
                     const cleanPrompt = cleanImagePrompt(userMessage);
                     const seed = Math.floor(Math.random() * 1000000);
-                    const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(cleanPrompt)}?nologo=true&seed=${seed}`;
+                    const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(cleanPrompt)}?width=1024&height=1024&model=flux&nologo=true&seed=${seed}`;
                     const responseText = `Here is your generated artwork for **"${cleanPrompt}"**:\n\n![${cleanPrompt}](${imageUrl})`;
 
                     const asstMsgObj = {

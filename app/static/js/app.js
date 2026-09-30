@@ -915,19 +915,19 @@ document.addEventListener("DOMContentLoaded", () => {
             const safeAlt = escapeHtml(alt || "Generated AI Image");
             const safeUrl = escapeHtml(url);
             return `
-                <div class="my-3 rounded-2xl overflow-hidden border border-cyan-500/30 bg-black/60 shadow-2xl max-w-md cursor-pointer group" onclick="openImagePreview('${safeUrl}', '${safeAlt}')">
-                    <img src="${safeUrl}" alt="${safeAlt}" class="w-full h-auto max-h-[380px] object-cover group-hover:scale-[1.02] transition-transform duration-300 rounded-t-xl" />
-                    <div class="p-3 bg-[#0d121f] text-xs text-cyan-300 font-medium flex items-center justify-between border-t border-cyan-500/20">
+                <figure class="my-3 rounded-2xl overflow-hidden border border-cyan-500/30 bg-black/60 shadow-2xl max-w-md cursor-pointer group" onclick="openImagePreview('${safeUrl}', '${safeAlt}')">
+                    <img src="${safeUrl}" alt="${safeAlt}" class="w-full h-auto max-h-[380px] object-cover group-hover:scale-[1.02] transition-transform duration-300 rounded-t-xl" onerror="this.onerror=null; this.src='https://img.icons8.com/isometric/96/sparkles.png'; this.classList.add('p-8');" />
+                    <figcaption class="p-3 bg-[#0d121f] text-xs text-cyan-300 font-medium flex items-center justify-between border-t border-cyan-500/20">
                         <span class="truncate font-mono">🎨 ${safeAlt}</span>
                         <span class="text-[10px] text-slate-400 group-hover:text-white shrink-0 ml-2">Click to View ↗</span>
-                    </div>
-                </div>
+                    </figcaption>
+                </figure>
             `;
         });
 
-        const parts = formatted.split(/(<div class="my-3 rounded-2xl[\s\S]*?<\/div>)/g);
+        const parts = formatted.split(/(<figure class="my-3 rounded-2xl[\s\S]*?<\/figure>)/g);
         return parts.map(part => {
-            if (part.startsWith('<div class="my-3 rounded-2xl')) {
+            if (part.startsWith('<figure class="my-3 rounded-2xl')) {
                 return part;
             }
             return escapeHtml(part);
@@ -1000,7 +1000,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (elem) elem.remove();
     };
 
-    const escapeHtml = (str) => str ? str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") : "";
+    const escapeHtml = (str) => str ? String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;") : "";
 
     // =========================================================================
     // 3. PHASE 8: KNOWLEDGE BASE & COLLECTIONS
