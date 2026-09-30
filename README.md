@@ -10,6 +10,7 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![Streamlit Cloud](https://img.shields.io/badge/Streamlit_Cloud-Live_App-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)](https://aethermind-multi-modal-ai-fwt8jmcqdbbmoahwveobze.streamlit.app/)
 [![Firebase](https://img.shields.io/badge/Firebase_Auth-v10-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)](https://firebase.google.com)
+[![Supabase](https://img.shields.io/badge/Supabase-Cloud_DB-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com)
 [![Qdrant](https://img.shields.io/badge/Qdrant-VectorDB-DC2626?style=for-the-badge&logo=qdrant&logoColor=white)](https://qdrant.tech)
 [![Tests](https://img.shields.io/badge/Tests-34%2F34_Passing-22C55E?style=for-the-badge&logo=pytest&logoColor=white)](#-testing-suite)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
@@ -24,9 +25,9 @@
 
 ## 📋 Executive Project Summary
 
-**AetherMind Multimodal AI** is a production-grade enterprise artificial intelligence operating system created by **Kavati John Shreyan**. It unifies text generation, multi-format document intelligence, computer vision OCR, API-less AI image synthesis, ChatGPT-style speech-to-text voice transcription, Qdrant vector Retrieval-Augmented Generation (RAG), and workspace project management into a single, ultra-responsive web platform.
+**AetherMind Multimodal AI** is a production-grade enterprise artificial intelligence operating system created by **Kavati John Shreyan**. It unifies text generation, multi-format document intelligence, computer vision OCR, API-less AI image synthesis, ChatGPT-style speech-to-text voice transcription, Qdrant vector Retrieval-Augmented Generation (RAG), Supabase cloud data persistence, a 12-preset **Responsive Device Studio**, and an **Enterprise Settings Center** into a single, ultra-responsive web platform.
 
-Engineered with zero mandatory API key requirements, AetherMind provides an immediate free tier powered by Pollinations AI alongside dedicated custom API key options for Google Gemini, OpenAI, Anthropic Claude, Groq, and Cohere. The application features live Firebase Authentication (Email/Password, Google OAuth popup/redirect, and instant Guest demo mode), a dynamic device viewport switcher engine, and 100% user data isolation.
+Engineered with zero mandatory API key requirements, AetherMind provides an immediate free tier powered by Pollinations AI alongside custom API key configuration options for 16+ AI models including Google Gemini, OpenAI, Anthropic Claude, Groq, Cohere, DeepSeek R1, and Mistral. The application features live Firebase Authentication (Email/Password, Google OAuth popup/redirect, and instant Guest demo mode), a dynamic device viewport switcher engine with live scrolling, and 100% multi-user data isolation.
 
 ---
 
@@ -34,9 +35,9 @@ Engineered with zero mandatory API key requirements, AetherMind provides an imme
 
 <div align="center">
 
-| Multimodal Workspace & Dashboard | AI Image Generation & Action Toolbar |
-| :---: | :---: |
-| ![AetherMind Workspace Interface](app/static/img/bg-futuristic.png) | *Enterprise AI Image Synthesis Card* |
+| Multimodal Workspace & Dashboard | Responsive Device Studio | Enterprise Settings Center |
+| :---: | :---: | :---: |
+| ![AetherMind Workspace Interface](app/static/img/bg-futuristic.png) | *12 Viewport Presets & Live Resizing (`Ctrl+Shift+R`)* | *9 Functional Tabs & 16 API Providers (`Ctrl+Shift+S`)* |
 
 </div>
 
@@ -44,14 +45,35 @@ Engineered with zero mandatory API key requirements, AetherMind provides an imme
 
 ## ⚡ Complete Feature Manifest
 
-### 🔐 1. Firebase Identity & Authentication System
-- **Official Firebase Auth v10 SDK**: Complete client and backend Firebase credential integration.
+### ⚙️ 1. Enterprise Settings Center (`Ctrl + Shift + S`)
+- **VS Code-Style Search Bar**: Search settings (`#esc-search-input`) by keyword (*"theme"*, *"api"*, *"notifications"*, *"profile"*, *"billing"*, *"shortcuts"*) to instantly jump to relevant tabs.
+- **9 Fully Functional Tabs**:
+  1. 👤 **Profile**: Dynamic user profile synchronization with Firebase Auth/Supabase, avatar upload, credentials, password reset, account export (`.json`), and deletion.
+  2. 💼 **Workspace**: Default AI model selection, default image quality, voice assistant accent, auto-save, auto-sync, auto-backup, and workspace export/import.
+  3. 🔔 **Notifications**: Desktop, push, email, sound effects, trigger checkboxes, and a live **`🔔 Test Live Notification`** action button.
+  4. 🎨 **Theme & Visuals**: Dark Neon, Cyber Blue, Purple Galaxy, OLED Black presets, backdrop blur slider (0-30px), and glow intensity slider.
+  5. 🔑 **API Keys Manager**: Manage encrypted credentials for 16 AI & Cloud Providers (OpenAI, Gemini 2.5, Claude 3.5, Groq, Cohere, OpenRouter, Together AI, Mistral, DeepSeek R1, Qwen, ElevenLabs, AssemblyAI, Pollinations, Firebase, Supabase, Qdrant) with masked inputs, eye reveal toggle (👁️), copy (📋), and live **`⚡ Test`** latency pings.
+  6. 💳 **Billing & Subscriptions**: Tier status, monthly resource consumption bars (Images, Voice, Documents, Chats, Vectors, Tokens), and Stripe upgrade readiness.
+  7. ⚙️ **System & Diagnostics**: Live system health checks, database latency audit, cache clear actions (`Clear Cache`, `Clear Images`, `Reset Application`).
+  8. ⌨️ **Shortcuts**: Searchable reference and customizable keyboard shortcuts.
+  9. 🚪 **Sign Out**: Clean logout dialog with token revocation and session cache wiping.
+
+### 💻📱 2. Responsive Device Studio (`Ctrl + Shift + R`)
+- **Combined Outlined SVG Button**: Neon-styled topbar trigger icon (💻📱) with active pulse animation.
+- **12 Viewport Presets**: Desktop Large (3840×2160), Desktop Full HD (1920×1080), Laptop (1440×900), MacBook Pro (1512×982), Tablet Landscape (1024×768), Tablet Portrait (768×1024), iPad Pro (1024×1366), Large Phone (430×932), Medium Phone (390×844), Small Phone (360×640), Fold Device (280×653), Ultra Wide (2560×1080).
+- **Live Custom Sliders**: Real-time Width (280px-3840px), Height (500px-2160px), and Zoom Scale (50%-150%) sliders.
+- **Full Canvas Scrolling & 1-Click Revert**: `overflow-y-auto overflow-x-auto` canvas scrolling + **`↺ Revert Original`** buttons in topbar, floating resolution overlay, and modal header/footer.
+- **Automated Responsive Validation**: Automated DOM layout checks displaying status badges (`✔ Desktop Ready`, `✔ Tablet Ready`, `✔ Mobile Ready`, `✔ Layout Stable`).
+- **Export & Report Tools**: Copy Resolution (`📋`), Take Screenshot (`📸`), and Export Responsive Audit Report (`📄`).
+
+### 🔐 3. Firebase Identity & Authentication System
+- **Official Firebase Auth v10 SDK**: Client and backend Firebase credential integration.
 - **Email & Password Authentication**: Complete user signup, login, password reset, and session persistence.
 - **Google OAuth Sign-In**: Powered by `signInWithPopup` and `signInWithRedirect`, strictly verifying Firebase user tokens before workspace entry.
 - **Instant Guest / Demo Mode**: 1-click guest authentication for immediate system evaluation without registration.
-- **User Session Isolation**: Strict user-level data isolation across database records, chat histories, uploaded documents, images, and long-term memory points.
+- **Strict Multi-User Isolation**: Every database query, chat, image, document, and memory point is isolated by `firebase_uid`.
 
-### 💬 2. Multimodal Chat & Smart Auto-Routing Engine
+### 💬 4. Multimodal Chat & Smart Auto-Routing Engine
 - **Smart Auto Engine**: Natural language classifier automatically detects user intent and dispatches queries to the correct pipeline (Chat, Image Generator, Document Intelligence, Vision OCR, Web Search).
 - **Multi-Model Provider Support**:
   - `AetherMind Auto Engine (Smart Multimodal)` *(API-less Free Tier)*
@@ -63,9 +85,9 @@ Engineered with zero mandatory API key requirements, AetherMind provides an imme
   - `Mistral AI & Cohere`
 - **Automatic Multi-Model Failover**: Sequential failover handling ensures 100% uptime even during upstream provider capacity shortages.
 
-### 🎨 3. Enterprise AI Image Generation System
-- **Auto Prompt Enhancer**: Transforms simple prompts (*"panda eating bamboo"*) into hyper-detailed photorealistic descriptors (*"Ultra realistic giant panda eating fresh green bamboo in a peaceful bamboo forest during golden hour, cinematic lighting, detailed fur, DSLR photography, depth of field, volumetric lighting, masterpiece, ultra high resolution"*).
-- **Multi-Model Failover Chain**: Rotates across `AetherMind Flux`, `Turbo`, `Realism`, `Anime`, `3D`, and PIL/SVG vector canvas fallback renderers to prevent broken image loading.
+### 🎨 5. Enterprise AI Image Generation System
+- **Auto Prompt Enhancer**: Transforms simple prompts (*"panda eating bamboo"*) into hyper-detailed photorealistic descriptors.
+- **Multi-Model Failover Chain**: Rotates across `AetherMind Flux`, `Turbo`, `Realism`, `Anime`, `3D`, and PIL/SVG vector canvas fallback renderers.
 - **Interactive Action Toolbar**:
   - ⬇️ **Download**: Saves high-resolution images directly to device storage.
   - ⛶ **Fullscreen**: Opens artwork in a high-resolution lightbox preview modal.
@@ -74,36 +96,36 @@ Engineered with zero mandatory API key requirements, AetherMind provides an imme
   - 🔄 **Regenerate**: Re-runs generation with a fresh seed.
   - ⚡ **HD Upscale**: Generates 8K ultra high-definition resolution artwork.
 
-### 🎙️ 4. ChatGPT-Style Voice Input & STT Engine
+### 🎙️ 6. ChatGPT-Style Voice Input & STT Engine
 - **Live Speech-to-Text**: Captures voice using browser Web Speech API combined with backend Whisper STT (`/api/v1/audio/transcribe`).
 - **Direct Input Placement**: Inserts transcribed speech into `chatInput.value` in real-time without uploading audio recordings as document files or creating attachment chips.
 - **Automatic Intent Triggering**: Automatically executes image generation or chat submit once spoken voice input completes.
 
-### 📄 5. Document Intelligence & Qdrant Vector RAG
+### 📄 7. Document Intelligence & Qdrant Vector RAG
 - **Multi-Format Extraction**: Parses and extracts content from `PDF, DOCX, CSV, Excel, TXT, JSON, Markdown, PPTX`.
-- **Instant Document Summaries**: Provides key insights, structural overviews, and data table extractions.
+- **Instant Document Summaries**: Key insights, structural overviews, and data table extractions.
 - **Qdrant Vector RAG**: Converts document text into high-dimensional vector embeddings stored in Qdrant collections for semantic retrieval.
 
-### 🌍 6. Real-Time Web Search & Multi-Language Engine
+### 🌍 8. Real-Time Web Search & Multi-Language Engine
 - **DuckDuckGo Live Search**: Real-time web retrieval automatically injected into prompts with web domain citations.
 - **50+ Languages Support**: Full automatic detection and response matching across 50+ languages, including all 22 official Indian languages (*Telugu, Hindi, Tamil, Kannada, Malayalam, Marathi, Bengali, Gujarati, Punjabi, Odia, Assamese, etc.*).
 
-### 📁 7. Workspace Projects, Memory & Tools
+### 📁 9. Workspace Projects & Memory RAG
 - **Long-Term Memory Compression**: Condenses long chat histories into persistent key-value memories.
 - **Workspace Projects**: Categorizes chats, documents, and media into custom projects with 1-click bulk ZIP archive downloads.
 - **Global Search Modal**: Unified workspace search querying across chats, files, images, documents, audio, projects, and long-term memory.
-- **Device Viewport Switcher Engine**: Dynamic toggling between Desktop (`100%`), Laptop (`1280px`), Tablet (`768px`), and Mobile (`390px`) viewports.
 
 ---
 
-## 🏛️ System Architecture & Complete Backend Workflows
+## 🏛️ System Architecture & Workflows
 
-### 1. Overall System Architecture Diagram
+### System Architecture Diagram
 
 ```mermaid
 graph TD
     User([User Browser Client]) -->|HTTPS / Streamlit Bridge| Frontend[Vanilla HTML5 / JS / Tailwind CSS]
     Frontend -->|Firebase Auth v10| FirebaseAuth[Firebase Identity Platform]
+    Frontend -->|Supabase Sync| SupabaseDB[(Supabase Cloud Database)]
     Frontend -->|REST API Requests| FastAPIServer[FastAPI Server Engine - app/main.py]
 
     subgraph Core Execution & Auto-Routing Engine
@@ -131,109 +153,6 @@ graph TD
 
 ---
 
-### 2. Request Flow & Smart Auto Engine Routing Workflow
-
-```mermaid
-sequenceDiagram
-    autonumber
-    actor User as User Browser
-    participant UI as Frontend App Interface
-    participant Router as Smart Auto Engine
-    participant Img as Image Generator
-    participant RAG as Qdrant Vector RAG
-    participant LLM as Provider Manager
-
-    User->>UI: Enter prompt / Spoken voice input
-    UI->>Router: Analyze Prompt & Attachment Metadata
-    alt Image Intent Detected ("draw...", "generate image...", visual prompt)
-        Router->>Img: Enhance Prompt & Select Model (Flux/Turbo/Realism)
-        Img-->>UI: Return Image URL + Action Toolbar
-    else Document / File Query Attached
-        Router->>RAG: Extract Text & Perform Qdrant Vector Search
-        RAG-->>LLM: Inject Document Chunks into Context Block
-        LLM-->>UI: Return Summarized Analysis & Structured Answers
-    else General Question / Real-Time Web Query
-        Router->>LLM: Dispatch Query to Optimal Provider (Gemini/Groq/Apiless)
-        LLM-->>UI: Stream Markdown Response
-    end
-```
-
----
-
-### 3. Enterprise Image Generation Workflow
-
-```mermaid
-flowchart LR
-    A[User Raw Image Prompt] --> B[clean_image_prompt: Strip Conversational Noise]
-    B --> C[enhance_image_prompt: Inject Photorealistic Descriptors]
-    C --> D[Auto Model Selector: Flux / Realism / Anime / 3D]
-    D --> E{Pollinations Primary Fetch}
-    E -->|Success| F[Return High-Res Image URL]
-    E -->|Error 503 / Timeout| G[Retry Candidate 2: Turbo Engine]
-    G -->|Error| H[Retry Candidate 3: Un-throttled Base URL]
-    H -->|Error| I[Synthetic PIL / SVG Vector Canvas Fallback]
-    F --> J[Render Figure Card + Action Toolbar: Download/Fullscreen/Copy/Regenerate/Upscale]
-    I --> J
-```
-
----
-
-### 4. ChatGPT-Style Voice Transcription Workflow
-
-```mermaid
-flowchart TD
-    A[Click Microphone Button] --> B[Initialize Web Speech API & MediaRecorder Stream]
-    B --> C[Live Speech Recognition Updates Input Box in Real-Time]
-    C --> D[User Stops Speaking / Clicks Stop]
-    D --> E{Live Transcript Captured?}
-    E -->|Yes| F[Set chatInput.value = Recognized Text]
-    E -->|No| G[Post Audio Stream to /api/v1/audio/transcribe Backend]
-    G --> H[Extract Transcript from Speech Engine]
-    H --> F
-    F --> I[Check Intent Classification]
-    I -->|Image Request| J[Auto-Submit Image Generation]
-    I -->|General Query| K[Focus Chat Input Box]
-```
-
----
-
-### 5. Document Processing & Qdrant RAG Ingestion Flow
-
-```mermaid
-flowchart TD
-    A[Upload File: PDF / DOCX / CSV / PPTX] --> B[Save Local File Storage / Uploads]
-    B --> C[Document Engine Parsing & Text Extraction]
-    C --> D[Text Chunking & Embedding Generation]
-    D --> E[Ingest Vector Embeddings into Qdrant DB]
-    E --> F[Store Relational Metadata in Database]
-    F --> G[Perform Semantic Vector Similarity Search on User Query]
-    G --> H[Inject Document Context into LLM System Prompt]
-```
-
----
-
-### 6. Firebase Authentication & User Isolation Flow
-
-```mermaid
-sequenceDiagram
-    autonumber
-    actor User as User Browser
-    participant AuthUI as Login Portal / Auth Modal
-    participant Firebase as Firebase Auth v10 SDK
-    participant API as FastAPI Auth Middleware
-    participant DB as SQLite / Supabase Database
-
-    User->>AuthUI: Enter Email/Password OR Click Google Sign-In
-    AuthUI->>Firebase: signInWithEmailAndPassword() / signInWithPopup()
-    Firebase-->>AuthUI: Return Valid Firebase User & IdToken
-    AuthUI->>API: POST /api/v1/auth/login (Header: Authorization Bearer Token)
-    API->>DB: Verify User Metadata & User ID
-    DB-->>API: Return User Isolated Records
-    API-->>User: Grant Access & Render Isolated Workspace Dashboard
-```
-
----
-
 ## 🛠️ Technology Stack Reference
 
 | Layer | Technologies Used |
@@ -242,9 +161,10 @@ sequenceDiagram
 | **Backend Framework** | FastAPI 0.110+, Uvicorn, Pydantic v2 |
 | **Cloud Deployment** | Streamlit Cloud (`streamlit_app.py` Client API Bridge) |
 | **Authentication & Identity** | Firebase Authentication v10 SDK (Email/Password, Google OAuth, Guest) |
+| **Cloud Persistence** | Supabase PostgreSQL, Realtime Storage Bridge |
 | **Vector Database & RAG** | Qdrant Vector Database, Semantic Embeddings |
 | **Relational Database** | SQLAlchemy 2.0 Async, SQLite / Supabase PostgreSQL |
-| **AI Infrastructure Providers** | Google Gemini, OpenAI, Anthropic Claude, Groq, Cohere, Pollinations AI (API-less) |
+| **AI Infrastructure Providers** | Google Gemini, OpenAI, Anthropic Claude, Groq, Cohere, DeepSeek, Pollinations AI |
 | **Image Synthesis Engine** | Pollinations AI (Flux, Turbo, Realism, Anime, 3D) + PIL Synthetic Canvas |
 | **Voice & Speech Processing** | Web Speech API + Backend Whisper STT |
 | **Frontend Interface** | Vanilla HTML5, JavaScript (ES6+), Tailwind CSS, Glassmorphism UI |
@@ -274,10 +194,7 @@ AETHERMIND MULTIMODAL AI/
 │   │   └── user.py               # User profile & settings endpoints
 │   ├── auth/                     # Session token & Firebase handlers
 │   ├── config/                   # System settings & environment configuration
-│   ├── core/                     # Execution core
-│   │   ├── image_generator.py    # Auto prompt enhancement & multi-model image engine
-│   │   ├── vision_engine.py      # Computer vision OCR engine
-│   │   └── web_search_engine.py  # DuckDuckGo live web search engine
+│   ├── core/                     # Execution core (image_generator, vision, web_search)
 │   ├── database/                 # SQLAlchemy async sessions & migrations
 │   ├── documents/                # Document parsing engines (PDF, DOCX, CSV)
 │   ├── memory/                   # Knowledge retrieval & memory services
@@ -287,9 +204,9 @@ AETHERMIND MULTIMODAL AI/
 │   ├── static/                   # Static web assets (styles.css, app.js, auth.js, img)
 │   └── templates/                # HTML5 pages (index.html, auth.html, logout.html)
 ├── tests/                        # Pytest automated test suites (34/34 passing)
-├── ABOUT PROJECT.md              # Detailed paragraph-based documentation
+├── ABOUT PROJECT.md              # Detailed paragraph-based feature documentation
 ├── FIREBASE_AUTHENTICATION_GUIDE.md # Firebase Auth setup instructions
-├── README.md                     # Comprehensive enterprise documentation
+├── README.md                     # Comprehensive main repository documentation
 ├── requirements.txt              # Python backend dependencies
 └── streamlit_app.py              # Streamlit Cloud deployment runner & client API bridge
 ```
@@ -326,8 +243,6 @@ Copy `.env.example` to `.env` and fill in required values:
 cp .env.example .env
 ```
 
-**Required Environment Variables**:
-
 | Variable Name | Description | Required |
 | :--- | :--- | :--- |
 | `FIREBASE_API_KEY` | Firebase Web API Key | Yes |
@@ -336,29 +251,21 @@ cp .env.example .env
 | `FIREBASE_STORAGE_BUCKET` | Firebase Storage Bucket URI | Yes |
 | `FIREBASE_MESSAGING_SENDER_ID` | Firebase Messaging Sender ID | Yes |
 | `FIREBASE_APP_ID` | Firebase App ID | Yes |
-| `FIREBASE_MEASUREMENT_ID` | Firebase Analytics ID | Optional |
 | `SECRET_KEY` | Secret Key for signing session JWT tokens | Yes |
 | `DATABASE_URL` | SQLite URI (`sqlite+aiosqlite:///./aethermind.db`) | Yes |
 | `QDRANT_URL` | Qdrant Vector DB Endpoint | Optional |
 
-### 4. Running the FastAPI Local Development Server
+### 4. Running the Local Application
 
 ```bash
+# Option A: FastAPI Backend Server
 uvicorn app.main:app --reload --port 8000
-```
 
-Access the application in your browser:
-- Application Workspace: `http://localhost:8000`
-- Firebase Login Portal: `http://localhost:8000/login`
-- Logout Page: `http://localhost:8000/logout`
-
-### 5. Running via Streamlit Launcher
-
-```bash
+# Option B: Streamlit Cloud Launcher
 streamlit run streamlit_app.py
 ```
 
-Live Streamlit Cloud Deployment: [https://aethermind-multi-modal-ai-fwt8jmcqdbbmoahwveobze.streamlit.app/](https://aethermind-multi-modal-ai-fwt8jmcqdbbmoahwveobze.streamlit.app/)
+Live Streamlit Cloud Application: [https://aethermind-multi-modal-ai-fwt8jmcqdbbmoahwveobze.streamlit.app/](https://aethermind-multi-modal-ai-fwt8jmcqdbbmoahwveobze.streamlit.app/)
 
 ---
 
@@ -370,46 +277,8 @@ Run the full pytest suite to verify application integrity:
 pytest tests/
 ```
 
-- **Passing Tests**: 34/34 test modules passing cleanly.
+- **Passing Tests**: **34/34** test modules passing cleanly (100%).
 - **Coverage**: Auth User endpoints, Memory & Vector RAG, Multimodal Execution, Workspace Project CRUD.
-
----
-
-## 🔧 Troubleshooting & Common Fixes
-
-### 1. 503 Capacity Errors on AI Models
-- **Solution**: AetherMind includes automated multi-model failover. If an upstream provider is busy, the provider manager automatically reroutes the request to the API-less Pollinations engine without breaking execution.
-
-### 2. Firebase Popup Blocked During Google Sign-In
-- **Solution**: Ensure your browser allows popups for the application domain, or click the Google Sign-In button again to trigger the automatic `signInWithRedirect` fallback.
-
-### 3. Voice Microphone Permission Denied
-- **Solution**: Grant microphone permission in browser site settings. If Web Speech API is restricted in your browser, AetherMind automatically switches to the backend audio transcription endpoint.
-
----
-
-## 🗺️ Engineering Roadmap & Future Enhancements
-
-- [x] Firebase Auth v10 Integration (Email/Password, Google OAuth, Guest)
-- [x] API-less Free Tier Engine with Multi-Model Rotation
-- [x] Auto Prompt Enhancement for AI Image Synthesis
-- [x] ChatGPT-Style Voice Input with Zero Audio File Attachment Leakage
-- [x] Qdrant Vector RAG & Document Intelligence
-- [x] Responsive Device Viewport Switcher Engine
-- [ ] In-Browser WebGPU Local Model Execution
-- [ ] Multi-Agent Workflow Orchestration Subsystem
-- [ ] Real-Time WebRTC Voice-to-Voice Streaming Channel
-
----
-
-## 🤝 Contribution Guide
-
-1. Fork the repository on GitHub.
-2. Create a feature branch (`git checkout -b feature/amazing-feature`).
-3. Commit your changes (`git commit -m "feat: add amazing feature"`).
-4. Run tests to ensure everything passes (`pytest`).
-5. Push to your branch (`git push origin feature/amazing-feature`).
-6. Open a Pull Request.
 
 ---
 
