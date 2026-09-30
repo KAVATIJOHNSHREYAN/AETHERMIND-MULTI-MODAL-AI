@@ -448,6 +448,66 @@ def build_standalone_aethermind_html(_cache_key=None):
             }), { status: 200, headers: { 'Content-Type': 'application/json' } });
         }
 
+        // Conversation History Persistence Helper
+        function saveConversationMessage(chatId, userMsgObj, assistantMsgObj, modelName) {
+            let chats = getStoredItems('aethermind_saved_chats');
+            let targetChat = chats.find(c => c.id === chatId);
+            if (!targetChat) {
+                const titleSnippet = (userMsgObj.content || "New Conversation").slice(0, 35) + ((userMsgObj.content || '').length > 35 ? "..." : "");
+                targetChat = {
+                    id: chatId,
+                    title: titleSnippet,
+                    selected_model: modelName || "gemini-2.5-flash",
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                    messages: []
+                };
+                chats.unshift(targetChat);
+            }
+            targetChat.selected_model = modelName || targetChat.selected_model;
+            targetChat.updated_at = new Date().toISOString();
+            if (userMsgObj && !targetChat.messages.some(m => m.created_at === userMsgObj.created_at && m.content === userMsgObj.content)) {
+                targetChat.messages.push(userMsgObj);
+            }
+            if (assistantMsgObj && !targetChat.messages.some(m => m.created_at === assistantMsgObj.created_at && m.content === assistantMsgObj.content)) {
+                targetChat.messages.push(assistantMsgObj);
+            }
+            try { localStorage.setItem('aethermind_saved_chats', JSON.stringify(chats)); } catch(e) {}
+        }
+
+        // Conversation API Routes (/api/v1/chat/conversations)
+        if (urlStr.includes('/api/v1/chat/conversations')) {
+            if (options.method === 'DELETE') {
+                const parts = urlStr.split('/conversations/');
+                const delId = parts[1] ? parts[1].split('?')[0] : '';
+                let chats = getStoredItems('aethermind_saved_chats');
+                chats = chats.filter(c => c.id !== delId);
+                try { localStorage.setItem('aethermind_saved_chats', JSON.stringify(chats)); } catch(e) {}
+                return new Response(JSON.stringify({ success: true, message: "Deleted conversation", data: { id: delId } }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+            }
+            
+            const parts = urlStr.split('/conversations/');
+            if (parts.length > 1 && parts[1] && !parts[1].startsWith('?')) {
+                const targetId = parts[1].split('?')[0];
+                const chats = getStoredItems('aethermind_saved_chats');
+                const found = chats.find(c => c.id === targetId);
+                if (found) {
+                    return new Response(JSON.stringify({ success: true, data: found }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+                }
+            }
+
+            const chats = getStoredItems('aethermind_saved_chats');
+            return new Response(JSON.stringify({
+                success: true,
+                data: chats.map(c => ({
+                    id: c.id,
+                    title: c.title || "Conversation",
+                    selected_model: c.selected_model || "gemini-2.5-flash",
+                    updated_at: c.updated_at
+                }))
+            }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+        }
+
         // Handle Chat Completion Endpoint (/api/v1/chat)
         if ((urlStr.includes('/api/v1/chat') || urlStr.includes('/api/v1/chat/completions')) && options.method === 'POST') {
             try {
@@ -461,7 +521,16 @@ def build_standalone_aethermind_html(_cache_key=None):
                 if (!userMessage) userMessage = "Analyze the attached document";
 
                 console.log("📨 Processing User Query:", userMessage);
-                const modelChoice = body.model || "apiless-gpt4o";
+                const modelChoice = body.model || localStorage.getItem('aethermind_active_model') || "gemini-2.5-flash";
+                const chatId = body.chat_id || "chat_" + Date.now();
+
+                const userMsgObj = {
+                    id: "msg_u_" + Date.now(),
+                    role: "user",
+                    content: userMessage,
+                    attachments: body.attachments || [],
+                    created_at: new Date().toISOString()
+                };
 
                 // DETECT IMAGE GENERATION INTENT IN CHAT PROMPT
                 const isImageGen = /generate.*image|draw|picture of|photo of|create.*image|give.*pic|show.*pic|pic of|photo of|image of/i.test(userMessage);
@@ -471,14 +540,24 @@ def build_standalone_aethermind_html(_cache_key=None):
                     const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(cleanPrompt)}?nologo=true&seed=${seed}`;
                     const responseText = `Here is your generated artwork for **"${cleanPrompt}"**:\n\n![${cleanPrompt}](${imageUrl})`;
 
+                    const asstMsgObj = {
+                        id: "msg_a_" + Date.now(),
+                        role: "assistant",
+                        content: responseText,
+                        model_name: "AetherMind Flux Engine",
+                        created_at: new Date().toISOString()
+                    };
+
+                    saveConversationMessage(chatId, userMsgObj, asstMsgObj, modelChoice);
+
                     return new Response(JSON.stringify({
                         success: true,
                         data: {
-                            chat_id: body.chat_id || "chat_" + Date.now(),
+                            chat_id: chatId,
                             role: "assistant",
                             content: responseText,
                             model_used: "AetherMind Flux Engine",
-                            created_at: new Date().toISOString()
+                            created_at: asstMsgObj.created_at
                         }
                     }), { status: 200, headers: { 'Content-Type': 'application/json' } });
                 }
@@ -560,14 +639,24 @@ def build_standalone_aethermind_html(_cache_key=None):
                     responseText = "I am AetherMind Multimodal AI. I have processed your document and request.";
                 }
 
+                const asstMsgObj = {
+                    id: "msg_a_" + Date.now(),
+                    role: "assistant",
+                    content: responseText,
+                    model_name: modelChoice,
+                    created_at: new Date().toISOString()
+                };
+
+                saveConversationMessage(chatId, userMsgObj, asstMsgObj, modelChoice);
+
                 return new Response(JSON.stringify({
                     success: true,
                     data: {
-                        chat_id: body.chat_id || "chat_" + Date.now(),
+                        chat_id: chatId,
                         role: "assistant",
                         content: responseText,
                         model_used: modelChoice,
-                        created_at: new Date().toISOString()
+                        created_at: asstMsgObj.created_at
                     }
                 }), { status: 200, headers: { 'Content-Type': 'application/json' } });
 
@@ -575,10 +664,11 @@ def build_standalone_aethermind_html(_cache_key=None):
                 console.error("Pollinations bridge error:", err);
             }
 
+            const fallbackChatId = "chat_" + Date.now();
             return new Response(JSON.stringify({
                 success: true,
                 data: {
-                    chat_id: "chat_" + Date.now(),
+                    chat_id: fallbackChatId,
                     role: "assistant",
                     content: "Hello! I am AetherMind Multimodal AI. How can I help you today?",
                     model_used: "apiless-gpt4o",

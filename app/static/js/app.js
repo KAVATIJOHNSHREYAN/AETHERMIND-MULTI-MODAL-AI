@@ -2093,6 +2093,23 @@ AetherMind Multimodal AI OS is an enterprise-grade artificial intelligence opera
     btnSizePhone?.addEventListener("click", () => setDeviceViewport("phone"));
     btnSizeHybrid?.addEventListener("click", () => setDeviceViewport("hybrid"));
 
+    // Bind Model Selector Change Event & Session State
+    if (modelSelect) {
+        modelSelect.addEventListener("change", (e) => {
+            const val = e.target.value;
+            const optText = e.target.options[e.target.selectedIndex]?.text || val;
+            try {
+                localStorage.setItem("aethermind_active_model", val);
+                sessionStorage.setItem("aethermind_active_model", val);
+            } catch (err) {}
+
+            showToast(`🔄 Connecting to ${optText}...`, "info");
+            setTimeout(() => {
+                showToast(`✨ Active AI Provider set to ${optText}`, "success");
+            }, 250);
+        });
+    }
+
     // Initialize User Session & Sync Auth State
     async function initUserSession() {
         const savedEmail = localStorage.getItem("aethermind_user_email");
@@ -2103,10 +2120,20 @@ AetherMind Multimodal AI OS is an enterprise-grade artificial intelligence opera
         if (savedName && userDispName) userDispName.textContent = savedName;
         if (savedEmail && userDispEmail) userDispEmail.textContent = savedEmail;
 
+        const savedModel = localStorage.getItem("aethermind_active_model") || sessionStorage.getItem("aethermind_active_model");
+        if (savedModel && modelSelect) {
+            modelSelect.value = savedModel;
+        }
+
         const savedDeviceSize = localStorage.getItem("aethermind_device_size") || "desktop";
         setDeviceViewport(savedDeviceSize);
 
-        loadConversationsHistory();
+        await loadConversationsHistory();
+
+        const savedChatId = localStorage.getItem("aethermind_active_chat");
+        if (savedChatId && typeof window.switchConversation === "function") {
+            window.switchConversation(savedChatId);
+        }
 
         // Bind Modal Action Bar Listeners
         const btnLoadSampleDocs = document.getElementById("btn-load-sample-docs");
