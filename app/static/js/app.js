@@ -980,11 +980,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const formatMessageContent = (text) => {
         if (!text) return "";
         let formatted = text.replace(/!\[(.*?)\]\((.*?)\)/g, (match, alt, url) => {
+            const rawUrl = (url || "").replace(/&amp;/g, "&").trim();
             const safeAlt = escapeHtml(alt || "Generated AI Image");
-            const safeUrl = escapeHtml(url);
+            const safeUrl = rawUrl.replace(/"/g, "&quot;");
+            const fallbackUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(alt || 'AI Artwork')}?nologo=true`;
+            
             return `
-                <figure class="my-3 rounded-2xl overflow-hidden border border-cyan-500/30 bg-black/60 shadow-2xl max-w-md cursor-pointer group" onclick="openImagePreview('${safeUrl}', '${safeAlt}')">
-                    <img src="${safeUrl}" alt="${safeAlt}" class="w-full h-auto max-h-[380px] object-cover group-hover:scale-[1.02] transition-transform duration-300 rounded-t-xl" onerror="this.onerror=null; this.src='https://img.icons8.com/isometric/96/sparkles.png'; this.classList.add('p-8');" />
+                <figure class="my-3 rounded-2xl overflow-hidden border border-cyan-500/30 bg-black/60 shadow-2xl max-w-md cursor-pointer group" onclick="openImagePreview('${encodeURI(rawUrl)}', '${safeAlt}')">
+                    <img src="${safeUrl}" alt="${safeAlt}" referrerpolicy="no-referrer" loading="lazy" class="w-full h-auto max-h-[380px] object-cover group-hover:scale-[1.02] transition-transform duration-300 rounded-t-xl" onerror="if(!this.dataset.retried){this.dataset.retried=true; this.src='${fallbackUrl}';} else {this.onerror=null; this.src='https://img.icons8.com/isometric/96/sparkles.png'; this.classList.add('p-8');}" />
                     <figcaption class="p-3 bg-[#0d121f] text-xs text-cyan-300 font-medium flex items-center justify-between border-t border-cyan-500/20">
                         <span class="truncate font-mono">🎨 ${safeAlt}</span>
                         <span class="text-[10px] text-slate-400 group-hover:text-white shrink-0 ml-2">Click to View ↗</span>
