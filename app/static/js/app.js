@@ -2616,13 +2616,13 @@ AetherMind Multimodal AI OS is an enterprise-grade artificial intelligence opera
 
     let currentEnterpriseSettings = {
         profile: {
-            name: "Kavati John Shreyan",
-            username: "@johnshreyan",
-            email: "johnshreyankavati@gmail.com",
-            phone: "+1 (555) 019-2834",
-            country: "IN",
-            tz: "Asia/Kolkata",
-            bio: "Enterprise AI OS Administrator & Lead Engineer."
+            name: "AetherMind User",
+            username: "@user",
+            email: "user@aethermind.ai",
+            phone: "",
+            country: "US",
+            tz: "UTC",
+            bio: "Enterprise AI OS Administrator."
         },
         workspace: {
             name: "AetherMind Multimodal AI",
@@ -2657,7 +2657,34 @@ AetherMind Multimodal AI OS is an enterprise-grade artificial intelligence opera
         }
     } catch(e) {}
 
+    function syncUserProfileToSettings() {
+        const savedName = localStorage.getItem("aethermind_user_name");
+        const savedEmail = localStorage.getItem("aethermind_user_email");
+        const firebaseUser = window.firebase && window.firebase.auth ? window.firebase.auth().currentUser : null;
+
+        const activeName = firebaseUser?.displayName || savedName || currentEnterpriseSettings.profile.name || "AetherMind User";
+        const activeEmail = firebaseUser?.email || savedEmail || currentEnterpriseSettings.profile.email || "user@aethermind.ai";
+        const activeUsername = "@" + (activeEmail.includes('@') ? activeEmail.split('@')[0] : "user");
+
+        currentEnterpriseSettings.profile.name = activeName;
+        currentEnterpriseSettings.profile.email = activeEmail;
+        currentEnterpriseSettings.profile.username = activeUsername;
+
+        const profNameInput = document.getElementById("esc-prof-name");
+        const profEmailInput = document.getElementById("esc-prof-email");
+        const profUsernameInput = document.getElementById("esc-prof-username");
+        const profNameDisp = document.getElementById("esc-prof-name-disp");
+        const profEmailDisp = document.getElementById("esc-prof-email-disp");
+
+        if (profNameInput && (!profNameInput.value || profNameInput.value === "Kavati John Shreyan")) profNameInput.value = activeName;
+        if (profEmailInput && (!profEmailInput.value || profEmailInput.value === "johnshreyankavati@gmail.com")) profEmailInput.value = activeEmail;
+        if (profUsernameInput && (!profUsernameInput.value || profUsernameInput.value === "@johnshreyan")) profUsernameInput.value = activeUsername;
+        if (profNameDisp) profNameDisp.textContent = activeName;
+        if (profEmailDisp) profEmailDisp.textContent = activeEmail;
+    }
+
     window.switchSettingsTab = (tabId) => {
+        syncUserProfileToSettings();
         const tabs = ['profile', 'workspace', 'notifications', 'theme', 'api', 'billing', 'system', 'shortcuts', 'logout'];
         tabs.forEach(t => {
             const panel = document.getElementById(`esc-panel-${t}`);
