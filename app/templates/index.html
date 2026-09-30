@@ -131,6 +131,11 @@
                     <svg class="w-4 h-4 text-[#7E8CA5]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
                     <span>System Settings</span>
                 </button>
+
+                <button id="open-about-btn" class="w-full py-2.5 px-3 sidebar-nav-item text-xs font-medium text-[#B7C2D8] flex items-center space-x-3">
+                    <svg class="w-4 h-4 text-[#A855F7]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <span>About AetherMind</span>
+                </button>
             </div>
         </div>
 
@@ -853,6 +858,38 @@
                     <a href="/logout" id="btn-logout-portal-modal" class="block w-full py-2.5 glass-card text-center text-xs text-slate-300 hover:text-white rounded-xl hover:bg-white/10 transition">
                         <span>🔒 Open Dedicated Logout Page (/logout)</span>
                     </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: ABOUT AETHERMIND -->
+    <div id="modal-about" class="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-panel w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col border border-white/20 rounded-3xl">
+            <div class="h-16 px-6 border-b border-white/10 flex items-center justify-between bg-[#0F1220]">
+                <div class="flex items-center space-x-3">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#3ABEFF] to-[#A855F7] flex items-center justify-center text-white font-bold text-base shadow-lg">Æ</div>
+                    <div>
+                        <h3 class="font-heading font-bold text-base text-white">About AetherMind AI OS</h3>
+                        <p class="text-[10px] text-cyan-400 font-mono">Created by Kavati John Shreyan</p>
+                    </div>
+                </div>
+                <button id="close-about-btn" class="p-2 text-[#7E8CA5] hover:text-white transition">✕</button>
+            </div>
+            
+            <div class="p-6 md:p-8 overflow-y-auto space-y-6">
+                <div class="glass-card p-6 rounded-2xl border border-white/10 space-y-4">
+                    <div class="flex items-center space-x-2 text-xs font-mono text-cyan-300 uppercase tracking-widest font-bold">
+                        <span>✨ Complete System Capabilities</span>
+                    </div>
+                    <p class="text-sm leading-relaxed text-slate-200 text-justify">
+                        AetherMind Multimodal AI is an enterprise-grade artificial intelligence operating system created by Kavati John Shreyan that seamlessly unifies text generation, document intelligence, vision OCR, AI image synthesis, voice recording and speech-to-text transcription, Qdrant vector memory, and workspace project management into a single responsive dark glassmorphic platform. Designed with zero API key dependencies, the system features a smart multimodal auto-routing engine that dynamically selects optimal free models while maintaining live Firebase Authentication supporting email credentials, Google OAuth popups or redirects, and instant guest demo access. Users can upload multi-format documents including PDF, DOCX, CSV, Excel, TXT, and PPTX to perform instant structural summaries, data extractions, and semantic vector similarity searches via Qdrant RAG, alongside real-time web search capabilities powered by DuckDuckGo and automatic multi-language understanding across fifty-plus languages including all twenty-two official Indian languages. The creative studio includes an enterprise AI image generation engine with automatic prompt enhancement, multi-model failover rotation across Flux, Turbo, Realism, Anime, 3D, and vector canvas renderers, complete with interactive download, lightbox preview, copy, regenerate, and HD upscale controls, while a ChatGPT-style speech-to-text voice pipeline converts user speech into active input text without file attachment leakage. AetherMind further empowers enterprise workflows through long-term memory compression, project workspace categorization, multi-device viewport toggling for desktop, laptop, tablet, and mobile, a global search modal, and a soft-deletion recycle bin for total control over workspace assets.
+                    </p>
+                </div>
+
+                <div class="flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-white/10">
+                    <span class="font-mono">Author: Kavati John Shreyan</span>
+                    <span class="font-mono text-cyan-400">Enterprise AI Operating System v4.0</span>
                 </div>
             </div>
         </div>

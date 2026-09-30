@@ -233,6 +233,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const formWorkspaceSearch = document.getElementById("form-workspace-search");
     const workspaceSearchResults = document.getElementById("workspace-search-results");
 
+    const modalAbout = document.getElementById("modal-about");
+    const closeAboutBtn = document.getElementById("close-about-btn");
+    const openAboutBtn = document.getElementById("open-about-btn");
+
     // Modal Display Helpers
     const hideAllModals = () => {
         document.querySelectorAll('[id^="modal-"]').forEach(m => m.classList.add("hidden"));
@@ -254,6 +258,7 @@ document.addEventListener("DOMContentLoaded", () => {
     closeKnowledgeBtn?.addEventListener("click", hideAllModals);
     closeMemoryBtn?.addEventListener("click", hideAllModals);
     closeSearchBtn?.addEventListener("click", hideAllModals);
+    closeAboutBtn?.addEventListener("click", hideAllModals);
 
     closeWorkspaceDashboardBtn?.addEventListener("click", hideAllModals);
     closeProjectsBtn?.addEventListener("click", hideAllModals);
@@ -262,6 +267,8 @@ document.addEventListener("DOMContentLoaded", () => {
     closeAudioBtn?.addEventListener("click", hideAllModals);
     closeRecycleBinBtn?.addEventListener("click", hideAllModals);
     closeGlobalSearchBtn?.addEventListener("click", hideAllModals);
+
+    openAboutBtn?.addEventListener("click", () => { hideAllModals(); if (modalAbout) modalAbout.classList.remove("hidden"); });
 
     // Dynamic Centralized Click Listener Delegation for All Interactive UI Buttons
     document.addEventListener("click", async (e) => {
