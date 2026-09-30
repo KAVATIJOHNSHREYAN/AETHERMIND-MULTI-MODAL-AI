@@ -3928,6 +3928,22 @@ AetherMind Multimodal AI OS is an enterprise-grade artificial intelligence opera
             localStorage.setItem('aethermind_user_email', user.email || '');
             localStorage.setItem('aethermind_user_name', user.displayName || (user.email ? user.email.split('@')[0] : 'User'));
             localStorage.setItem('aethermind_firebase_uid', user.uid);
+            
+            // Sync user profile to Supabase users table
+            if (window._aetherSupabase) {
+                const profilePayload = {
+                    uid: user.uid,
+                    email: user.email || '',
+                    display_name: user.displayName || (user.email ? user.email.split('@')[0] : 'User'),
+                    photo_url: user.photoURL || null,
+                    provider: user.providerData && user.providerData.length ? user.providerData[0].providerId : 'google.com',
+                    last_login: new Date().toISOString()
+                };
+                window._aetherSupabase.from('users').upsert([profilePayload], { onConflict: 'uid' })
+                    .then(({ error }) => {
+                        if (error) console.warn('[Supabase Profile Sync]', error.message);
+                    }).catch(err => console.warn('[Supabase Profile Exception]', err));
+            }
         } else {
             _currentFirebaseUID = null;
             localStorage.setItem('aethermind_user_name', 'Guest User');
@@ -4062,20 +4078,32 @@ AetherMind Multimodal AI OS is an enterprise-grade artificial intelligence opera
         });
     }
 
-    function gateFirebaseErrMsg(code) {
+    function gateFirebaseErrMsg(errOrCode) {
+        if (!errOrCode) return 'Authentication failed. Please check your credentials and try again.';
+        const code = typeof errOrCode === 'object' ? (errOrCode.code || errOrCode.message) : errOrCode;
         const map = {
-            'auth/user-not-found': 'No account found with this email.',
-            'auth/wrong-password': 'Incorrect password. Please try again.',
-            'auth/invalid-credential': 'Invalid email or password.',
-            'auth/email-already-in-use': 'This email is already registered.',
-            'auth/weak-password': 'Password must be at least 6 characters.',
+            'auth/user-not-found': 'No account found with this email address.',
+            'auth/wrong-password': 'Incorrect password. Please verify and try again.',
+            'auth/invalid-credential': 'Invalid email or password credentials.',
+            'auth/email-already-in-use': 'This email address is already registered. Please sign in instead.',
+            'auth/weak-password': 'Password is too weak. Must be at least 6 characters.',
             'auth/invalid-email': 'Please enter a valid email address.',
-            'auth/too-many-requests': 'Too many attempts. Please wait and try again.',
-            'auth/network-request-failed': 'Network error. Check your connection.',
-            'auth/popup-blocked': 'Popup was blocked. Trying redirect...',
-            'auth/popup-closed-by-user': 'Sign-in cancelled.',
+            'auth/too-many-requests': 'Too many failed attempts. Access temporarily blocked for security. Please try again later.',
+            'auth/network-request-failed': 'Network error. Please check your internet connection.',
+            'auth/popup-blocked': 'Google login popup was blocked by browser. Retrying via redirect...',
+            'auth/popup-closed-by-user': 'Google sign-in popup was closed before completing authentication.',
+            'auth/unauthorized-domain': 'This domain is not authorized in your Firebase console for OAuth sign-in.',
+            'auth/operation-not-allowed': 'Google Sign-In is disabled in Firebase console authentication settings.',
+            'auth/invalid-api-key': 'Invalid Firebase API Key configuration.',
+            'auth/app-not-authorized': 'This app is not authorized to use Firebase Authentication with the provided API key.',
+            'auth/account-exists-with-different-credential': 'An account already exists with the same email address but different sign-in credentials.',
+            'auth/cancelled-popup-request': 'Multiple sign-in popups opened. Latest request cancelled.'
         };
-        return map[code] || 'Authentication failed. Please try again.';
+        if (map[code]) return map[code];
+        if (typeof errOrCode === 'object' && errOrCode.message) {
+            return `Auth Error (${code}): ${errOrCode.message}`;
+        }
+        return `Authentication failed (${code}). Please try again.`;
     }
 
     // --- Login Form Submission ---
