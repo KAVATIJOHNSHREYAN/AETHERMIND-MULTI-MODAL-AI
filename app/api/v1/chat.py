@@ -281,27 +281,45 @@ async def chat_completion(
             logger.warning(f"Web search error (non-fatal): {search_err}")
 
     # Detect Image Generation Intents in Chat Prompt
-    p_lower = (req.prompt or "").lower().strip()
-    img_keywords = [
-        "generate pic", "generate image", "draw ", "draw a", "create image", 
-        "picture of", "photo of", "make a picture", "generate a picture", 
-        "paint ", "art of", "illustration of", "image of", "give pic", "show pic", "pic of", "/image"
-    ]
-    is_image_intent = any(kw in p_lower for kw in img_keywords)
+    from app.core.image_generator import is_image_request, clean_image_prompt, enhance_image_prompt
+    is_image_intent = is_image_request(req.prompt or "")
 
-    image_markdown = ""
     if is_image_intent:
         try:
-            from app.core.image_generator import clean_image_prompt
             cleaned_p = clean_image_prompt(req.prompt or "")
-            img_result = await image_generator.generate_image(prompt=cleaned_p)
+            img_result = await image_generator.generate_image(prompt=req.prompt or "", auto_enhance=True)
             img_url = img_result.get("image_url", "")
-            if img_url:
-                image_markdown = f"\n\n![{cleaned_p}]({img_url})"
+            enhanced_p = img_result.get("enhanced_prompt", cleaned_p)
+            model_used = img_result.get("model_name", "AetherMind Flux")
+
+            ai_response_text = f"Here is your generated image for **\"{cleaned_p}\"**:\n\n![{cleaned_p}]({img_url})"
+
+            assistant_msg = Message(
+                id=str(uuid.uuid4()),
+                chat_id=chat_id,
+                user_id=user_id,
+                role=MessageRole.ASSISTANT.value,
+                content=ai_response_text,
+                model_name=model_used
+            )
+            db.add(assistant_msg)
+            await db.commit()
+
+            return APIResponse(
+                success=True,
+                data={
+                    "chat_id": chat_id,
+                    "role": MessageRole.ASSISTANT.value,
+                    "content": ai_response_text,
+                    "model_used": model_used,
+                    "created_at": assistant_msg.created_at.isoformat() if assistant_msg.created_at else None
+                },
+                message="Image generated successfully"
+            )
         except Exception as img_err:
             logger.warning(f"Chat image generation error: {img_err}")
 
-    # Handle Synchronous Generation
+    # Handle Synchronous LLM Generation
     try:
         ai_response_text = await ai_provider_manager.generate(
             model=model,
@@ -311,8 +329,6 @@ async def chat_completion(
     except Exception as gen_err:
         logger.warning(f"AI Provider error ({gen_err}). Generating fallback response.")
         ai_response_text = f"I have processed your request for `{model}`."
-
-    if image_markdown:
         ai_response_text += image_markdown
 
     assistant_msg = Message(

@@ -976,29 +976,150 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Format message content with markdown images & text escaping
+    // Global Window Image Actions & Handlers
+    window.handleImageLoadError = function(img, promptText) {
+        if (!img) return;
+        const retryCount = parseInt(img.dataset.retried || "0", 10);
+        const cleanPrompt = (promptText || "futuristic artwork").replace(/[^a-zA-Z0-9\s,]/g, ' ').trim();
+        const seed = Math.floor(Math.random() * 1000000);
+
+        if (retryCount === 0) {
+            img.dataset.retried = "1";
+            img.src = `https://image.pollinations.ai/prompt/${encodeURIComponent(cleanPrompt)}?width=1024&height=1024&model=turbo&nologo=true&seed=${seed}`;
+        } else if (retryCount === 1) {
+            img.dataset.retried = "2";
+            img.src = `https://image.pollinations.ai/prompt/${encodeURIComponent(cleanPrompt)}?width=1024&height=1024&model=flux-realism&nologo=true&seed=${seed}`;
+        } else if (retryCount === 2) {
+            img.dataset.retried = "3";
+            img.src = `https://image.pollinations.ai/prompt/${encodeURIComponent(cleanPrompt)}?nologo=true&seed=${seed}`;
+        } else if (retryCount === 3) {
+            img.dataset.retried = "4";
+            const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+                <defs>
+                    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#0f172a"/>
+                        <stop offset="50%" stop-color="#1e1b4b"/>
+                        <stop offset="100%" stop-color="#311042"/>
+                    </linearGradient>
+                    <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stop-color="#38bdf8"/>
+                        <stop offset="100%" stop-color="#a855f7"/>
+                    </linearGradient>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#bg)"/>
+                <circle cx="512" cy="450" r="220" fill="none" stroke="rgba(56, 189, 248, 0.3)" stroke-width="8"/>
+                <polygon points="512,300 650,550 374,550" fill="none" stroke="rgba(168, 85, 247, 0.4)" stroke-width="6"/>
+                <text x="512" y="750" text-anchor="middle" fill="url(#textGrad)" font-family="sans-serif" font-size="36" font-weight="bold">🎨 ${cleanPrompt.slice(0, 40)}</text>
+                <text x="512" y="810" text-anchor="middle" fill="#94a3b8" font-family="sans-serif" font-size="22">AetherMind Enterprise AI Canvas</text>
+            </svg>`;
+            img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+        }
+    };
+
+    window.downloadImage = async function(url, name) {
+        showToast("⬇️ Starting image download...", "info");
+        try {
+            const response = await fetch(url);
+            const blob = await response.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = blobUrl;
+            a.download = (name || "aethermind_artwork").replace(/[^a-zA-Z0-9_-]/g, "_") + ".png";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(blobUrl);
+            showToast("Image downloaded!", "success");
+        } catch(e) {
+            window.open(url, "_blank");
+        }
+    };
+
+    window.copyImageUrl = function(url) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(url).then(() => {
+                showToast("📋 Image URL copied to clipboard!", "success");
+            }).catch(() => {
+                showToast("URL: " + url, "info");
+            });
+        } else {
+            showToast("URL: " + url, "info");
+        }
+    };
+
+    window.openOriginalImage = function(url) {
+        window.open(url, "_blank");
+    };
+
+    window.regenerateImage = function(prompt) {
+        const chatInput = document.getElementById("chat-input");
+        const chatForm = document.getElementById("chat-form");
+        if (chatInput) {
+            chatInput.value = `Generate image: ${prompt}`;
+            if (chatForm) chatForm.requestSubmit();
+        }
+    };
+
+    window.upscaleImage = function(prompt) {
+        const chatInput = document.getElementById("chat-input");
+        const chatForm = document.getElementById("chat-form");
+        if (chatInput) {
+            chatInput.value = `Generate image: ${prompt}, ultra high resolution 8k HD, masterpiece`;
+            if (chatForm) chatForm.requestSubmit();
+        }
+    };
+
+    // Format message content with markdown images, enterprise action toolbar & text escaping
     const formatMessageContent = (text) => {
         if (!text) return "";
         let formatted = text.replace(/!\[(.*?)\]\((.*?)\)/g, (match, alt, url) => {
             const rawUrl = (url || "").replace(/&amp;/g, "&").trim();
             const safeAlt = escapeHtml(alt || "Generated AI Image");
+            const safeAltRaw = (alt || "Generated AI Image").replace(/'/g, "\\'");
             const safeUrl = rawUrl.replace(/"/g, "&quot;");
-            const fallbackUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(alt || 'AI Artwork')}?nologo=true`;
-            
+
             return `
-                <figure class="my-3 rounded-2xl overflow-hidden border border-cyan-500/30 bg-black/60 shadow-2xl max-w-md cursor-pointer group" onclick="openImagePreview('${encodeURI(rawUrl)}', '${safeAlt}')">
-                    <img src="${safeUrl}" alt="${safeAlt}" referrerpolicy="no-referrer" loading="lazy" class="w-full h-auto max-h-[380px] object-cover group-hover:scale-[1.02] transition-transform duration-300 rounded-t-xl" onerror="if(!this.dataset.retried){this.dataset.retried=true; this.src='${fallbackUrl}';} else {this.onerror=null; this.src='https://img.icons8.com/isometric/96/sparkles.png'; this.classList.add('p-8');}" />
-                    <figcaption class="p-3 bg-[#0d121f] text-xs text-cyan-300 font-medium flex items-center justify-between border-t border-cyan-500/20">
-                        <span class="truncate font-mono">🎨 ${safeAlt}</span>
-                        <span class="text-[10px] text-slate-400 group-hover:text-white shrink-0 ml-2">Click to View ↗</span>
+                <figure class="my-4 rounded-2xl overflow-hidden border border-cyan-500/40 bg-[#080d19]/90 shadow-2xl max-w-lg w-full transition-all hover:border-cyan-400/60">
+                    <div class="relative group cursor-pointer overflow-hidden bg-slate-950 flex items-center justify-center min-h-[260px]" onclick="openImagePreview('${encodeURI(rawUrl)}', '${safeAltRaw}')">
+                        <img src="${safeUrl}" alt="${safeAlt}" referrerpolicy="no-referrer" loading="lazy" class="w-full h-auto max-h-[460px] object-cover group-hover:scale-[1.01] transition-transform duration-300 rounded-t-2xl" onerror="handleImageLoadError(this, '${safeAltRaw}')" />
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-between p-3 pointer-events-none">
+                            <span class="text-xs text-white font-medium drop-shadow">🔍 Fullscreen Lightbox</span>
+                            <span class="text-[11px] font-mono text-cyan-300 bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-500/30">AetherMind AI Engine</span>
+                        </div>
+                    </div>
+                    <figcaption class="p-3 bg-[#0c1222] border-t border-white/10 space-y-2.5">
+                        <div class="flex items-center justify-between text-xs text-slate-200">
+                            <span class="truncate font-semibold text-cyan-300 font-mono">🎨 ${safeAlt}</span>
+                        </div>
+                        <div class="flex flex-wrap items-center justify-between gap-1.5 pt-1 border-t border-white/10 text-xs">
+                            <div class="flex items-center space-x-1.5">
+                                <button type="button" onclick="event.stopPropagation(); downloadImage('${encodeURI(rawUrl)}', '${safeAltRaw}')" class="px-2.5 py-1 rounded-lg bg-cyan-500/15 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/30 flex items-center space-x-1 text-[11px] font-medium transition cursor-pointer">
+                                    <span>⬇️ Download</span>
+                                </button>
+                                <button type="button" onclick="event.stopPropagation(); openImagePreview('${encodeURI(rawUrl)}', '${safeAltRaw}')" class="px-2.5 py-1 rounded-lg bg-purple-500/15 hover:bg-purple-500/30 text-purple-300 border border-purple-500/30 flex items-center space-x-1 text-[11px] font-medium transition cursor-pointer">
+                                    <span>⛶ Fullscreen</span>
+                                </button>
+                                <button type="button" onclick="event.stopPropagation(); copyImageUrl('${encodeURI(rawUrl)}')" class="px-2.5 py-1 rounded-lg bg-slate-700/50 hover:bg-slate-700 text-slate-200 border border-white/10 flex items-center space-x-1 text-[11px] font-medium transition cursor-pointer">
+                                    <span>📋 Copy</span>
+                                </button>
+                            </div>
+                            <div class="flex items-center space-x-1.5">
+                                <button type="button" onclick="event.stopPropagation(); regenerateImage('${safeAltRaw}')" class="px-2.5 py-1 rounded-lg bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/30 flex items-center space-x-1 text-[11px] font-medium transition cursor-pointer">
+                                    <span>🔄 Regenerate</span>
+                                </button>
+                                <button type="button" onclick="event.stopPropagation(); upscaleImage('${safeAltRaw}')" class="px-2.5 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 flex items-center space-x-1 text-[11px] font-medium transition cursor-pointer">
+                                    <span>⚡ HD Upscale</span>
+                                </button>
+                            </div>
+                        </div>
                     </figcaption>
                 </figure>
             `;
         });
 
-        const parts = formatted.split(/(<figure class="my-3 rounded-2xl[\s\S]*?<\/figure>)/g);
+        const parts = formatted.split(/(<figure class="my-4 rounded-2xl[\s\S]*?<\/figure>)/g);
         return parts.map(part => {
-            if (part.startsWith('<figure class="my-3 rounded-2xl')) {
+            if (part.startsWith('<figure class="my-4 rounded-2xl')) {
                 return part;
             }
             return escapeHtml(part);

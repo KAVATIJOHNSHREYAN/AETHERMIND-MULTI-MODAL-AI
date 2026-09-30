@@ -135,11 +135,32 @@ def build_standalone_aethermind_html(_cache_key=None):
     <script>
     console.log("⚡ AetherMind Standalone Cloud Engine Bridge Active.");
 
+    function isImageRequest(input) {
+        if (!input) return false;
+        const p = input.trim().toLowerCase();
+        if (/(code|function|script|summary|table|document|article|essay|poem|text|json|csv|python|javascript|html)/i.test(p)) {
+            return false;
+        }
+        const patterns = [
+            /\b(draw|generate|create|imagine|design|paint|visualize|illustrate|render)\b/i,
+            /\b(make|give|show)(\s+me)?\s*(a|an)?\s*(picture|photo|image|pic|artwork|drawing|illustration|sketch|render|painting)\b/i,
+            /\b(picture|photo|image|pic|artwork|drawing|illustration|sketch|render)\s+of\b/i,
+            /\b(i\s+want|can\s+you\s+make|would\s+like)\s+(a|an)?\s*(picture|photo|image|pic|artwork|drawing)\b/i,
+            /\b(convert|turn)\s+this\s+into\s+(an?\s+)?image\b/i,
+            /^\/(image|draw)\b/i
+        ];
+        for (let pat of patterns) {
+            if (pat.test(p)) return true;
+        }
+        const keywords = ["photorealistic", "cyberpunk", "cinematic", "anime", "portrait", "3d render", "fantasy castle", "sunset", "dragon flying", "panda eating", "panda standing", "tiger wearing", "astronaut drinking", "samurai fighting", "puppy sleeping"];
+        return keywords.some(kw => p.includes(kw));
+    }
+
     function cleanImagePrompt(input) {
         if (!input) return "futuristic AI artwork";
         let p = input.trim();
-        p = p.replace(/^(can\s+you\s+)?(please\s+)?(generate|create|draw|make|show|give)(\s+me)?\s*(a|an|the)?\s*(hd|4k|8k|realistic|photo|picture|image|pic)?\s*(of|about|with|:|\s)+/i, '');
-        p = p.replace(/^(image|picture|photo|pic)\s*(of|:|\s)+/i, '');
+        p = p.replace(/^(can\s+you\s+)?(please\s+)?(generate|create|draw|make|show|give)(\s+me)?\s*(a|an|the)?\s*(hd|4k|8k|realistic|photo|picture|image|pic|artwork|illustration)?\s*(of|about|with|:|\s)+/i, '');
+        p = p.replace(/^(image|picture|photo|pic|artwork|illustration)\s*(of|:|\s)+/i, '');
         p = p.replace(/^(give|show|make|draw)\s*(me)?\s*(a|an|the)?\s*(pic|picture|photo|image)?\s*(of|:|\s)+/i, '');
         p = p.replace(/^(generate|create|draw|make|show|give)\s+/i, '');
         p = p.replace(/^:\s*/, '');
@@ -147,10 +168,32 @@ def build_standalone_aethermind_html(_cache_key=None):
         return p || input;
     }
 
+    function enhanceImagePrompt(input) {
+        const cleaned = cleanImagePrompt(input);
+        const p_lower = cleaned.toLowerCase();
+        if (cleaned.split(/\s+/).length > 25) return cleaned;
+
+        const hasStyle = /(cinematic|photorealistic|hyperrealistic|anime|manga|3d render|watercolor|sketch|oil painting|digital art|unreal engine|dslr|studio lighting|8k)/i.test(p_lower);
+        if (hasStyle) return `${cleaned}, ultra high resolution, masterpiece quality, vivid composition`;
+
+        let enhancement = "ultra realistic, cinematic lighting, detailed textures, DSLR photography, depth of field, volumetric lighting, masterpiece, 8k resolution";
+        if (/(anime|manga|ghibli|waifu|chibi|comic)/i.test(p_lower)) {
+            enhancement = "masterpiece anime illustration, vibrant colors, clean lineart, dynamic composition, high resolution, Studio Ghibli style";
+        } else if (/(3d|render|character|toy|sculpture|blender)/i.test(p_lower)) {
+            enhancement = "3D octane render, raytracing, soft studio lighting, ultra detailed textures, 8k resolution, Pixar quality";
+        } else if (/(cyberpunk|sci-fi|futuristic|neon|robot|hologram)/i.test(p_lower)) {
+            enhancement = "cyberpunk aesthetic, vibrant neon reflections, atmospheric fog, volumetric lighting, hyper-detailed, 8k resolution, cinematic composition";
+        } else if (/(fantasy|dragon|magic|castle|warrior|galaxy)/i.test(p_lower)) {
+            enhancement = "epic fantasy artwork, dramatic lighting, intricate details, vivid color palette, masterpiece, ultra high definition, concept art";
+        }
+
+        return `${cleaned}, ${enhancement}`;
+    }
+
     const originalFetch = window.fetch;
     window.fetch = async function(url, options = {}) {
         const urlStr = typeof url === 'string' ? url : (url.url || '');
-        
+
         // Mock Auth Endpoints
         if (urlStr.includes('/api/v1/auth/logout')) {
             return new Response(JSON.stringify({
@@ -219,13 +262,15 @@ def build_standalone_aethermind_html(_cache_key=None):
                 const body = JSON.parse(options.body || '{}');
                 const rawPrompt = body.prompt || "futuristic AI artwork";
                 const imgPrompt = cleanImagePrompt(rawPrompt);
+                const enhancedPrompt = enhanceImagePrompt(imgPrompt);
                 const seed = Math.floor(Math.random() * 1000000);
-                const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(imgPrompt)}?nologo=true&seed=${seed}`;
+                const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(enhancedPrompt)}?width=1024&height=1024&model=flux&nologo=true&seed=${seed}`;
                 return new Response(JSON.stringify({
                     success: true,
                     data: {
                         image_url: imageUrl,
                         prompt: imgPrompt,
+                        enhanced_prompt: enhancedPrompt,
                         model_name: "AetherMind Flux"
                     }
                 }), { status: 200, headers: { 'Content-Type': 'application/json' } });
@@ -558,12 +603,13 @@ def build_standalone_aethermind_html(_cache_key=None):
                 };
 
                 // DETECT IMAGE GENERATION INTENT IN CHAT PROMPT
-                const isImageGen = /generate.*(image|pic|photo|artwork|drawing|map)|draw|picture of|photo of|create.*(image|pic|photo)|give.*pic|show.*pic|pic of|image of|\/image/i.test(userMessage);
+                const isImageGen = isImageRequest(userMessage);
                 if (isImageGen) {
                     const cleanPrompt = cleanImagePrompt(userMessage);
+                    const enhancedPrompt = enhanceImagePrompt(cleanPrompt);
                     const seed = Math.floor(Math.random() * 1000000);
-                    const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(cleanPrompt)}?width=1024&height=1024&model=flux&nologo=true&seed=${seed}`;
-                    const responseText = `Here is your generated artwork for **"${cleanPrompt}"**:\n\n![${cleanPrompt}](${imageUrl})`;
+                    const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(enhancedPrompt)}?width=1024&height=1024&model=flux&nologo=true&seed=${seed}`;
+                    const responseText = `Here is your generated image for **"${cleanPrompt}"**:\n\n![${cleanPrompt}](${imageUrl})`;
 
                     const asstMsgObj = {
                         id: "msg_a_" + Date.now(),
