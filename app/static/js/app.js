@@ -2355,24 +2355,31 @@ AetherMind Multimodal AI OS is an enterprise-grade artificial intelligence opera
         currentRDCState.height = height;
         currentRDCState.zoom = zoom;
 
-        // Apply styles to main canvas
+        // Apply styles to main canvas with full scrolling support
         mainCanvas.style.transition = "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)";
         mainCanvas.style.transformOrigin = "top center";
         mainCanvas.style.transform = `scale(${zoom / 100})`;
+        mainCanvas.style.overflow = "auto";
+        mainCanvas.style.overflowY = "auto";
+        mainCanvas.style.overflowX = "auto";
 
         const screenW = window.innerWidth;
+        const btnRevert = document.getElementById("btn-revert-original");
+
         if (width >= screenW || mode === "desktop" || mode === "fullscreen") {
             mainCanvas.style.maxWidth = "100%";
             mainCanvas.style.margin = "0";
             mainCanvas.style.borderRadius = "0px";
             mainCanvas.style.border = "none";
             mainCanvas.style.boxShadow = "none";
+            if (btnRevert) btnRevert.classList.add("hidden");
         } else {
             mainCanvas.style.maxWidth = `${width}px`;
             mainCanvas.style.margin = "0 auto";
             mainCanvas.style.borderRadius = "20px";
             mainCanvas.style.border = "1px solid rgba(56, 189, 248, 0.4)";
             mainCanvas.style.boxShadow = "0 0 50px rgba(56, 189, 248, 0.25)";
+            if (btnRevert) btnRevert.classList.remove("hidden");
         }
 
         // Notch & Bezel Frame Toggle
@@ -2380,16 +2387,23 @@ AetherMind Multimodal AI OS is an enterprise-grade artificial intelligence opera
             mainCanvas.style.borderTop = "12px solid #0B101D";
         }
 
-        // Floating Resolution Badge on Canvas
+        // Floating Resolution Badge on Canvas with direct Revert Original Button
         let overlay = document.getElementById("rdc-canvas-res-overlay");
-        if (currentRDCState.showLabel) {
+        if (currentRDCState.showLabel && (width < screenW || zoom !== 100)) {
             if (!overlay) {
                 overlay = document.createElement("div");
                 overlay.id = "rdc-canvas-res-overlay";
-                overlay.className = "fixed bottom-4 right-4 z-40 px-3 py-1.5 rounded-full bg-[#0F1629]/90 border border-[#3ABEFF]/40 text-[#3ABEFF] font-mono text-[11px] shadow-lg pointer-events-none flex items-center space-x-2";
+                overlay.className = "fixed bottom-4 right-4 z-40 px-3 py-1.5 rounded-full bg-[#0F1629]/95 border border-[#3ABEFF]/40 text-[#3ABEFF] font-mono text-[11px] shadow-2xl flex items-center space-x-2";
                 document.body.appendChild(overlay);
             }
-            overlay.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span><span>${width} × ${height} (${zoom}%)</span>`;
+            overlay.innerHTML = `
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>${width} × ${height} (${zoom}%)</span>
+                <button type="button" onclick="window.revertToOriginalViewport()"
+                    class="ml-2 px-2.5 py-0.5 rounded-full bg-rose-500/25 text-rose-300 hover:bg-rose-500/45 border border-rose-500/40 transition text-[10px] cursor-pointer font-sans font-medium flex items-center gap-1">
+                    <span>↺ Revert Original</span>
+                </button>
+            `;
             overlay.style.display = "flex";
         } else if (overlay) {
             overlay.style.display = "none";
@@ -2435,6 +2449,15 @@ AetherMind Multimodal AI OS is an enterprise-grade artificial intelligence opera
     window.setDeviceViewport = setDeviceViewport;
     window.applyRDCPreset = (presetId) => {
         setDeviceViewport(presetId);
+    };
+
+    window.revertToOriginalViewport = () => {
+        currentRDCState.isCustom = false;
+        currentRDCState.activePreset = "desktop_fhd";
+        setDeviceViewport("desktop", window.innerWidth, window.innerHeight, 100);
+        const btnRevert = document.getElementById("btn-revert-original");
+        if (btnRevert) btnRevert.classList.add("hidden");
+        showToast("↺ Viewport Reverted to Original Fullscreen Desktop", "info");
     };
 
     // Automated Responsive Validation Audit Engine

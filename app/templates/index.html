@@ -472,7 +472,7 @@
          2. MAIN UNIFIED MULTIMODAL CONVERSATION CANVAS
          ========================================================================= -->
     <main id="main-canvas"
-        class="flex-1 flex flex-col h-full relative overflow-hidden gap-3 transition-all duration-300 mx-auto w-full">
+        class="flex-1 flex flex-col h-full relative overflow-y-auto overflow-x-auto custom-scrollbar gap-3 transition-all duration-300 mx-auto w-full">
 
         <!-- Floating Glass Top Navigation Bar -->
         <header class="h-16 glass-panel px-6 flex items-center justify-between z-20 shrink-0">
@@ -489,7 +489,7 @@
                 </button>
                 <div class="relative">
                     <select id="model-select"
-                        class="glass-input text-xs font-semibold py-2 px-4 pr-8 appearance-none focus:outline-none cursor-pointer text-[#3ABEFF]">
+                        class="glass-input text-xs font-semibold py-2 px-3 pr-7 max-w-[170px] sm:max-w-[240px] md:max-w-xs truncate appearance-none focus:outline-none cursor-pointer text-[#3ABEFF]">
                         <option value="auto" selected>✨ AetherMind Auto Engine (Smart Multimodal)</option>
                         <option value="apiless-gpt4o">⚡ GPT-4o Engine</option>
                         <option value="gemini-2.5-flash">✨ Google Gemini 2.5 Multimodal</option>
@@ -508,6 +508,14 @@
 
             <!-- Topbar Right Control Actions (Device Viewport Sizes, Search, Knowledge, Memory) -->
             <div class="flex items-center space-x-2 shrink-0">
+                <!-- Topbar Revert to Original Viewport Button -->
+                <button type="button" id="btn-revert-original" onclick="window.revertToOriginalViewport()"
+                    class="hidden px-2.5 py-1.5 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-300 hover:bg-rose-500/30 transition text-xs flex items-center space-x-1 cursor-pointer shadow-md shadow-rose-500/10"
+                    title="Revert Viewport to Original Fullscreen Desktop">
+                    <span class="text-xs">↺</span>
+                    <span class="font-medium text-xs">Revert Original</span>
+                </button>
+
                 <!-- Single Responsive Device Center Trigger Button -->
                 <button type="button" id="btn-responsive-center" onclick="openModal('modal-responsive-center')"
                     class="relative group px-3 py-1.5 rounded-xl bg-[#0F1629]/90 border border-[#3ABEFF]/40 shadow-lg shadow-[#3ABEFF]/15 hover:border-[#9333EA]/60 hover:shadow-[#9333EA]/30 transition-all duration-300 flex items-center space-x-2 text-xs cursor-pointer"
