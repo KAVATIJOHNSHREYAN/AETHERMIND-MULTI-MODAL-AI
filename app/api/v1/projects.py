@@ -63,6 +63,19 @@ async def list_projects(
     return APIResponse(success=True, data=projs, message="Projects list loaded")
 
 
+@router.get("/{project_id}", response_model=APIResponse[dict])
+async def get_project_detail(
+    project_id: str,
+    current_user: User = Depends(get_current_user_or_session),
+    db: AsyncSession = Depends(get_async_db)
+):
+    """Retrieve detailed project payload with files, folders, chats and stats."""
+    detail = await project_service.get_project_detail(db=db, project_id=project_id, user_id=current_user.id)
+    if not detail:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return APIResponse(success=True, data=detail, message=f"Project '{detail.get('name')}' loaded")
+
+
 @router.post("/move-item", response_model=APIResponse[dict])
 async def move_item_to_project(
     req: MoveToProjectRequest,
@@ -94,5 +107,5 @@ async def delete_project(
     db: AsyncSession = Depends(get_async_db)
 ):
     """Delete a project container."""
-    success = await project_service.delete_project(db=db, project_id=project_id)
+    success = await project_service.delete_project(db=db, project_id=project_id, user_id=current_user.id)
     return APIResponse(success=success, message=f"Project {project_id} deleted", data={"id": project_id})

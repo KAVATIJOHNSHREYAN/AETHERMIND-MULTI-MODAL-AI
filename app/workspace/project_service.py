@@ -67,7 +67,7 @@ class ProjectService:
         user_id: str = "default-user-id",
         include_archived: bool = False
     ) -> List[Dict[str, Any]]:
-        """List user projects."""
+        """List user projects with file and chat counts."""
         try:
             q = select(Project).where(Project.user_id == user_id)
             if not include_archived:
@@ -75,8 +75,16 @@ class ProjectService:
             q = q.order_by(Project.created_at.desc())
             res = await db.execute(q)
             projs = res.scalars().all()
-            return [
-                {
+            
+            output = []
+            for p in projs:
+                file_cnt_res = await db.execute(select(FileModel).where(FileModel.project_id == p.id, FileModel.user_id == user_id, FileModel.is_deleted == False))
+                file_cnt = len(file_cnt_res.scalars().all())
+                
+                chat_cnt_res = await db.execute(select(Chat).where(Chat.project_id == p.id, Chat.user_id == user_id))
+                chat_cnt = len(chat_cnt_res.scalars().all())
+                
+                output.append({
                     "id": p.id,
                     "name": p.name,
                     "description": p.description,
@@ -84,13 +92,90 @@ class ProjectService:
                     "icon": p.icon,
                     "is_archived": p.is_archived,
                     "tags": p.tags or [],
+                    "file_count": file_cnt,
+                    "chat_count": chat_cnt,
                     "created_at": p.created_at.isoformat() if p.created_at else None
-                }
-                for p in projs
-            ]
+                })
+            return output
         except Exception as e:
             logger.warning(f"Error listing projects: {e}")
             return []
+
+    async def get_project_detail(
+        self,
+        db: AsyncSession,
+        project_id: str,
+        user_id: str
+    ) -> Optional[Dict[str, Any]]:
+        """Retrieve complete project details including associated files, folders, chats, and image generations."""
+        try:
+            res = await db.execute(select(Project).where(Project.id == project_id, Project.user_id == user_id))
+            p = res.scalar_one_or_none()
+            if not p:
+                return None
+                
+            files_res = await db.execute(select(FileModel).where(FileModel.project_id == project_id, FileModel.user_id == user_id, FileModel.is_deleted == False))
+            files = files_res.scalars().all()
+            
+            folders_res = await db.execute(select(Folder).where(Folder.project_id == project_id, Folder.user_id == user_id, Folder.is_deleted == False))
+            folders = folders_res.scalars().all()
+            
+            chats_res = await db.execute(select(Chat).where(Chat.project_id == project_id, Chat.user_id == user_id))
+            chats = chats_res.scalars().all()
+            
+            storage_used = sum(f.size_bytes or 0 for f in files)
+            
+            return {
+                "id": p.id,
+                "name": p.name,
+                "description": p.description,
+                "color": p.color,
+                "icon": p.icon,
+                "is_archived": p.is_archived,
+                "tags": p.tags or [],
+                "created_at": p.created_at.isoformat() if p.created_at else None,
+                "files": [
+                    {
+                        "id": f.id,
+                        "filename": f.filename,
+                        "file_type": f.file_type,
+                        "mime_type": f.mime_type,
+                        "size_bytes": f.size_bytes,
+                        "public_url": f.public_url,
+                        "folder_id": f.folder_id,
+                        "is_starred": f.is_starred or False,
+                        "created_at": f.created_at.isoformat() if f.created_at else None
+                    }
+                    for f in files
+                ],
+                "folders": [
+                    {
+                        "id": f.id,
+                        "name": f.name,
+                        "parent_id": f.parent_id,
+                        "created_at": f.created_at.isoformat() if f.created_at else None
+                    }
+                    for f in folders
+                ],
+                "chats": [
+                    {
+                        "id": c.id,
+                        "title": c.title,
+                        "created_at": c.created_at.isoformat() if c.created_at else None
+                    }
+                    for c in chats
+                ],
+                "stats": {
+                    "total_files": len(files),
+                    "total_folders": len(folders),
+                    "total_chats": len(chats),
+                    "storage_used_bytes": storage_used,
+                    "storage_used_mb": round(storage_used / (1024 * 1024), 2)
+                }
+            }
+        except Exception as e:
+            logger.warning(f"Error fetching project detail: {e}")
+            return None
 
     async def move_item_to_project(
         self,
@@ -130,17 +215,27 @@ class ProjectService:
             await db.rollback()
             return False
 
-    async def delete_project(self, db: AsyncSession, project_id: str) -> bool:
-        """Delete project."""
+    async def delete_project(self, db: AsyncSession, project_id: str, user_id: str = None) -> bool:
+        """Cascade delete project and associated resources for the authenticated user."""
         try:
-            res = await db.execute(select(Project).where(Project.id == project_id))
+            q = select(Project).where(Project.id == project_id)
+            if user_id:
+                q = q.where(Project.user_id == user_id)
+            res = await db.execute(q)
             p = res.scalar_one_or_none()
             if p:
+                # Delete files, folders, and chats assigned to this project
+                await db.execute(delete(FileModel).where(FileModel.project_id == project_id))
+                await db.execute(delete(Folder).where(Folder.project_id == project_id))
+                await db.execute(delete(Chat).where(Chat.project_id == project_id))
                 await db.delete(p)
                 await db.commit()
+                if user_id:
+                    await workspace_service.log_activity(db, user_id, "delete_project", "project", project_id, f"Deleted project '{p.name}'")
                 return True
             return False
-        except Exception:
+        except Exception as e:
+            logger.warning(f"Error deleting project: {e}")
             await db.rollback()
             return False
 

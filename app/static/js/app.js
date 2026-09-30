@@ -1082,6 +1082,8 @@ document.addEventListener("DOMContentLoaded", () => {
             const modalProjectsWorkspace = document.getElementById("modal-projects-workspace");
             if (modalProjectsWorkspace) modalProjectsWorkspace.classList.remove("hidden");
             loadProjects();
+            loadFileManagerFiles();
+            populateFolderProjectSelect();
             return;
         }
 
@@ -2372,12 +2374,14 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
-    // B. PROJECTS MANAGEMENT
+    // B. PROJECTS & FILE MANAGER MODULE
     if (formCreateProject) {
         formCreateProject.addEventListener("submit", async (e) => {
             e.preventDefault();
-            const name = document.getElementById("project-name-input").value.trim();
-            const description = document.getElementById("project-desc-input").value.trim();
+            const nameInput = document.getElementById("proj-name-input") || document.getElementById("project-name-input");
+            const descInput = document.getElementById("proj-desc-input") || document.getElementById("project-desc-input");
+            const name = nameInput ? nameInput.value.trim() : "";
+            const description = descInput ? descInput.value.trim() : "";
             const color = document.getElementById("project-color-input")?.value || "#3b82f6";
             if (!name) return;
 
@@ -2390,9 +2394,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 const data = await res.json();
                 if (data.success) {
                     showToast(`Project '${name}' created successfully`, "success");
-                    document.getElementById("project-name-input").value = "";
-                    document.getElementById("project-desc-input").value = "";
+                    if (nameInput) nameInput.value = "";
+                    if (descInput) descInput.value = "";
                     loadProjects();
+                    populateFolderProjectSelect();
                 } else {
                     showToast(data.detail || "Failed to create project", "error");
                 }
@@ -2401,6 +2406,54 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
     }
+
+    const formCreateFolder = document.getElementById("form-create-folder");
+    if (formCreateFolder) {
+        formCreateFolder.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const nameInput = document.getElementById("folder-name-input");
+            const projSelect = document.getElementById("folder-proj-select");
+            const name = nameInput ? nameInput.value.trim() : "";
+            const projectId = projSelect ? projSelect.value : null;
+            if (!name) return;
+
+            try {
+                const res = await authenticatedFetch("/api/v1/files/folders", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name, project_id: projectId || null })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(`Folder '${name}' created successfully`, "success");
+                    if (nameInput) nameInput.value = "";
+                    loadFileManagerFiles();
+                } else {
+                    showToast(data.detail || "Failed to create folder", "error");
+                }
+            } catch (e) {
+                showToast("Error creating folder", "error");
+            }
+        });
+    }
+
+    const populateFolderProjectSelect = async () => {
+        const select = document.getElementById("folder-proj-select");
+        if (!select) return;
+        try {
+            const res = await authenticatedFetch("/api/v1/projects");
+            const data = await res.json();
+            if (data.success && data.data) {
+                select.innerHTML = '<option value="">No Project (Root)</option>';
+                data.data.forEach(p => {
+                    const opt = document.createElement("option");
+                    opt.value = p.id;
+                    opt.textContent = `📁 Project: ${p.name}`;
+                    select.appendChild(opt);
+                });
+            }
+        } catch (e) {}
+    };
 
     const loadProjects = async () => {
         if (!projectsGrid) return;
@@ -2414,15 +2467,20 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     const renderProjectsList = (projects) => {
+        if (!projectsGrid) return;
         projectsGrid.innerHTML = "";
         if (projects.length === 0) {
-            projectsGrid.innerHTML = `<div class="text-slate-400 col-span-3 text-center py-6">No projects created yet. Create a project above!</div>`;
+            projectsGrid.innerHTML = `<div class="text-slate-400 col-span-2 text-center py-6">No projects created yet. Create a project above!</div>`;
             return;
         }
 
         projects.forEach(p => {
             const card = document.createElement("div");
-            card.className = "p-4 rounded-xl bg-white/5 border border-white/10 space-y-3 flex flex-col justify-between group hover:border-cyan-500/40 transition";
+            card.className = "p-4 rounded-xl bg-white/5 border border-white/10 space-y-3 flex flex-col justify-between group hover:border-cyan-500/40 transition cursor-pointer";
+            card.onclick = (e) => {
+                if (e.target.tagName === 'BUTTON') return;
+                openProjectDetails(p.id, p.name);
+            };
             card.innerHTML = `
                 <div>
                     <div class="flex items-center justify-between">
@@ -2436,22 +2494,92 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>
                 <div class="flex items-center justify-between text-[11px] pt-2 border-t border-white/5">
                     <span class="text-slate-500">${p.chat_count || 0} chats</span>
-                    <button type="button" class="text-rose-400 hover:underline" onclick="deleteProject('${p.id}')">Delete</button>
+                    <button type="button" class="text-rose-400 hover:underline" onclick="deleteProject('${p.id}', event)">Delete</button>
                 </div>
             `;
             projectsGrid.appendChild(card);
         });
     };
 
-    window.deleteProject = async (projectId) => {
+    window.openProjectDetails = async (projectId, projectName) => {
+        try {
+            const res = await authenticatedFetch(`/api/v1/projects/${projectId}`);
+            const data = await res.json();
+            if (data.success && data.data) {
+                const p = data.data;
+                showToast(`Opened project '${p.name}' (${p.stats.total_files} files, ${p.stats.total_chats} chats)`, "info");
+                loadFileManagerFiles(projectId);
+            }
+        } catch (e) {}
+    };
+
+    window.deleteProject = async (projectId, e) => {
+        if (e) e.stopPropagation();
+        if (!confirm("Are you sure you want to delete this project and all associated files/chats?")) return;
         try {
             const res = await authenticatedFetch(`/api/v1/projects/${projectId}`, { method: "DELETE" });
             const data = await res.json();
             if (data.success) {
                 showToast("Project deleted", "info");
                 loadProjects();
+                loadFileManagerFiles();
+                populateFolderProjectSelect();
             }
         } catch (e) {}
+    };
+
+    const loadFileManagerFiles = async (projectId = null) => {
+        const grid = document.getElementById("file-manager-grid");
+        if (!grid) return;
+        try {
+            const url = projectId ? `/api/v1/files/manager?project_id=${projectId}` : "/api/v1/files/manager";
+            const res = await authenticatedFetch(url);
+            const data = await res.json();
+            if (data.success && data.data) {
+                renderFileManagerFiles(data.data);
+            }
+        } catch (e) {}
+    };
+
+    const renderFileManagerFiles = (files) => {
+        const grid = document.getElementById("file-manager-grid");
+        if (!grid) return;
+        grid.innerHTML = "";
+        if (files.length === 0) {
+            grid.innerHTML = '<div class="text-slate-400 text-center py-4 text-xs">No files stored in this workspace yet.</div>';
+            return;
+        }
+
+        files.forEach(f => {
+            const row = document.createElement("div");
+            row.className = "flex items-center justify-between p-2.5 rounded-lg bg-white/5 border border-white/10 hover:border-cyan-500/30 transition text-xs";
+            const sizeStr = f.size_bytes ? (f.size_bytes < 1024 * 1024 ? `${Math.round(f.size_bytes/1024)} KB` : `${(f.size_bytes/(1024*1024)).toFixed(1)} MB`) : '0 KB';
+            row.innerHTML = `
+                <div class="flex items-center space-x-3 truncate max-w-[60%]">
+                    <span class="text-base">${getFileTypeIcon(f.file_type || f.mime_type)}</span>
+                    <span class="font-medium text-white truncate" title="${escapeHtml(f.filename)}">${escapeHtml(f.filename)}</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="text-slate-400 text-[11px] font-mono">${sizeStr}</span>
+                    <div class="flex items-center space-x-2">
+                        <button type="button" class="text-yellow-400 hover:text-yellow-300 text-sm" onclick="toggleStarFile('${f.id}', event)">${f.is_starred ? '★' : '☆'}</button>
+                        ${f.public_url ? `<a href="${f.public_url}" target="_blank" download="${escapeHtml(f.filename)}" class="text-cyan-400 hover:underline">Download</a>` : ''}
+                        <button type="button" class="text-rose-400 hover:underline" onclick="softDeleteFile('${f.id}', event)">Delete</button>
+                    </div>
+                </div>
+            `;
+            grid.appendChild(row);
+        });
+    };
+
+    const getFileTypeIcon = (type = '') => {
+        const t = (type || '').toLowerCase();
+        if (t.includes('pdf') || t.includes('doc') || t.includes('document')) return '📄';
+        if (t.includes('image') || t.includes('png') || t.includes('jpg')) return '🖼️';
+        if (t.includes('audio') || t.includes('mp3') || t.includes('wav')) return '🎵';
+        if (t.includes('video') || t.includes('mp4')) return '🎥';
+        if (t.includes('zip') || t.includes('tar') || t.includes('rar')) return '📦';
+        return '📁';
     };
 
     // C. MEDIA GALLERY
