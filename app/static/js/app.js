@@ -432,7 +432,16 @@ document.addEventListener("DOMContentLoaded", () => {
             let responseText = `${systemNote}\n\n`;
             const lowerPrompt = prompt.toLowerCase();
 
-            if (lowerPrompt.includes("hello") || lowerPrompt.includes("hi") || lowerPrompt.includes("hey")) {
+            if (lowerPrompt.includes("generate pic") || lowerPrompt.includes("generate image") || lowerPrompt.includes("generate photo") || lowerPrompt.includes("draw") || lowerPrompt.includes("picture of") || lowerPrompt.includes("photo of") || lowerPrompt.includes("image of")) {
+                if (navigator.onLine && window.generateImageFromPrompt) {
+                    responseText += `🎨 Image generation intent detected! Dispatching prompt to **Pollinations AI Artwork Engine**...\n\nI am triggering the AI Image Generator for: *"${prompt}"*`;
+                    setTimeout(() => {
+                        window.generateImageFromPrompt(prompt);
+                    }, 400);
+                } else {
+                    responseText += `🎨 **Offline AI Canvas Render**\n\nGenerated local artwork representation for: *"${prompt}"*\n\n\`\`\`xml\n<svg width="400" height="250" viewBox="0 0 400 250" xmlns="http://www.w3.org/2000/svg">\n  <defs>\n    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">\n      <stop offset="0%" stop-color="#38BDF8"/>\n      <stop offset="50%" stop-color="#8B5CF6"/>\n      <stop offset="100%" stop-color="#EC4899"/>\n    </linearGradient>\n  </defs>\n  <rect width="100%" height="100%" fill="#0F172A" rx="16"/>\n  <circle cx="200" cy="125" r="70" fill="url(#g)" opacity="0.85"/>\n  <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="bold">${prompt.slice(0, 30)}</text>\n</svg>\n\`\`\`\n\n*(Note: Cloud AI image generation is active when connected to the internet)*`;
+                }
+            } else if (lowerPrompt.includes("hello") || lowerPrompt.includes("hi") || lowerPrompt.includes("hey")) {
                 responseText += `Hello! I am running locally inside your browser powered by **${activeModel.name}** via WebGPU hardware acceleration.\n\nKey Local AI Features:\n- ⚡ **Zero Cloud Latency & Private Execution**\n- 🔒 **No API Keys Required**\n- 💻 **100% Local Browser Memory Processing**\n\nHow can I assist you today?`;
             } else if (lowerPrompt.includes("who are you") || lowerPrompt.includes("what model")) {
                 responseText += `I am **AetherMind Local AI Engine**, executing the **${activeModel.name}** open-weights model directly in your web browser using WebGPU.\n\nSpecs:\n- Model Size: ${activeModel.size}\n- RAM Requirement: ${activeModel.ram}\n- Target VRAM: ${activeModel.vram}\n- Quantization: ${activeModel.quantization}`;
