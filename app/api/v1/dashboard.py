@@ -18,6 +18,9 @@ router = APIRouter()
 from app.core.dependencies import get_current_user_or_session
 from app.models.user import User
 
+@router.get("", response_model=APIResponse[dict])
+@router.get("/", response_model=APIResponse[dict])
+@router.get("/stats", response_model=APIResponse[dict])
 @router.get("/overview", response_model=APIResponse[dict])
 async def get_dashboard_overview(
     current_user: User = Depends(get_current_user_or_session),

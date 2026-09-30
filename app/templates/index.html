@@ -8,7 +8,17 @@
     <!-- Favicon & App Icons -->
     <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
     <link rel="icon" type="image/png" sizes="32x32" href="/static/img/favicon.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/static/img/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/img/icons/icon-192x192.png">
+    <!-- PWA Web App Manifest & App Configuration -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0F1629">
+    <meta name="background-color" content="#0B132B">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="AetherMind">
+    <meta name="application-name" content="AetherMind Multimodal AI">
+    <meta name="msapplication-TileColor" content="#0F1629">
+    <meta name="msapplication-TileImage" content="/static/img/icons/icon-144x144.png">
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="/static/css/styles.css">
@@ -532,6 +542,21 @@
                     <span class="text-xs">↺</span>
                     <span class="font-medium text-xs">Revert Original</span>
                 </button>
+
+                <!-- PWA Install Topbar Trigger Button -->
+                <button type="button" id="btn-pwa-install-topbar" onclick="window.triggerPWAInstallPrompt()"
+                    class="hidden px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#3ABEFF]/20 to-[#9333EA]/20 border border-[#3ABEFF]/40 shadow-lg shadow-[#3ABEFF]/15 hover:border-[#3ABEFF] text-[#3ABEFF] hover:text-white transition-all duration-300 flex items-center space-x-1.5 text-xs cursor-pointer shrink-0"
+                    title="Install AetherMind Multimodal AI as a Native Desktop / Mobile Application">
+                    <span class="text-xs animate-bounce">📱</span>
+                    <span class="font-bold text-xs">Install App</span>
+                </button>
+
+                <!-- Offline Network Banner Pill -->
+                <div id="offline-network-banner" class="hidden px-2.5 py-1 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 text-[11px] font-mono font-medium flex items-center space-x-1.5 shrink-0"
+                    title="Internet connection unavailable. Operating in offline cached asset mode.">
+                    <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+                    <span>Offline (Cached Mode)</span>
+                </div>
 
                 <!-- Single Responsive Device Center Trigger Button -->
                 <button type="button" id="btn-responsive-center" onclick="openModal('modal-responsive-center')"
@@ -1293,6 +1318,10 @@
                         class="esc-tab-btn w-full px-3 py-2 rounded-xl flex items-center space-x-2.5 text-slate-300 hover:text-white hover:bg-white/10 transition text-left cursor-pointer">
                         <span class="text-sm">💻</span> <span class="truncate">Local AI (WebGPU)</span>
                     </button>
+                    <button type="button" onclick="window.switchSettingsTab('pwa')" id="esc-tab-btn-pwa"
+                        class="esc-tab-btn w-full px-3 py-2 rounded-xl flex items-center space-x-2.5 text-slate-300 hover:text-white hover:bg-white/10 transition text-left cursor-pointer">
+                        <span class="text-sm">📱</span> <span class="truncate">PWA & Offline App</span>
+                    </button>
                     <div class="border-t border-white/10 my-1"></div>
                     <button type="button" onclick="window.switchSettingsTab('logout')" id="esc-tab-btn-logout"
                         class="esc-tab-btn w-full px-3 py-2 rounded-xl flex items-center space-x-2.5 text-rose-400 hover:bg-rose-500/10 transition text-left cursor-pointer">
@@ -1867,6 +1896,99 @@
                         </div>
                     </div>
 
+                    <!-- Tab 8.8: PWA & Offline App Manager -->
+                    <div id="esc-panel-pwa" class="esc-tab-panel hidden space-y-5">
+                        <div class="flex items-center justify-between p-4 rounded-2xl bg-[#0F1629]/90 border border-[#3ABEFF]/30 shadow-xl">
+                            <div class="flex items-center space-x-3">
+                                <div class="p-3 rounded-xl bg-gradient-to-tr from-[#3ABEFF]/20 to-[#9333EA]/20 border border-[#3ABEFF]/30 text-[#3ABEFF] text-2xl">
+                                    📱
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+                                        <span>Progressive Web Application (PWA) & Native App Manager</span>
+                                        <span id="esc-pwa-status-badge" class="px-2 py-0.5 rounded-full text-[10px] font-mono font-medium bg-[#3ABEFF]/20 text-[#3ABEFF] border border-[#3ABEFF]/40">Ready to Install</span>
+                                    </h3>
+                                    <p class="text-xs text-slate-400 mt-0.5">Install AetherMind on Windows, macOS, Linux, Android, or iOS as a standalone native app.</p>
+                                </div>
+                            </div>
+                            <button type="button" onclick="window.PWAManager && window.PWAManager.triggerInstall()"
+                                class="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#3ABEFF] to-[#9333EA] text-white hover:opacity-90 transition text-xs font-bold shadow-lg shadow-[#3ABEFF]/20 cursor-pointer shrink-0">
+                                🚀 Install App
+                            </button>
+                        </div>
+
+                        <!-- System PWA Diagnostic Status -->
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                            <div class="p-3.5 rounded-xl bg-white/[0.03] border border-white/10">
+                                <span class="text-[11px] text-slate-400 block font-medium">Installed Version</span>
+                                <div id="esc-pwa-version-val" class="text-xs font-bold text-[#3ABEFF] mt-1 font-mono">v1.0.0</div>
+                            </div>
+                            <div class="p-3.5 rounded-xl bg-white/[0.03] border border-white/10">
+                                <span class="text-[11px] text-slate-400 block font-medium">Service Worker Scope</span>
+                                <div class="text-xs font-bold text-emerald-400 mt-1 font-mono truncate">/ (Root Scope)</div>
+                            </div>
+                            <div class="p-3.5 rounded-xl bg-white/[0.03] border border-white/10">
+                                <span class="text-[11px] text-slate-400 block font-medium">Static Asset Cache</span>
+                                <div id="esc-pwa-cache-val" class="text-xs font-bold text-slate-200 mt-1 font-mono">~12.4 MB</div>
+                            </div>
+                            <div class="p-3.5 rounded-xl bg-white/[0.03] border border-white/10">
+                                <span class="text-[11px] text-slate-400 block font-medium">Display Mode</span>
+                                <div class="text-xs font-bold text-slate-200 mt-1 font-mono">Standalone Window</div>
+                            </div>
+                        </div>
+
+                        <!-- PWA Actions Bar -->
+                        <div class="p-4 rounded-2xl bg-black/40 border border-white/10 flex flex-wrap items-center justify-between gap-3">
+                            <div>
+                                <h4 class="text-xs font-bold text-white">Application Cache & Updates</h4>
+                                <p class="text-[11px] text-slate-400 mt-0.5">Manage precached static assets, background updates, and offline shell storage.</p>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <button type="button" onclick="window.PWAManager && window.PWAManager.checkForUpdates()" class="px-3 py-1.5 rounded-xl bg-white/10 text-white hover:bg-white/20 transition text-xs font-medium cursor-pointer">
+                                    🔄 Check for Updates
+                                </button>
+                                <button type="button" onclick="window.PWAManager && window.PWAManager.clearCache()" class="px-3 py-1.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 hover:bg-rose-500/25 transition text-xs font-medium cursor-pointer">
+                                    🗑️ Clear PWA Cache
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- PWA Configuration Controls -->
+                        <div class="p-5 rounded-2xl bg-black/40 border border-white/10 space-y-3">
+                            <h4 class="text-xs font-bold uppercase tracking-wider text-[#3ABEFF]">PWA & Offline Execution Settings</h4>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                                <label class="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.02] border border-white/5 cursor-pointer">
+                                    <span class="text-slate-300">Background Sync Queue</span>
+                                    <input type="checkbox" id="esc-pwa-bg-sync" checked class="rounded border-slate-700 text-[#3ABEFF]">
+                                </label>
+                                <label class="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.02] border border-white/5 cursor-pointer">
+                                    <span class="text-slate-300">Push Notifications Infrastructure</span>
+                                    <input type="checkbox" id="esc-pwa-push-notif" checked class="rounded border-slate-700 text-[#3ABEFF]">
+                                </label>
+                                <label class="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.02] border border-white/5 cursor-pointer">
+                                    <span class="text-slate-300">Automatic App Asset Updates</span>
+                                    <input type="checkbox" id="esc-pwa-auto-update" checked class="rounded border-slate-700 text-[#3ABEFF]">
+                                </label>
+                                <label class="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.02] border border-white/5 cursor-pointer">
+                                    <span class="text-slate-300">Offline Shell Pre-caching</span>
+                                    <input type="checkbox" id="esc-pwa-precache" checked class="rounded border-slate-700 text-[#3ABEFF]">
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- OS Uninstall Guide Callout -->
+                        <div class="p-4 rounded-2xl bg-white/[0.02] border border-white/10 text-xs space-y-2">
+                            <h4 class="font-bold text-slate-300 flex items-center space-x-1.5">
+                                <span>💡 Uninstalling Installed PWA</span>
+                            </h4>
+                            <p class="text-slate-400 text-[11px] leading-relaxed">
+                                • <strong>Windows/macOS:</strong> Open AetherMind app window -> Click app title bar menu (⋮ or ...) -> Select <em>"Uninstall AetherMind..."</em><br>
+                                • <strong>Android/iOS:</strong> Long press the AetherMind home screen icon -> Select <em>"Remove App"</em> or <em>"Uninstall"</em>.
+                            </p>
+                        </div>
+                    </div>
+
                     <!-- Tab 9: Sign Out -->
                     <div id="esc-panel-logout" class="esc-tab-panel hidden space-y-5">
                         <div class="p-6 rounded-2xl bg-gradient-to-tr from-rose-500/20 to-purple-500/20 border border-rose-500/30 text-center space-y-4">
@@ -2287,6 +2409,73 @@
                 <button type="button" onclick="window.switchToCloudAI()" class="px-4 py-2 rounded-xl bg-white/10 text-slate-300 hover:text-white hover:bg-white/20 transition text-xs font-medium cursor-pointer">
                     ⚡ Switch to Cloud AI
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: PWA CUSTOM INSTALLATION DIALOG -->
+    <div id="modal-pwa-install" class="fixed inset-0 bg-black/85 backdrop-blur-2xl z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-panel w-full max-w-lg overflow-hidden shadow-2xl flex flex-col border border-[#3ABEFF]/40 rounded-3xl">
+            <!-- Header -->
+            <div class="h-16 px-6 border-b border-white/10 flex items-center justify-between bg-[#0F1629]/90 shrink-0">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#3ABEFF] to-[#9333EA] flex items-center justify-center text-white text-xl shadow-lg">
+                        📱
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-base text-white">Install AetherMind Multimodal AI</h3>
+                        <p class="text-xs text-[#3ABEFF] font-mono">Native Desktop & Mobile Application</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeModal('modal-pwa-install')" class="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition text-sm">
+                    ✕
+                </button>
+            </div>
+
+            <!-- Body -->
+            <div class="p-6 space-y-4 bg-[#0B132B]/60 text-xs">
+                <div class="p-4 rounded-2xl bg-gradient-to-r from-cyan-950/40 via-purple-950/40 to-slate-900/40 border border-[#3ABEFF]/30 space-y-2">
+                    <h4 class="text-sm font-bold text-white flex items-center space-x-2">
+                        <span>⚡ Transform to Native App Experience</span>
+                    </h4>
+                    <p class="text-slate-300 text-xs leading-relaxed">
+                        Install AetherMind directly onto your device. Enjoy sub-second startup, standalone desktop window, offline shell access, and zero browser tabs!
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 font-mono text-[11px] text-slate-300">
+                    <div class="p-2.5 rounded-xl bg-white/[0.03] border border-white/10 flex items-center space-x-2">
+                        <span class="text-emerald-400 font-bold">✓</span>
+                        <span>Works Offline</span>
+                    </div>
+                    <div class="p-2.5 rounded-xl bg-white/[0.03] border border-white/10 flex items-center space-x-2">
+                        <span class="text-emerald-400 font-bold">✓</span>
+                        <span>Fast Startup</span>
+                    </div>
+                    <div class="p-2.5 rounded-xl bg-white/[0.03] border border-white/10 flex items-center space-x-2">
+                        <span class="text-emerald-400 font-bold">✓</span>
+                        <span>Native Window</span>
+                    </div>
+                    <div class="p-2.5 rounded-xl bg-white/[0.03] border border-white/10 flex items-center space-x-2">
+                        <span class="text-emerald-400 font-bold">✓</span>
+                        <span>~12 MB Storage</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Actions -->
+            <div class="flex items-center justify-between px-6 py-4 border-t border-white/10 bg-[#0F1629]/90 shrink-0">
+                <button type="button" onclick="window.dismissPWAInstallPrompt()" class="text-xs text-slate-400 hover:text-slate-200 transition">
+                    Don't Show Again
+                </button>
+                <div class="flex items-center space-x-2">
+                    <button type="button" onclick="closeModal('modal-pwa-install')" class="px-4 py-2 rounded-xl bg-white/10 text-slate-300 hover:text-white hover:bg-white/20 transition font-medium text-xs">
+                        Maybe Later
+                    </button>
+                    <button type="button" onclick="window.executePWAInstall()" class="px-5 py-2 rounded-xl bg-gradient-to-r from-[#3ABEFF] to-[#9333EA] text-white font-bold text-xs hover:opacity-90 transition shadow-lg shadow-[#3ABEFF]/30 cursor-pointer">
+                        🚀 Install Now
+                    </button>
+                </div>
             </div>
         </div>
     </div>

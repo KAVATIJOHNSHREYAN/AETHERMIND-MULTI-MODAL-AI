@@ -1,0 +1,166 @@
+{
+  "name": "AetherMind Multimodal AI",
+  "short_name": "AetherMind",
+  "description": "Enterprise Multimodal AI Operating System — Unified AI OS, Local WebGPU Engine, Vector RAG & Document Intelligence",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0B132B",
+  "theme_color": "#0F1629",
+  "lang": "en-US",
+  "dir": "ltr",
+  "prefer_related_applications": false,
+  "categories": [
+    "ai",
+    "productivity",
+    "utilities",
+    "business"
+  ],
+  "icons": [
+    {
+      "src": "/static/img/icons/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/img/icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/img/icons/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/img/icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/img/icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/img/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/img/icons/maskable-icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/static/img/icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/img/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/img/icons/maskable-icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/static/img/icons/icon-1024x1024.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "New Conversation",
+      "short_name": "New Chat",
+      "description": "Start a new multimodal AI conversation",
+      "url": "/?action=new-chat",
+      "icons": [
+        {
+          "src": "/static/img/icons/icon-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Generate AI Artwork",
+      "short_name": "Image Gen",
+      "description": "Create photorealistic AI images",
+      "url": "/?action=image-gen",
+      "icons": [
+        {
+          "src": "/static/img/icons/icon-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Document Intelligence",
+      "short_name": "Upload Doc",
+      "description": "Upload PDF, DOCX or images for OCR analysis",
+      "url": "/?action=upload-doc",
+      "icons": [
+        {
+          "src": "/static/img/icons/icon-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Voice Studio",
+      "short_name": "Voice AI",
+      "description": "Record voice and speak with AI voice assistant",
+      "url": "/?action=voice-studio",
+      "icons": [
+        {
+          "src": "/static/img/icons/icon-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Projects Workspace",
+      "short_name": "Projects",
+      "description": "Open isolated projects workspace",
+      "url": "/?action=projects",
+      "icons": [
+        {
+          "src": "/static/img/icons/icon-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/static/img/bg-futuristic.png",
+      "sizes": "1920x1080",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "AetherMind Multimodal AI Desktop Workspace"
+    },
+    {
+      "src": "/static/img/shot_165111.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "AetherMind Multimodal AI Mobile View"
+    }
+  ]
+}

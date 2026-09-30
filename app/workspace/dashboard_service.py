@@ -67,14 +67,41 @@ class DashboardService:
             recent_uploads = up_res.scalars().all()
 
             # Quota: 50 GB
-            quota_bytes = 53687091200
+            # 9. Build Dynamic Activity Timeline for Authenticated User
+            timeline = []
+            for u in recent_uploads:
+                timeline.append({
+                    "action": "Uploaded File",
+                    "target_name": u.filename,
+                    "entity_type": u.file_type or "Document",
+                    "timestamp": u.created_at.isoformat() if u.created_at else None
+                })
+            for c in recent_chats:
+                timeline.append({
+                    "action": "Started Chat",
+                    "target_name": c.title or "Conversation",
+                    "entity_type": c.selected_model or "AI Chat",
+                    "timestamp": c.updated_at.isoformat() if c.updated_at else None
+                })
+
+            timeline.sort(key=lambda x: x.get("timestamp") or "", reverse=True)
+
+            quota_bytes = 53687091200  # 50 GB
             used_mb = round(used_storage_bytes / (1024 * 1024), 2)
             used_percentage = round((used_storage_bytes / float(quota_bytes)) * 100.0, 2)
 
             return {
+                "projects": total_projects,
+                "conversations": total_chats,
+                "documents": total_files,
+                "images": total_generations,
+                "ragCollections": total_kb_collections,
+                "storageUsed": used_mb,
+                "storageLimit": 51200,  # MB
                 "overview": {
                     "total_projects": total_projects,
                     "total_conversations": total_chats,
+                    "total_chats": total_chats,
                     "total_files": total_files,
                     "total_generations": total_generations,
                     "total_kb_collections": total_kb_collections
@@ -106,12 +133,42 @@ class DashboardService:
                         "created_at": u.created_at.isoformat() if u.created_at else None
                     }
                     for u in recent_uploads
-                ]
+                ],
+                "timeline": timeline[:10],
+                "activity_timeline": timeline[:10]
             }
 
         except Exception as e:
             logger.warning(f"Error building dashboard overview: {e}")
-            return {"overview": {}, "storage": {}}
+            return {
+                "projects": 0,
+                "conversations": 0,
+                "documents": 0,
+                "images": 0,
+                "ragCollections": 0,
+                "storageUsed": 0.0,
+                "storageLimit": 51200,
+                "overview": {
+                    "total_projects": 0,
+                    "total_conversations": 0,
+                    "total_chats": 0,
+                    "total_files": 0,
+                    "total_generations": 0,
+                    "total_kb_collections": 0
+                },
+                "storage": {
+                    "used_bytes": 0,
+                    "used_mb": 0.0,
+                    "quota_bytes": 53687091200,
+                    "quota_gb": 50.0,
+                    "used_percentage": 0.0,
+                    "breakdown": {}
+                },
+                "recent_chats": [],
+                "recent_uploads": [],
+                "timeline": [],
+                "activity_timeline": []
+            }
 
 
 dashboard_service = DashboardService()

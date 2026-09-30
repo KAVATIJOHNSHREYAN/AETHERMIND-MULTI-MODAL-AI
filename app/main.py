@@ -78,8 +78,22 @@ try:
 except Exception as dir_err:
     logger.warning(f"Static/templates directory creation skipped: {dir_err}")
 
+from fastapi.responses import FileResponse
+
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 templates = Jinja2Templates(directory=templates_dir)
+
+@app.get("/manifest.json", include_in_schema=False)
+async def serve_manifest():
+    """Serve Web App Manifest at Root Level for PWA Discovery"""
+    manifest_path = os.path.join(static_dir, "manifest.json")
+    return FileResponse(manifest_path, media_type="application/manifest+json")
+
+@app.get("/sw.js", include_in_schema=False)
+async def serve_sw():
+    """Serve Service Worker at Root Scope for Full Domain PWA Interception"""
+    sw_path = os.path.join(static_dir, "sw.js")
+    return FileResponse(sw_path, media_type="application/javascript", headers={"Service-Worker-Allowed": "/"})
 
 @app.get("/login", include_in_schema=False)
 @app.get("/auth", include_in_schema=False)
