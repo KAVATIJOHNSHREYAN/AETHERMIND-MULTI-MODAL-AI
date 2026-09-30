@@ -152,13 +152,19 @@ AetherMind is optimized for speed and responsiveness. The FastAPI backend utiliz
 
 The primary cloud deployment target for AetherMind Multimodal AI is Streamlit Cloud. The application's entry runner embeds the complete single-page HTML interface, styles, and client scripts into a standalone runner that communicates with external microservices over secure HTTP and WebSocket connections. This deployment setup enables instant one-click cloud hosting directly from the main GitHub repository branch.
 
+### Local AI WebGPU Execution & Session Resilience Architecture
+
+AetherMind integrates in-browser **Local AI (WebGPU)** model execution, allowing privacy-first LLM inference (Llama 3.2 1B, DeepSeek R1 1.5B, Gemma 2 2B) completely offline without sending prompt payloads to external servers. The Local AI Engine includes **Smart Image Intent Detection**—automatically routing visual prompt requests (`generate pic`, `picture of`, `draw`) to Pollinations AI when connected, or rendering a dynamic SVG vector graphic canvas directly inside the chat UI when offline. 
+
+Session resilience logic preserves both authenticated Firebase user identity and Guest mode sessions across page refreshes, preventing unexpected authentication dialog popups. Image asset management includes multi-format MIME detection (`.png`, `.jpg`, `.webp`, `.svg`) ensuring clean image download filenames across desktop and mobile devices.
+
 ---
 
 ## Future Roadmap & Enterprise Horizon
 
 The long-term engineering roadmap for AetherMind Multimodal AI encompasses several key advancements aimed at expanding enterprise functionality:
 
-First, expanding local AI model execution by integrating WebGPU and WebAssembly runtimes directly inside the browser, allowing offline text and image generation without server requests.
+First, expanding local AI model execution with WebAssembly & WebGPU multi-model execution models for complex local workflow pipelines.
 
 Second, implementing automated multi-agent workflow orchestration, enabling specialized autonomous agents to collaborate on multi-step research, software development, and document generation tasks.
 

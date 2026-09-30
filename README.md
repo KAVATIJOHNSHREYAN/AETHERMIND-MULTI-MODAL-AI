@@ -29,7 +29,7 @@
 
 **AetherMind Multimodal AI** is a production-grade enterprise artificial intelligence operating system created by **Kavati John Shreyan**. It unifies text generation, multi-format document intelligence, computer vision OCR, API-less AI image synthesis, ChatGPT-style speech-to-text voice transcription, Qdrant vector Retrieval-Augmented Generation (RAG), Supabase cloud data persistence, an **Installable Progressive Web Application (PWA)**, an enterprise **Workspace Dashboard & Projects File Manager**, a 12-preset **Responsive Device Studio**, an **Enterprise Settings Center**, and an in-browser **Local AI (WebGPU Offline)** engine into a single, ultra-responsive web platform.
 
-Engineered with zero mandatory API key requirements, AetherMind provides an immediate free tier powered by Pollinations AI and browser-based WebGPU local models (Llama 3.2 1B, Llama 3.2 3B, DeepSeek R1 Distill 1.5B, Phi-4 Mini, Gemma 2 2B, Qwen 2.5 1.5B) alongside custom API key configuration options for 16+ AI models including Google Gemini, OpenAI, Anthropic Claude, Groq, Cohere, DeepSeek R1, and Mistral. The application features live Firebase Authentication (Email/Password, Google OAuth popup/redirect, and instant Guest demo mode), a dynamic device viewport switcher engine with live scrolling, and 100% multi-user data isolation.
+Engineered with zero mandatory API key requirements, AetherMind provides an immediate free tier powered by Pollinations AI and browser-based WebGPU local models (Llama 3.2 1B, Llama 3.2 3B, DeepSeek R1 Distill 1.5B, Phi-4 Mini, Gemma 2 2B, Qwen 2.5 1.5B) alongside custom API key configuration options for 16+ AI models including Google Gemini, OpenAI, Anthropic Claude, Groq, Cohere, DeepSeek R1, and Mistral. The application features live Firebase Authentication (Email/Password, Google OAuth popup/redirect, and instant Guest demo mode with session persistence across page refreshes), smart Local AI image intent routing, SVG vector canvas offline rendering, a dynamic device viewport switcher engine, and 100% multi-user data isolation.
 
 ---
 
@@ -108,6 +108,8 @@ Engineered with zero mandatory API key requirements, AetherMind provides an imme
   - `Qwen 2.5 1.5B` (~950 MB, RAM: ~2.5 GB, VRAM: ~1.8 GB) — Multilingual instruction model.
 - **Hardware & Capability Detection**: Startup detection of WebGPU support, GPU Adapter info, System RAM, and Storage availability. Displays `Ready for Local AI` badge.
 - **Offline Privacy Mode**: 1-click toggle (`🔒 Offline Privacy Mode`) disabling external cloud API requests, keeping user data 100% local inside browser memory.
+- **Smart Image Intent Auto-Routing**: Detects image generation requests (`generate pic`, `draw`, `picture of`) in Local AI mode and dispatches to Pollinations AI when connected to the internet, or renders a responsive SVG vector graphic canvas when offline.
+- **Session State Persistence**: Automatically maintains authenticated user or guest sessions across page refreshes without unexpected lockouts.
 - **Local AI Storage Manager**: Download progress tracking with real-time speed calculation (MB/s), model activation, deletion, and IndexedDB cache purging.
 - **Initialization Overlay & Fallback**: Step-by-step progress feedback (`Loading Model` -> `Initializing WebGPU` -> `Compiling Shaders` -> `Loading Weights` -> `Ready`) with a non-blocking `⚡ Switch to Cloud AI` failover option.
 
