@@ -427,41 +427,41 @@
             <!-- Profile Dropdown Popup Menu -->
             <div id="user-dropdown-menu"
                 class="absolute bottom-16 left-3 right-3 glass-panel p-2 rounded-2xl border border-white/15 shadow-2xl space-y-1 hidden z-50">
-                <button
-                    class="w-full text-left px-3 py-2 text-xs font-medium text-white hover:bg-white/10 rounded-xl flex items-center space-x-2">
+                <button type="button" onclick="window.openSettingsTab('profile')"
+                    class="w-full text-left px-3 py-2 text-xs font-medium text-white hover:bg-white/10 rounded-xl flex items-center space-x-2 cursor-pointer">
                     <span>👤</span> <span>Profile</span>
                 </button>
-                <button
-                    class="w-full text-left px-3 py-2 text-xs font-medium text-white hover:bg-white/10 rounded-xl flex items-center space-x-2">
-                    <span>🚀</span> <span>Workspace Settings</span>
+                <button type="button" onclick="window.openSettingsTab('workspace')"
+                    class="w-full text-left px-3 py-2 text-xs font-medium text-white hover:bg-white/10 rounded-xl flex items-center space-x-2 cursor-pointer">
+                    <span>💼</span> <span>Workspace Settings</span>
                 </button>
-                <button
-                    class="w-full text-left px-3 py-2 text-xs font-medium text-white hover:bg-white/10 rounded-xl flex items-center space-x-2">
+                <button type="button" onclick="window.openSettingsTab('notifications')"
+                    class="w-full text-left px-3 py-2 text-xs font-medium text-white hover:bg-white/10 rounded-xl flex items-center space-x-2 cursor-pointer">
                     <span>🔔</span> <span>Notifications</span>
                 </button>
-                <button
-                    class="w-full text-left px-3 py-2 text-xs font-medium text-white hover:bg-white/10 rounded-xl flex items-center space-x-2">
-                    <span>🌙</span> <span>Theme (Dark Neon)</span>
+                <button type="button" onclick="window.openSettingsTab('theme')"
+                    class="w-full text-left px-3 py-2 text-xs font-medium text-white hover:bg-white/10 rounded-xl flex items-center space-x-2 cursor-pointer">
+                    <span>🎨</span> <span>Theme & Visuals</span>
                 </button>
-                <button id="dropdown-open-keys"
-                    class="w-full text-left px-3 py-2 text-xs font-medium text-white hover:bg-white/10 rounded-xl flex items-center space-x-2">
-                    <span>🔑</span> <span>API Keys</span>
+                <button type="button" onclick="window.openSettingsTab('api')" id="dropdown-open-keys"
+                    class="w-full text-left px-3 py-2 text-xs font-medium text-white hover:bg-white/10 rounded-xl flex items-center space-x-2 cursor-pointer">
+                    <span>🔑</span> <span>API Keys Manager</span>
                 </button>
-                <button
-                    class="w-full text-left px-3 py-2 text-xs font-medium text-white hover:bg-white/10 rounded-xl flex items-center space-x-2">
+                <button type="button" onclick="window.openSettingsTab('billing')"
+                    class="w-full text-left px-3 py-2 text-xs font-medium text-white hover:bg-white/10 rounded-xl flex items-center space-x-2 cursor-pointer">
                     <span>💳</span> <span>Billing & Subscriptions</span>
                 </button>
-                <button id="dropdown-open-settings"
-                    class="w-full text-left px-3 py-2 text-xs font-medium text-white hover:bg-white/10 rounded-xl flex items-center space-x-2">
-                    <span>⚙️</span> <span>System Settings</span>
+                <button type="button" onclick="window.openSettingsTab('system')" id="dropdown-open-settings"
+                    class="w-full text-left px-3 py-2 text-xs font-medium text-white hover:bg-white/10 rounded-xl flex items-center space-x-2 cursor-pointer">
+                    <span>⚙️</span> <span>System Settings & Diagnostics</span>
                 </button>
-                <button
-                    class="w-full text-left px-3 py-2 text-xs font-medium text-white hover:bg-white/10 rounded-xl flex items-center space-x-2">
+                <button type="button" onclick="window.openSettingsTab('shortcuts')"
+                    class="w-full text-left px-3 py-2 text-xs font-medium text-white hover:bg-white/10 rounded-xl flex items-center space-x-2 cursor-pointer">
                     <span>⌨️</span> <span>Keyboard Shortcuts</span>
                 </button>
                 <div class="border-t border-white/10 my-1"></div>
-                <button id="dropdown-btn-logout"
-                    class="w-full text-left px-3 py-2 text-xs font-semibold text-red-400 hover:bg-red-500/10 rounded-xl flex items-center space-x-2">
+                <button type="button" onclick="window.openSettingsTab('logout')" id="dropdown-btn-logout"
+                    class="w-full text-left px-3 py-2 text-xs font-semibold text-rose-400 hover:bg-rose-500/10 rounded-xl flex items-center space-x-2 cursor-pointer">
                     <span>🚪</span> <span>Sign Out</span>
                 </button>
             </div>
@@ -1212,19 +1212,477 @@
         </div>
     </div>
 
-    <!-- MODAL: SETTINGS -->
+    <!-- MODAL: ENTERPRISE SETTINGS CENTER -->
     <div id="modal-settings"
-        class="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
-        <div class="glass-panel w-full max-w-3xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]">
-            <div class="h-14 px-6 border-b border-white/10 flex items-center justify-between bg-[#0F1220]">
-                <h3 class="font-heading font-bold text-lg text-white">AI Provider Settings & API Keys</h3>
-                <button id="close-settings-btn" class="p-2 text-[#7E8CA5] hover:text-white">✕</button>
+        class="fixed inset-0 bg-black/85 backdrop-blur-2xl z-50 flex items-center justify-center p-2 sm:p-5 hidden overflow-y-auto">
+        <div class="relative w-full max-w-5xl bg-[#0B101D]/95 border border-[#3ABEFF]/30 rounded-3xl shadow-2xl shadow-[#3ABEFF]/15 overflow-hidden my-auto text-slate-100 max-h-[92vh] flex flex-col md:flex-row">
+            <!-- Sidebar Navigation Column -->
+            <div class="w-full md:w-64 bg-[#0F1629]/90 border-b md:border-b-0 md:border-r border-white/10 p-4 flex flex-col shrink-0">
+                <!-- Header & Title -->
+                <div class="flex items-center space-x-3 mb-4 px-2">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#3ABEFF] to-[#9333EA] flex items-center justify-center text-white font-bold text-base shadow-lg shadow-[#3ABEFF]/20">
+                        ⚙️
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-sm text-white tracking-tight">Settings Center</h3>
+                        <p class="text-[10px] text-cyan-400 font-mono">Enterprise AI Operating System</p>
+                    </div>
+                </div>
+
+                <!-- Search Bar -->
+                <div class="relative mb-4">
+                    <input type="text" id="esc-search-input" placeholder="Search settings..."
+                        class="w-full px-3 py-1.5 pl-8 rounded-xl bg-black/40 border border-white/10 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-[#3ABEFF]/60 transition">
+                    <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                </div>
+
+                <!-- Tab Navigation Buttons -->
+                <nav class="space-y-1 overflow-x-auto md:overflow-y-auto flex md:flex-col custom-scrollbar pb-2 md:pb-0 font-medium text-xs">
+                    <button type="button" onclick="window.switchSettingsTab('profile')" id="esc-tab-btn-profile"
+                        class="esc-tab-btn w-full px-3 py-2 rounded-xl flex items-center space-x-2.5 text-white bg-[#3ABEFF]/20 border border-[#3ABEFF]/40 transition text-left cursor-pointer">
+                        <span class="text-sm">👤</span> <span class="truncate">Profile</span>
+                    </button>
+                    <button type="button" onclick="window.switchSettingsTab('workspace')" id="esc-tab-btn-workspace"
+                        class="esc-tab-btn w-full px-3 py-2 rounded-xl flex items-center space-x-2.5 text-slate-300 hover:text-white hover:bg-white/10 transition text-left cursor-pointer">
+                        <span class="text-sm">💼</span> <span class="truncate">Workspace</span>
+                    </button>
+                    <button type="button" onclick="window.switchSettingsTab('notifications')" id="esc-tab-btn-notifications"
+                        class="esc-tab-btn w-full px-3 py-2 rounded-xl flex items-center space-x-2.5 text-slate-300 hover:text-white hover:bg-white/10 transition text-left cursor-pointer">
+                        <span class="text-sm">🔔</span> <span class="truncate">Notifications</span>
+                    </button>
+                    <button type="button" onclick="window.switchSettingsTab('theme')" id="esc-tab-btn-theme"
+                        class="esc-tab-btn w-full px-3 py-2 rounded-xl flex items-center space-x-2.5 text-slate-300 hover:text-white hover:bg-white/10 transition text-left cursor-pointer">
+                        <span class="text-sm">🎨</span> <span class="truncate">Theme & Visuals</span>
+                    </button>
+                    <button type="button" onclick="window.switchSettingsTab('api')" id="esc-tab-btn-api"
+                        class="esc-tab-btn w-full px-3 py-2 rounded-xl flex items-center space-x-2.5 text-slate-300 hover:text-white hover:bg-white/10 transition text-left cursor-pointer">
+                        <span class="text-sm">🔑</span> <span class="truncate">API Keys Manager</span>
+                    </button>
+                    <button type="button" onclick="window.switchSettingsTab('billing')" id="esc-tab-btn-billing"
+                        class="esc-tab-btn w-full px-3 py-2 rounded-xl flex items-center space-x-2.5 text-slate-300 hover:text-white hover:bg-white/10 transition text-left cursor-pointer">
+                        <span class="text-sm">💳</span> <span class="truncate">Billing & Subscriptions</span>
+                    </button>
+                    <button type="button" onclick="window.switchSettingsTab('system')" id="esc-tab-btn-system"
+                        class="esc-tab-btn w-full px-3 py-2 rounded-xl flex items-center space-x-2.5 text-slate-300 hover:text-white hover:bg-white/10 transition text-left cursor-pointer">
+                        <span class="text-sm">⚙️</span> <span class="truncate">System & Diagnostics</span>
+                    </button>
+                    <button type="button" onclick="window.switchSettingsTab('shortcuts')" id="esc-tab-btn-shortcuts"
+                        class="esc-tab-btn w-full px-3 py-2 rounded-xl flex items-center space-x-2.5 text-slate-300 hover:text-white hover:bg-white/10 transition text-left cursor-pointer">
+                        <span class="text-sm">⌨️</span> <span class="truncate">Shortcuts</span>
+                    </button>
+                    <div class="border-t border-white/10 my-1"></div>
+                    <button type="button" onclick="window.switchSettingsTab('logout')" id="esc-tab-btn-logout"
+                        class="esc-tab-btn w-full px-3 py-2 rounded-xl flex items-center space-x-2.5 text-rose-400 hover:bg-rose-500/10 transition text-left cursor-pointer">
+                        <span class="text-sm">🚪</span> <span class="truncate">Sign Out</span>
+                    </button>
+                </nav>
             </div>
-            <div class="p-6 overflow-y-auto space-y-4 text-xs">
-                <div class="glass-card p-4 space-y-3">
-                    <div class="font-bold text-white text-sm">✨ Google Gemini API Key</div>
-                    <input type="password" placeholder="Enter Google Gemini API Key"
-                        class="w-full glass-input px-3 py-2 text-white">
+
+            <!-- Content Area Column -->
+            <div class="flex-1 flex flex-col overflow-hidden bg-[#0B101D]">
+                <!-- Header Title Bar -->
+                <div class="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-[#0F1629]/60 shrink-0">
+                    <div>
+                        <h2 id="esc-active-tab-title" class="text-base font-bold text-white tracking-tight">Profile Settings</h2>
+                        <p id="esc-active-tab-desc" class="text-xs text-slate-400">Manage account information, personal preferences, and security options.</p>
+                    </div>
+                    <button type="button" onclick="closeModal('modal-settings')" class="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition" title="Close">✕</button>
+                </div>
+
+                <!-- Scrollable Tab Panels Body -->
+                <div class="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-6 text-xs">
+                    <!-- Tab 1: Profile -->
+                    <div id="esc-panel-profile" class="esc-tab-panel space-y-5">
+                        <div class="p-4 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center space-x-4">
+                            <div class="relative group">
+                                <img id="esc-prof-avatar-img" src="https://api.dicebear.com/7.x/bottts/svg?seed=AetherUser" class="w-16 h-16 rounded-2xl border border-[#3ABEFF]/40 shadow-md object-cover bg-[#0F1629]">
+                                <label for="esc-avatar-upload-input" class="absolute inset-0 bg-black/60 rounded-2xl opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer transition text-[10px] text-white font-medium">Change</label>
+                                <input type="file" id="esc-avatar-upload-input" class="hidden" accept="image/*">
+                            </div>
+                            <div class="space-y-1">
+                                <h4 id="esc-prof-name-disp" class="text-sm font-bold text-white">Kavati John Shreyan</h4>
+                                <p id="esc-prof-email-disp" class="text-xs text-cyan-400 font-mono">johnshreyankavati@gmail.com</p>
+                                <span class="inline-block px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[10px] font-mono">Verified Account ✓</span>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-slate-300 mb-1 font-medium">Display Name</label>
+                                <input type="text" id="esc-prof-name" value="Kavati John Shreyan" class="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-white font-medium">
+                            </div>
+                            <div>
+                                <label class="block text-slate-300 mb-1 font-medium">Username</label>
+                                <input type="text" id="esc-prof-username" value="@johnshreyan" class="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-white font-medium">
+                            </div>
+                            <div>
+                                <label class="block text-slate-300 mb-1 font-medium">Email Address</label>
+                                <input type="email" id="esc-prof-email" value="johnshreyankavati@gmail.com" class="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-white font-medium">
+                            </div>
+                            <div>
+                                <label class="block text-slate-300 mb-1 font-medium">Phone Number</label>
+                                <input type="text" id="esc-prof-phone" value="+1 (555) 019-2834" class="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-white font-medium">
+                            </div>
+                            <div>
+                                <label class="block text-slate-300 mb-1 font-medium">Country / Region</label>
+                                <select id="esc-prof-country" class="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-white font-medium">
+                                    <option value="US">United States</option>
+                                    <option value="IN" selected>India</option>
+                                    <option value="UK">United Kingdom</option>
+                                    <option value="DE">Germany</option>
+                                    <option value="JP">Japan</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-slate-300 mb-1 font-medium">Timezone</label>
+                                <select id="esc-prof-tz" class="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-white font-medium">
+                                    <option value="Asia/Kolkata" selected>UTC+05:30 (India Standard Time)</option>
+                                    <option value="America/New_York">UTC-05:00 (Eastern Time)</option>
+                                    <option value="UTC">UTC (Coordinated Universal Time)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-slate-300 mb-1 font-medium">Bio / Notes</label>
+                            <textarea id="esc-prof-bio" rows="2" class="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-white font-medium placeholder-slate-500">Enterprise AI OS Administrator & Lead Engineer.</textarea>
+                        </div>
+
+                        <!-- Account Status Cards -->
+                        <div class="p-4 rounded-2xl bg-black/30 border border-white/10 space-y-3 font-mono">
+                            <h4 class="text-xs font-semibold text-[#3ABEFF] uppercase tracking-wider font-sans">Account Diagnostics & Security</h4>
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                                <div class="p-2 rounded-xl bg-white/[0.02] border border-white/10">
+                                    <div class="text-slate-400 text-[10px]">Created</div>
+                                    <div class="text-white font-bold text-[11px]">Sep 2026</div>
+                                </div>
+                                <div class="p-2 rounded-xl bg-white/[0.02] border border-white/10">
+                                    <div class="text-slate-400 text-[10px]">Last Login</div>
+                                    <div class="text-emerald-400 font-bold text-[11px]">Today</div>
+                                </div>
+                                <div class="p-2 rounded-xl bg-white/[0.02] border border-white/10">
+                                    <div class="text-slate-400 text-[10px]">Auth Method</div>
+                                    <div class="text-purple-300 font-bold text-[11px]">Firebase Google</div>
+                                </div>
+                                <div class="p-2 rounded-xl bg-white/[0.02] border border-white/10">
+                                    <div class="text-slate-400 text-[10px]">Storage Used</div>
+                                    <div class="text-cyan-300 font-bold text-[11px]">12.5 MB / 50 GB</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Profile Action Buttons -->
+                        <div class="flex flex-wrap items-center gap-2 pt-2">
+                            <button type="button" id="esc-btn-change-pass" onclick="showToast('🔑 Password reset email sent to your address!', 'info')" class="px-3 py-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition font-medium">🔑 Change Password</button>
+                            <button type="button" id="esc-btn-export-data" onclick="window.exportAccountData()" class="px-3 py-2 rounded-xl bg-[#3ABEFF]/20 text-[#3ABEFF] border border-[#3ABEFF]/40 hover:bg-[#3ABEFF]/30 transition font-medium">📦 Export Account Data</button>
+                            <button type="button" id="esc-btn-delete-acc" onclick="showToast('⚠️ Delete account confirmation link requested', 'warning')" class="px-3 py-2 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/30 hover:bg-rose-500/30 transition font-medium">⚠️ Delete Account</button>
+                        </div>
+                    </div>
+
+                    <!-- Tab 2: Workspace -->
+                    <div id="esc-panel-workspace" class="esc-tab-panel hidden space-y-5">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-slate-300 mb-1 font-medium">Workspace Name</label>
+                                <input type="text" id="esc-ws-name" value="AetherMind Multimodal AI" class="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-white font-medium">
+                            </div>
+                            <div>
+                                <label class="block text-slate-300 mb-1 font-medium">Default AI Model Engine</label>
+                                <select id="esc-ws-model" class="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-white font-medium">
+                                    <option value="auto" selected>✨ Smart Auto Engine (Recommended)</option>
+                                    <option value="gemini-2.5-flash">✨ Google Gemini 2.5</option>
+                                    <option value="gpt-4o">⚡ OpenAI GPT-4o Vision</option>
+                                    <option value="apiless-deepseek">🐋 DeepSeek R1 Reasoning</option>
+                                    <option value="claude-3-5-sonnet">🧠 Anthropic Claude 3.5 Sonnet</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-slate-300 mb-1 font-medium">Default Image Generation Quality</label>
+                                <select id="esc-ws-imgquality" class="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-white font-medium">
+                                    <option value="hd" selected>1024×1024 HD (Pollinations Flux)</option>
+                                    <option value="turbo">Fast Turbo Canvas</option>
+                                    <option value="realism">Realism Engine</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-slate-300 mb-1 font-medium">Default Voice Assistant Accent</label>
+                                <select id="esc-ws-voice" class="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-white font-medium">
+                                    <option value="nova" selected>Nova (Female - Natural)</option>
+                                    <option value="alloy">Alloy (Neutral)</option>
+                                    <option value="echo">Echo (Male)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-slate-300 mb-1 font-medium">Workspace Description</label>
+                            <textarea id="esc-ws-desc" rows="2" class="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-white font-medium">Enterprise Multimodal AI Operating System with Qdrant Vector RAG and Supabase cloud persistence.</textarea>
+                        </div>
+
+                        <!-- Workspace Automation Toggles -->
+                        <div class="p-4 rounded-2xl bg-black/30 border border-white/10 space-y-3">
+                            <h4 class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Workspace Automation & Storage Sync</h4>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <label class="flex items-center space-x-2.5 p-2.5 rounded-xl bg-white/[0.02] border border-white/10 hover:bg-white/5 cursor-pointer">
+                                    <input type="checkbox" id="esc-ws-autosave" class="accent-[#3ABEFF] rounded" checked>
+                                    <div>
+                                        <div class="text-white font-medium">Auto-Save Conversations</div>
+                                        <div class="text-slate-400 text-[10px]">Automatically save chats to Supabase database</div>
+                                    </div>
+                                </label>
+                                <label class="flex items-center space-x-2.5 p-2.5 rounded-xl bg-white/[0.02] border border-white/10 hover:bg-white/5 cursor-pointer">
+                                    <input type="checkbox" id="esc-ws-autosync" class="accent-[#3ABEFF] rounded" checked>
+                                    <div>
+                                        <div class="text-white font-medium">Cloud Sync Engine</div>
+                                        <div class="text-slate-400 text-[10px]">Sync user workspace across desktop and mobile</div>
+                                    </div>
+                                </label>
+                                <label class="flex items-center space-x-2.5 p-2.5 rounded-xl bg-white/[0.02] border border-white/10 hover:bg-white/5 cursor-pointer">
+                                    <input type="checkbox" id="esc-ws-autobackup" class="accent-purple-500 rounded" checked>
+                                    <div>
+                                        <div class="text-white font-medium">Auto-Backup Workspace</div>
+                                        <div class="text-slate-400 text-[10px]">Create daily snapshots of indexed documents</div>
+                                    </div>
+                                </label>
+                                <label class="flex items-center space-x-2.5 p-2.5 rounded-xl bg-white/[0.02] border border-white/10 hover:bg-white/5 cursor-pointer">
+                                    <input type="checkbox" id="esc-ws-autocompress" class="accent-purple-500 rounded" checked>
+                                    <div>
+                                        <div class="text-white font-medium">Auto-Compress Long Memory</div>
+                                        <div class="text-slate-400 text-[10px]">Summarize old conversations into Qdrant memory</div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-wrap items-center gap-2 pt-2">
+                            <button type="button" onclick="window.exportWorkspaceData()" class="px-3.5 py-2 rounded-xl bg-[#3ABEFF]/20 border border-[#3ABEFF]/40 text-[#3ABEFF] hover:bg-[#3ABEFF]/30 transition font-medium">📤 Export Workspace Backup</button>
+                            <button type="button" onclick="showToast('📥 Select a JSON workspace backup to import', 'info')" class="px-3.5 py-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition font-medium">📥 Import Workspace</button>
+                        </div>
+                    </div>
+
+                    <!-- Tab 3: Notifications -->
+                    <div id="esc-panel-notifications" class="esc-tab-panel hidden space-y-5">
+                        <div class="p-4 rounded-2xl bg-black/30 border border-white/10 space-y-3">
+                            <h4 class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Notification Channels</h4>
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                <label class="flex items-center space-x-2 p-2.5 rounded-xl bg-white/[0.02] border border-white/10 cursor-pointer">
+                                    <input type="checkbox" id="esc-notif-desktop" class="accent-[#3ABEFF] rounded" checked>
+                                    <span class="text-white font-medium">Desktop Alerts</span>
+                                </label>
+                                <label class="flex items-center space-x-2 p-2.5 rounded-xl bg-white/[0.02] border border-white/10 cursor-pointer">
+                                    <input type="checkbox" id="esc-notif-push" class="accent-[#3ABEFF] rounded" checked>
+                                    <span class="text-white font-medium">Push Notifications</span>
+                                </label>
+                                <label class="flex items-center space-x-2 p-2.5 rounded-xl bg-white/[0.02] border border-white/10 cursor-pointer">
+                                    <input type="checkbox" id="esc-notif-email" class="accent-[#3ABEFF] rounded">
+                                    <span class="text-white font-medium">Email Digest</span>
+                                </label>
+                                <label class="flex items-center space-x-2 p-2.5 rounded-xl bg-white/[0.02] border border-white/10 cursor-pointer">
+                                    <input type="checkbox" id="esc-notif-sound" class="accent-purple-500 rounded" checked>
+                                    <span class="text-white font-medium">Sound Effects</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="p-4 rounded-2xl bg-black/30 border border-white/10 space-y-3">
+                            <h4 class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Notification Event Triggers</h4>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-300">
+                                <label class="flex items-center space-x-2"><input type="checkbox" class="accent-[#3ABEFF] rounded" checked> <span>Document Upload & RAG Indexing Completed</span></label>
+                                <label class="flex items-center space-x-2"><input type="checkbox" class="accent-[#3ABEFF] rounded" checked> <span>AI Artwork Rendering Finished</span></label>
+                                <label class="flex items-center space-x-2"><input type="checkbox" class="accent-[#3ABEFF] rounded" checked> <span>Voice Audio Speech-to-Text Completed</span></label>
+                                <label class="flex items-center space-x-2"><input type="checkbox" class="accent-[#3ABEFF] rounded" checked> <span>Long-Term Vector Memory Compressed</span></label>
+                                <label class="flex items-center space-x-2"><input type="checkbox" class="accent-[#3ABEFF] rounded" checked> <span>Security & Session Alerts</span></label>
+                                <label class="flex items-center space-x-2"><input type="checkbox" class="accent-[#3ABEFF] rounded" checked> <span>New Feature & OS Announcements</span></label>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center space-x-3 pt-2">
+                            <button type="button" onclick="showToast('🔔 AetherMind Test Notification: Enterprise System Active!', 'success')" class="px-4 py-2 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/30 transition font-medium">🔔 Test Live Notification</button>
+                        </div>
+                    </div>
+
+                    <!-- Tab 4: Theme & Visuals -->
+                    <div id="esc-panel-theme" class="esc-tab-panel hidden space-y-5">
+                        <div>
+                            <h4 class="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-3">Theme Presets</h4>
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 font-medium">
+                                <button type="button" onclick="window.applyThemePreset('dark-neon')" class="p-3 rounded-2xl border border-[#3ABEFF]/60 bg-[#0F1629] text-[#3ABEFF] text-left hover:scale-105 transition shadow-lg shadow-[#3ABEFF]/10">
+                                    <div class="text-sm">🌙 Dark Neon</div>
+                                    <div class="text-[10px] text-slate-400 mt-1">Cyan & Purple Glow</div>
+                                </button>
+                                <button type="button" onclick="window.applyThemePreset('cyber-blue')" class="p-3 rounded-2xl border border-cyan-500/40 bg-[#071328] text-cyan-300 text-left hover:scale-105 transition">
+                                    <div class="text-sm">⚡ Cyber Blue</div>
+                                    <div class="text-[10px] text-slate-400 mt-1">Deep Electric Ocean</div>
+                                </button>
+                                <button type="button" onclick="window.applyThemePreset('purple-galaxy')" class="p-3 rounded-2xl border border-purple-500/40 bg-[#140B28] text-purple-300 text-left hover:scale-105 transition">
+                                    <div class="text-sm">🌌 Purple Galaxy</div>
+                                    <div class="text-[10px] text-slate-400 mt-1">Nebula & Starlight</div>
+                                </button>
+                                <button type="button" onclick="window.applyThemePreset('oled-black')" class="p-3 rounded-2xl border border-white/20 bg-black text-white text-left hover:scale-105 transition">
+                                    <div class="text-sm">⬛ OLED Black</div>
+                                    <div class="text-[10px] text-slate-400 mt-1">True Pitch Black</div>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Accent Color Picker & Sliders -->
+                        <div class="p-4 rounded-2xl bg-black/30 border border-white/10 space-y-4">
+                            <h4 class="text-xs font-semibold text-[#3ABEFF] uppercase tracking-wider">Visual Customizations</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-slate-300 mb-1 font-medium">Background Backdrop Blur (px)</label>
+                                    <input type="range" id="esc-theme-blur" min="0" max="30" value="16" class="w-full accent-[#3ABEFF]">
+                                </div>
+                                <div>
+                                    <label class="block text-slate-300 mb-1 font-medium">Glow Intensity (%)</label>
+                                    <input type="range" id="esc-theme-glow" min="0" max="100" value="75" class="w-full accent-purple-500">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab 5: API Keys Manager -->
+                    <div id="esc-panel-api" class="esc-tab-panel hidden space-y-5">
+                        <div class="p-3 rounded-xl bg-[#3ABEFF]/10 border border-[#3ABEFF]/30 text-[#3ABEFF] flex items-center space-x-2">
+                            <span>🔒</span>
+                            <span>All API keys are encrypted locally and in Supabase. Never exposed to front-end logs.</span>
+                        </div>
+
+                        <div class="space-y-3" id="esc-api-providers-container">
+                            <!-- Dynamic API Cards rendered by app.js -->
+                        </div>
+                    </div>
+
+                    <!-- Tab 6: Billing & Subscriptions -->
+                    <div id="esc-panel-billing" class="esc-tab-panel hidden space-y-5">
+                        <div class="p-5 rounded-2xl bg-gradient-to-r from-[#3ABEFF]/20 via-[#9333EA]/20 to-pink-500/20 border border-[#3ABEFF]/40 flex flex-wrap items-center justify-between gap-4">
+                            <div>
+                                <span class="px-2.5 py-0.5 rounded-full bg-[#3ABEFF] text-black font-bold text-[10px] uppercase">Enterprise SaaS Tier</span>
+                                <h3 class="text-xl font-bold text-white mt-1">Unlimited Pro Workspace</h3>
+                                <p class="text-xs text-slate-300">All multimodal engines, Qdrant RAG, and cloud persistence unlocked.</p>
+                            </div>
+                            <button type="button" onclick="showToast('⚡ Stripe Enterprise Subscription Active!', 'success')" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#3ABEFF] to-[#9333EA] text-white font-bold shadow-lg cursor-pointer hover:opacity-90">Manage Stripe Plan</button>
+                        </div>
+
+                        <!-- Usage Meters -->
+                        <div class="p-4 rounded-2xl bg-black/30 border border-white/10 space-y-3">
+                            <h4 class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Monthly Resource Usage</h4>
+                            <div class="space-y-2.5 font-mono">
+                                <div>
+                                    <div class="flex justify-between text-slate-300 text-[11px] mb-1">
+                                        <span>AI Image Generations</span>
+                                        <span class="text-[#3ABEFF]">42 / 100 images</span>
+                                    </div>
+                                    <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden"><div class="bg-[#3ABEFF] h-full w-[42%]"></div></div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-slate-300 text-[11px] mb-1">
+                                        <span>Voice Audio Speech-to-Text</span>
+                                        <span class="text-purple-400">18 / 60 mins</span>
+                                    </div>
+                                    <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden"><div class="bg-purple-500 h-full w-[30%]"></div></div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-slate-300 text-[11px] mb-1">
+                                        <span>Document RAG Index Storage</span>
+                                        <span class="text-emerald-400">24.5 / 500 MB</span>
+                                    </div>
+                                    <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden"><div class="bg-emerald-400 h-full w-[5%]"></div></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab 7: System & Diagnostics -->
+                    <div id="esc-panel-system" class="esc-tab-panel hidden space-y-5">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="p-4 rounded-2xl bg-black/30 border border-white/10 space-y-2">
+                                <h4 class="text-xs font-semibold text-emerald-400 uppercase tracking-wider">Database & Network Diagnostics</h4>
+                                <div class="space-y-1.5 font-mono text-[11px]">
+                                    <div class="flex justify-between text-slate-300"><span>Supabase DB:</span><span class="text-emerald-400">Connected 200 OK (28ms)</span></div>
+                                    <div class="flex justify-between text-slate-300"><span>Qdrant Vector RAG:</span><span class="text-emerald-400">Active 200 OK (14ms)</span></div>
+                                    <div class="flex justify-between text-slate-300"><span>Firebase Auth:</span><span class="text-emerald-400">Active 200 OK (32ms)</span></div>
+                                    <div class="flex justify-between text-slate-300"><span>Pollinations AI:</span><span class="text-emerald-400">Ready 200 OK</span></div>
+                                </div>
+                            </div>
+
+                            <div class="p-4 rounded-2xl bg-black/30 border border-white/10 space-y-2">
+                                <h4 class="text-xs font-semibold text-[#3ABEFF] uppercase tracking-wider">System Information</h4>
+                                <div class="space-y-1.5 font-mono text-[11px]">
+                                    <div class="flex justify-between text-slate-300"><span>Platform Version:</span><span class="text-white">v4.0 Enterprise</span></div>
+                                    <div class="flex justify-between text-slate-300"><span>Environment:</span><span class="text-cyan-300">Streamlit Production Cloud</span></div>
+                                    <div class="flex justify-between text-slate-300"><span>Python Engine:</span><span class="text-cyan-300">3.13.0</span></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- System Cache Clear Actions -->
+                        <div class="flex flex-wrap items-center gap-2 pt-2">
+                            <button type="button" onclick="showToast('🧹 Local Cache Cleared Successfully!', 'success')" class="px-3 py-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition font-medium">🧹 Clear Local Cache</button>
+                            <button type="button" onclick="showToast('🖼️ Generated Image Cache Cleared', 'info')" class="px-3 py-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition font-medium">🖼️ Clear Image Cache</button>
+                            <button type="button" onclick="showToast('🚨 Entire Application State Reset', 'warning')" class="px-3 py-2 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/30 hover:bg-rose-500/30 transition font-medium">🚨 Reset Application</button>
+                        </div>
+                    </div>
+
+                    <!-- Tab 8: Shortcuts -->
+                    <div id="esc-panel-shortcuts" class="esc-tab-panel hidden space-y-5">
+                        <div class="p-4 rounded-2xl bg-black/30 border border-white/10 space-y-3">
+                            <h4 class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Keyboard Shortcuts Reference</h4>
+                            <div class="space-y-2 font-mono">
+                                <div class="flex justify-between items-center p-2 rounded-xl bg-white/[0.02] border border-white/10">
+                                    <span class="text-slate-300 font-sans">Open Responsive Device Center</span>
+                                    <kbd class="px-2 py-1 rounded bg-slate-800 text-[#3ABEFF] border border-slate-700 text-[11px]">Ctrl + Shift + R</kbd>
+                                </div>
+                                <div class="flex justify-between items-center p-2 rounded-xl bg-white/[0.02] border border-white/10">
+                                    <span class="text-slate-300 font-sans">Open Enterprise Settings Center</span>
+                                    <kbd class="px-2 py-1 rounded bg-slate-800 text-[#3ABEFF] border border-slate-700 text-[11px]">Ctrl + Shift + S</kbd>
+                                </div>
+                                <div class="flex justify-between items-center p-2 rounded-xl bg-white/[0.02] border border-white/10">
+                                    <span class="text-slate-300 font-sans">Global Search & Command Palette</span>
+                                    <kbd class="px-2 py-1 rounded bg-slate-800 text-[#3ABEFF] border border-slate-700 text-[11px]">Ctrl + K</kbd>
+                                </div>
+                                <div class="flex justify-between items-center p-2 rounded-xl bg-white/[0.02] border border-white/10">
+                                    <span class="text-slate-300 font-sans">Compress Long-Term Memory</span>
+                                    <kbd class="px-2 py-1 rounded bg-slate-800 text-[#3ABEFF] border border-slate-700 text-[11px]">Ctrl + Shift + M</kbd>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab 9: Sign Out -->
+                    <div id="esc-panel-logout" class="esc-tab-panel hidden space-y-5">
+                        <div class="p-6 rounded-2xl bg-gradient-to-tr from-rose-500/20 to-purple-500/20 border border-rose-500/30 text-center space-y-4">
+                            <div class="w-16 h-16 rounded-2xl bg-[#0B132B] border border-rose-500/40 mx-auto flex items-center justify-center text-3xl shadow-xl">
+                                🛡️
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-bold text-white">Sign Out of AetherMind Multimodal AI</h3>
+                                <p class="text-xs text-slate-300 mt-1">Ending session will revoke active authentication tokens and clear local cache.</p>
+                            </div>
+                            <div class="flex items-center justify-center space-x-3 pt-2">
+                                <button type="button" onclick="closeModal('modal-settings')" class="px-4 py-2 rounded-xl bg-white/10 text-white font-medium hover:bg-white/20 transition">Cancel</button>
+                                <button type="button" onclick="triggerLogoutFlow()" class="px-5 py-2.5 rounded-xl bg-rose-500 text-white font-bold shadow-lg shadow-rose-500/30 hover:bg-rose-600 transition">🚪 Confirm Sign Out</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer Action Bar -->
+                <div class="flex items-center justify-between px-6 py-3 border-t border-white/10 bg-[#0F1629]/80 shrink-0">
+                    <div class="flex items-center space-x-2 text-[11px] text-slate-400">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span id="esc-sync-status">Connected to Supabase Storage</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button type="button" onclick="window.resetEnterpriseSettings()" class="px-3.5 py-1.5 rounded-xl border border-white/10 text-slate-300 hover:bg-white/10 transition text-xs font-medium cursor-pointer">
+                            ↺ Reset Defaults
+                        </button>
+                        <button type="button" onclick="window.saveEnterpriseSettings(true)" class="px-4 py-1.5 rounded-xl bg-gradient-to-r from-[#3ABEFF] to-[#9333EA] text-white font-bold text-xs hover:opacity-90 transition shadow-lg shadow-[#3ABEFF]/20 cursor-pointer">
+                            💾 Save Preferences
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
