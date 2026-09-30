@@ -557,14 +557,48 @@ document.addEventListener("DOMContentLoaded", () => {
             window.addEventListener('online', () => {
                 const banner = document.getElementById("offline-network-banner");
                 if (banner) banner.classList.add("hidden");
-                if (window.showToast) window.showToast("🟢 Internet Reconnected. Synced with AetherMind Cloud.", "success");
+                
+                // If offline mode was auto-triggered due to network loss, switch back to Cloud AI
+                if (window.LocalAIEngine && window.LocalAIEngine._autoTriggeredOffline) {
+                    window.LocalAIEngine._autoTriggeredOffline = false;
+                    window.LocalAIEngine.toggleOfflineMode(false);
+                    const modelSelect = document.getElementById("model-select");
+                    if (modelSelect && modelSelect.value === "local-webgpu") {
+                        modelSelect.value = "auto";
+                    }
+                    if (window.showToast) window.showToast("🟢 Internet Reconnected. Switched back to Cloud AI.", "success");
+                } else {
+                    if (window.showToast) window.showToast("🟢 Internet Reconnected. Synced with AetherMind Cloud.", "success");
+                }
             });
 
             window.addEventListener('offline', () => {
                 const banner = document.getElementById("offline-network-banner");
                 if (banner) banner.classList.remove("hidden");
-                if (window.showToast) window.showToast("📡 Internet Disconnected. Operating in Offline Cached Mode.", "info");
+                
+                // Automatically switch to Local AI Offline Mode when internet disconnects
+                if (window.LocalAIEngine && !window.LocalAIEngine.offlinePrivacyMode) {
+                    window.LocalAIEngine._autoTriggeredOffline = true;
+                    window.LocalAIEngine.toggleOfflineMode(true);
+                    const modelSelect = document.getElementById("model-select");
+                    if (modelSelect) modelSelect.value = "local-webgpu";
+                    if (window.showToast) window.showToast("📡 Internet Disconnected. Automatically switched to Local AI (Offline WebGPU)!", "info");
+                } else {
+                    if (window.showToast) window.showToast("📡 Internet Disconnected. Operating in Offline Cached Mode.", "info");
+                }
             });
+
+            // Initial check on page load
+            if (!navigator.onLine) {
+                setTimeout(() => {
+                    if (window.LocalAIEngine && !window.LocalAIEngine.offlinePrivacyMode) {
+                        window.LocalAIEngine._autoTriggeredOffline = true;
+                        window.LocalAIEngine.toggleOfflineMode(true);
+                        const modelSelect = document.getElementById("model-select");
+                        if (modelSelect) modelSelect.value = "local-webgpu";
+                    }
+                }, 300);
+            }
         },
 
         async auditCacheSize() {
