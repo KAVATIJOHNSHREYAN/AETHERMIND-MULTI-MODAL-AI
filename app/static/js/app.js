@@ -4193,7 +4193,11 @@ AetherMind Multimodal AI OS is an enterprise-grade artificial intelligence opera
     document.getElementById('gate-btn-google')?.addEventListener('click', async () => {
         hideGateError();
         if (!firebaseAuth || !googleProvider) { showGateError('Firebase not available.'); return; }
+        
+        // If embedded inside Streamlit iframe, escape top window or use popup
+        const inIframe = window.self !== window.top;
         showToast('🔐 Connecting to Google…', 'info');
+        
         try {
             const result = await firebaseAuth.signInWithPopup(googleProvider);
             if (result && result.user) {
@@ -4204,23 +4208,27 @@ AetherMind Multimodal AI OS is an enterprise-grade artificial intelligence opera
             }
         } catch (err) {
             console.warn('[Firebase Auth] Google popup error:', err);
-            if (err.code === 'auth/popup-blocked' || err.code === 'auth/popup-closed-by-user' ||
-                err.code === 'auth/cancelled-popup-request') {
+            if (err.code === 'auth/operation-not-supported-in-this-environment' || inIframe) {
+                // Open app in top window or standalone tab for Google OAuth
+                try {
+                    const topUrl = window.location.href;
+                    if (inIframe && window.top) {
+                        window.top.location.href = topUrl;
+                        return;
+                    }
+                    await firebaseAuth.signInWithRedirect(googleProvider);
+                } catch (redirectErr) {
+                    const msg = 'Google Auth requires top-level window. Please click "Open in New Tab" or use Email/Password Sign-In / Guest Mode.';
+                    showGateError(msg);
+                    showToast(msg, 'error');
+                }
+            } else if (err.code === 'auth/popup-blocked' || err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
                 try {
                     showToast('Opening Google sign-in redirect…', 'info');
                     await firebaseAuth.signInWithRedirect(googleProvider);
                 } catch (redirectErr) {
                     showGateError(gateFirebaseErrMsg(redirectErr));
                     showToast(gateFirebaseErrMsg(redirectErr), 'error');
-                }
-            } else if (err.code === 'auth/operation-not-supported-in-this-environment') {
-                try {
-                    showToast('Popup not supported in iframe. Attempting redirect auth…', 'info');
-                    await firebaseAuth.signInWithRedirect(googleProvider);
-                } catch (redirectErr) {
-                    const msg = 'Google popup authentication is blocked inside Streamlit iframe embeds. Please use Email/Password Sign-In or Instant Guest Mode.';
-                    showGateError(msg);
-                    showToast(msg, 'error');
                 }
             } else {
                 showGateError(gateFirebaseErrMsg(err));
