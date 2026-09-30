@@ -454,7 +454,8 @@ def build_standalone_aethermind_html(_cache_key=None):
             let chats = getStoredItems('aethermind_saved_chats');
             let targetChat = chats.find(c => c.id === chatId);
             if (!targetChat) {
-                const titleSnippet = (userMsgObj.content || "New Conversation").slice(0, 35) + ((userMsgObj.content || '').length > 35 ? "..." : "");
+                const rawTxt = (userMsgObj && userMsgObj.content) ? userMsgObj.content : "New Conversation";
+                const titleSnippet = rawTxt.slice(0, 35) + (rawTxt.length > 35 ? "..." : "");
                 targetChat = {
                     id: chatId,
                     title: titleSnippet,
@@ -463,7 +464,6 @@ def build_standalone_aethermind_html(_cache_key=None):
                     updated_at: new Date().toISOString(),
                     messages: []
                 };
-                chats.unshift(targetChat);
             }
             targetChat.selected_model = modelName || targetChat.selected_model;
             targetChat.updated_at = new Date().toISOString();
@@ -473,6 +473,11 @@ def build_standalone_aethermind_html(_cache_key=None):
             if (assistantMsgObj && !targetChat.messages.some(m => m.created_at === assistantMsgObj.created_at && m.content === assistantMsgObj.content)) {
                 targetChat.messages.push(assistantMsgObj);
             }
+
+            // Move updated chat to top of list
+            chats = chats.filter(c => c.id !== chatId);
+            chats.unshift(targetChat);
+
             try { localStorage.setItem('aethermind_saved_chats', JSON.stringify(chats)); } catch(e) {}
         }
 

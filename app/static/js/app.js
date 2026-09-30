@@ -1247,59 +1247,132 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     // Conversations Load & Switch
+    // Conversations Load & Switch
     const loadConversationsHistory = async () => {
         if (!conversationList) return;
         try {
             const res = await authenticatedFetch("/api/v1/chat/conversations");
             const data = await res.json();
-            if (data.success && data.data) renderConversationsList(data.data);
-        } catch (e) {}
+            let chats = (data.success && data.data) ? data.data : [];
+            
+            // Fallback to local storage if server/bridge returned empty list
+            if (chats.length === 0) {
+                try {
+                    const saved = JSON.parse(localStorage.getItem('aethermind_saved_chats') || '[]');
+                    chats = saved.map(c => ({
+                        id: c.id,
+                        title: c.title || "Conversation",
+                        selected_model: c.selected_model || "gemini-2.5-flash",
+                        updated_at: c.updated_at
+                    }));
+                } catch (e) {}
+            }
+            renderConversationsList(chats);
+        } catch (e) {
+            try {
+                const saved = JSON.parse(localStorage.getItem('aethermind_saved_chats') || '[]');
+                renderConversationsList(saved);
+            } catch (err) {}
+        }
     };
 
     const renderConversationsList = (chats) => {
+        if (!conversationList) return;
         conversationList.innerHTML = "";
+        if (!chats || chats.length === 0) {
+            conversationList.innerHTML = `<div class="text-[11px] text-slate-500 italic p-2 text-center">No recent conversations</div>`;
+            return;
+        }
         chats.forEach(c => {
-            const btn = document.createElement("button");
+            const div = document.createElement("div");
             const isActive = c.id === activeChatId;
-            btn.className = `w-full py-2.5 px-3 rounded-lg text-xs font-medium flex items-center justify-between transition ${isActive ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' : 'text-slate-300 hover:bg-white/5'}`;
-            btn.innerHTML = `
-                <div class="flex items-center space-x-2 truncate">
+            div.className = `w-full py-2 px-3 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer group ${isActive ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' : 'text-slate-300 hover:bg-white/5 border border-transparent'}`;
+            div.innerHTML = `
+                <div class="flex items-center space-x-2 truncate pointer-events-none">
                     <span>💬</span>
-                    <span class="truncate">${escapeHtml(c.title)}</span>
+                    <span class="truncate">${escapeHtml(c.title || "Conversation")}</span>
                 </div>
-                <button class="text-slate-500 hover:text-rose-400 p-1" onclick="deleteConversation('${c.id}', event)">✕</button>
+                <button type="button" class="text-slate-500 hover:text-rose-400 p-1 rounded transition shrink-0 ml-2" title="Delete conversation">✕</button>
             `;
-            btn.addEventListener("click", () => switchConversation(c.id));
-            conversationList.appendChild(btn);
+            const delBtn = div.querySelector("button");
+            if (delBtn) {
+                delBtn.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    deleteConversation(c.id, e);
+                });
+            }
+            div.addEventListener("click", (e) => {
+                if (e.target.tagName !== 'BUTTON') {
+                    switchConversation(c.id);
+                }
+            });
+            conversationList.appendChild(div);
         });
     };
 
     window.switchConversation = async (chatId) => {
+        if (!chatId) return;
         activeChatId = chatId;
         localStorage.setItem('aethermind_active_chat', chatId);
         messagesContainer.innerHTML = "";
+        
+        let loadedMessages = [];
         try {
             const res = await authenticatedFetch(`/api/v1/chat/conversations/${chatId}`);
             const data = await res.json();
             if (data.success && data.data) {
-                (data.data.messages || []).forEach(m => renderMessage(m));
-                if (welcomeHero) welcomeHero.classList.add("hidden");
+                loadedMessages = data.data.messages || [];
             }
-        } catch (e) {}
+        } catch (e) {
+            console.warn("API conversation fetch failed, checking local storage:", e);
+        }
+
+        // Fallback to local storage if remote/bridge returned no messages
+        if (loadedMessages.length === 0) {
+            try {
+                const saved = JSON.parse(localStorage.getItem('aethermind_saved_chats') || '[]');
+                const found = saved.find(c => c.id === chatId);
+                if (found && found.messages && found.messages.length > 0) {
+                    loadedMessages = found.messages;
+                }
+            } catch (e) {}
+        }
+
+        if (loadedMessages.length > 0) {
+            if (welcomeHero) welcomeHero.classList.add("hidden");
+            loadedMessages.forEach(m => renderMessage(m));
+        } else {
+            if (welcomeHero) {
+                messagesContainer.appendChild(welcomeHero);
+                welcomeHero.classList.remove("hidden");
+            }
+        }
+
+        loadConversationsHistory();
     };
 
     window.deleteConversation = async (chatId, event) => {
         if (event) event.stopPropagation();
         try {
             await authenticatedFetch(`/api/v1/chat/conversations/${chatId}`, { method: "DELETE" });
-            if (activeChatId === chatId) {
-                activeChatId = null;
-                localStorage.removeItem('aethermind_active_chat');
-                messagesContainer.innerHTML = "";
-                if (welcomeHero) messagesContainer.classList.remove("hidden");
-            }
-            loadConversationsHistory();
         } catch (e) {}
+
+        try {
+            let saved = JSON.parse(localStorage.getItem('aethermind_saved_chats') || '[]');
+            saved = saved.filter(c => c.id !== chatId);
+            localStorage.setItem('aethermind_saved_chats', JSON.stringify(saved));
+        } catch(e) {}
+
+        if (activeChatId === chatId) {
+            activeChatId = null;
+            localStorage.removeItem('aethermind_active_chat');
+            messagesContainer.innerHTML = "";
+            if (welcomeHero) {
+                messagesContainer.appendChild(welcomeHero);
+                welcomeHero.classList.remove("hidden");
+            }
+        }
+        loadConversationsHistory();
     };
 
     if (btnNewChat) {
@@ -1307,18 +1380,23 @@ document.addEventListener("DOMContentLoaded", () => {
             activeChatId = null;
             localStorage.removeItem('aethermind_active_chat');
             messagesContainer.innerHTML = "";
-            if (welcomeHero) messagesContainer.appendChild(welcomeHero);
-            if (welcomeHero) welcomeHero.classList.remove("hidden");
+            if (welcomeHero) {
+                messagesContainer.appendChild(welcomeHero);
+                welcomeHero.classList.remove("hidden");
+            }
             pendingAttachments = [];
             renderPendingTray();
+            loadConversationsHistory();
         });
     }
 
     if (btnClearChat) {
         btnClearChat.addEventListener("click", () => {
             messagesContainer.innerHTML = "";
-            if (welcomeHero) messagesContainer.appendChild(welcomeHero);
-            if (welcomeHero) welcomeHero.classList.remove("hidden");
+            if (welcomeHero) {
+                messagesContainer.appendChild(welcomeHero);
+                welcomeHero.classList.remove("hidden");
+            }
         });
     }
 
