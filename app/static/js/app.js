@@ -1771,19 +1771,47 @@ document.addEventListener("DOMContentLoaded", () => {
     window.downloadImage = async function(url, name) {
         showToast("⬇️ Starting image download...", "info");
         try {
-            const response = await fetch(url);
-            const blob = await response.blob();
+            let blob;
+            let ext = "png";
+            
+            if (url.startsWith("data:")) {
+                const parts = url.split(",");
+                const mimeMatch = parts[0].match(/:(.*?);/);
+                const mime = mimeMatch ? mimeMatch[1] : "image/png";
+                ext = mime.includes("svg") ? "svg" : (mime.includes("jpeg") || mime.includes("jpg") ? "jpg" : "png");
+                
+                const bstr = atob(parts[1] || "");
+                let n = bstr.length;
+                const u8arr = new Uint8Array(n);
+                while (n--) {
+                    u8arr[n] = bstr.charCodeAt(n);
+                }
+                blob = new Blob([u8arr], { type: mime });
+            } else {
+                const response = await fetch(url);
+                blob = await response.blob();
+                if (blob.type.includes("jpeg") || blob.type.includes("jpg")) ext = "jpg";
+                else if (blob.type.includes("svg")) ext = "svg";
+                else if (blob.type.includes("webp")) ext = "webp";
+            }
+
             const blobUrl = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = blobUrl;
-            a.download = (name || "aethermind_artwork").replace(/[^a-zA-Z0-9_-]/g, "_") + ".png";
+            const cleanName = (name || "aethermind_artwork").replace(/[^a-zA-Z0-9_-]/g, "_").replace(/^_+|_+$/g, "") || "aethermind_artwork";
+            a.download = `${cleanName}.${ext}`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
-            URL.revokeObjectURL(blobUrl);
-            showToast("Image downloaded!", "success");
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+            showToast("✅ Image downloaded successfully!", "success");
         } catch(e) {
-            window.open(url, "_blank");
+            console.warn("Direct blob download failed, opening in new tab:", e);
+            const a = document.createElement("a");
+            a.href = url;
+            a.target = "_blank";
+            a.download = `${(name || "aethermind_artwork").replace(/[^a-zA-Z0-9_-]/g, "_")}.png`;
+            a.click();
         }
     };
 
