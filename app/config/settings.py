@@ -51,9 +51,6 @@ class Settings(BaseSettings):
     GOOGLE_GEMINI_API_KEY: str = ""
     ELEVENLABS_API_KEY: str = ""
 
-    # OAuth Configuration
-    MICROSOFT_CLIENT_ID: str = ""
-
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

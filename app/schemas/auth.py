@@ -13,7 +13,7 @@ class UserLogin(BaseModel):
     remember_me: Optional[bool] = False
 
 class OAuthLoginRequest(BaseModel):
-    provider: str  # 'google', 'github', 'microsoft'
+    provider: str = "google"
     id_token: str
     email: Optional[EmailStr] = None
     full_name: Optional[str] = None

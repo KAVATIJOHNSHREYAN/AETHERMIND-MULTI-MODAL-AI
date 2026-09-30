@@ -83,32 +83,6 @@ def test_google_oauth_login():
     assert data["success"] is True
     assert "access_token" in data["data"]
 
-def test_github_oauth_login():
-    """Test GitHub OAuth login endpoint"""
-    response = client.post("/api/v1/auth/oauth/github", json={
-        "provider": "github",
-        "id_token": "mock_github_id_token",
-        "email": f"github_{id(client)}@aethermind.ai",
-        "full_name": "GitHub Test User"
-    })
-    assert response.status_code == 200
-    data = response.json()
-    assert data["success"] is True
-    assert "access_token" in data["data"]
-
-def test_microsoft_oauth_login():
-    """Test Microsoft OAuth login endpoint"""
-    response = client.post("/api/v1/auth/oauth/microsoft", json={
-        "provider": "microsoft",
-        "id_token": "mock_microsoft_id_token",
-        "email": f"microsoft_{id(client)}@aethermind.ai",
-        "full_name": "Microsoft Test User"
-    })
-    assert response.status_code == 200
-    data = response.json()
-    assert data["success"] is True
-    assert "access_token" in data["data"]
-
 def test_protected_profile_route_without_token():
     """Test accessing protected route without token returns 401"""
     fresh_client = TestClient(app)

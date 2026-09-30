@@ -12,7 +12,7 @@ class User(Base):
     password_hash = Column(String(255), nullable=True)
     full_name = Column(String(255), nullable=True)
     avatar_url = Column(String(1024), nullable=True)
-    provider_type = Column(String(50), default="credentials", nullable=False) # 'credentials', 'google', 'github', 'microsoft'
+    provider_type = Column(String(50), default="credentials", nullable=False) # 'credentials', 'google'
     role = Column(String(50), default="user", nullable=False) # 'user', 'admin', 'moderator'
     is_active = Column(Boolean, default=True)
     is_verified = Column(Boolean, default=False)
