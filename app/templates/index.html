@@ -487,20 +487,37 @@
                             d="M13 5l7 7-7 7M5 5l7 7-7 7" />
                     </svg>
                 </button>
-                <div class="relative">
+                <div class="relative flex items-center space-x-2">
                     <select id="model-select"
                         class="glass-input text-xs font-semibold py-2 px-3 pr-7 max-w-[170px] sm:max-w-[240px] md:max-w-xs truncate appearance-none focus:outline-none cursor-pointer text-[#3ABEFF]">
-                        <option value="auto" selected>✨ AetherMind Auto Engine (Smart Multimodal)</option>
-                        <option value="apiless-gpt4o">⚡ GPT-4o Engine</option>
-                        <option value="gemini-2.5-flash">✨ Google Gemini 2.5 Multimodal</option>
-                        <option value="apiless-deepseek">🐋 DeepSeek R1 Reasoning</option>
+                        <option value="auto" selected>✨ Auto (Smart Multimodal Router)</option>
+                        <option value="pollinations">🌸 Pollinations AI (Free Cloud)</option>
                         <option value="gpt-4o">⚡ OpenAI GPT-4o Vision</option>
+                        <option value="gemini-2.5-flash">✨ Google Gemini 2.5 Multimodal</option>
                         <option value="claude-3-5-sonnet">🧠 Anthropic Claude 3.5 Sonnet</option>
                         <option value="groq-llama-3.3-70b">🚀 Groq Llama 3.3 70B (Ultra Fast)</option>
+                        <option value="cohere-command-r">💎 Cohere Command R+</option>
+                        <option value="apiless-deepseek">🐋 DeepSeek R1 Reasoning</option>
+                        <option value="qwen-2.5-max">🌐 Qwen 2.5 Max Engine</option>
+                        <option value="local-webgpu">💻 Local AI (Offline WebGPU)</option>
                     </select>
                 </div>
+                <!-- Capability Status Badge for WebGPU -->
+                <button type="button" id="local-ai-capability-badge" onclick="window.openLocalAIManager()"
+                    class="hidden lg:inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-[10px] font-mono font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 whitespace-nowrap shrink-0 cursor-pointer hover:bg-emerald-500/25 transition"
+                    title="Click to manage Local WebGPU AI Models">
+                    <span id="local-ai-badge-dot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span id="local-ai-badge-text">Ready for Local AI</span>
+                </button>
+                <!-- Offline Privacy Mode Toggle Button -->
+                <button type="button" id="btn-offline-mode-toggle" onclick="window.toggleOfflinePrivacyMode()"
+                    class="hidden sm:inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-xl text-[11px] font-medium bg-[#0F1629] border border-white/10 text-slate-300 hover:text-white hover:border-[#3ABEFF]/40 transition cursor-pointer"
+                    title="Offline Privacy Mode: Runs 100% in browser without external cloud API requests">
+                    <span class="text-xs">🔒</span>
+                    <span id="offline-mode-btn-label">Offline Mode</span>
+                </button>
                 <span
-                    class="hidden lg:inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-[10px] font-mono font-medium bg-[#3ABEFF]/15 text-[#3ABEFF] border border-[#3ABEFF]/30 whitespace-nowrap shrink-0">
+                    class="hidden xl:inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-[10px] font-mono font-medium bg-[#3ABEFF]/15 text-[#3ABEFF] border border-[#3ABEFF]/30 whitespace-nowrap shrink-0">
                     <span class="w-2 h-2 rounded-full bg-[#3ABEFF] animate-pulse"></span>
                     <span>Qdrant Vector RAG Active</span>
                 </span>
@@ -1272,6 +1289,10 @@
                         class="esc-tab-btn w-full px-3 py-2 rounded-xl flex items-center space-x-2.5 text-slate-300 hover:text-white hover:bg-white/10 transition text-left cursor-pointer">
                         <span class="text-sm">⌨️</span> <span class="truncate">Shortcuts</span>
                     </button>
+                    <button type="button" onclick="window.switchSettingsTab('localai')" id="esc-tab-btn-localai"
+                        class="esc-tab-btn w-full px-3 py-2 rounded-xl flex items-center space-x-2.5 text-slate-300 hover:text-white hover:bg-white/10 transition text-left cursor-pointer">
+                        <span class="text-sm">💻</span> <span class="truncate">Local AI (WebGPU)</span>
+                    </button>
                     <div class="border-t border-white/10 my-1"></div>
                     <button type="button" onclick="window.switchSettingsTab('logout')" id="esc-tab-btn-logout"
                         class="esc-tab-btn w-full px-3 py-2 rounded-xl flex items-center space-x-2.5 text-rose-400 hover:bg-rose-500/10 transition text-left cursor-pointer">
@@ -1651,6 +1672,201 @@
                         </div>
                     </div>
 
+                    <!-- Tab 8.5: Local AI (WebGPU Offline Engine) -->
+                    <div id="esc-panel-localai" class="esc-tab-panel hidden space-y-5">
+                        <div class="flex items-center justify-between p-4 rounded-2xl bg-[#0F1629]/90 border border-[#3ABEFF]/30 shadow-xl">
+                            <div class="flex items-center space-x-3">
+                                <div class="p-3 rounded-xl bg-[#3ABEFF]/15 border border-[#3ABEFF]/30 text-[#3ABEFF] text-2xl">
+                                    💻
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+                                        <span>Local AI (Browser WebGPU Offline Engine)</span>
+                                        <span id="esc-localai-status-badge" class="px-2 py-0.5 rounded-full text-[10px] font-mono font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">Ready for Local AI</span>
+                                    </h3>
+                                    <p class="text-xs text-slate-400 mt-0.5">Run lightweight open-weights LLMs directly inside your browser using WebGPU hardware acceleration.</p>
+                                </div>
+                            </div>
+                            <button type="button" onclick="window.LocalAIEngine && window.LocalAIEngine.runCapabilityDetection()"
+                                class="px-3 py-1.5 rounded-xl bg-white/10 text-white hover:bg-white/20 transition text-xs font-medium cursor-pointer shrink-0">
+                                🔄 Re-Scan WebGPU
+                            </button>
+                        </div>
+
+                        <!-- System Hardware Capability Diagnostics Card -->
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                            <div class="p-3 rounded-xl bg-white/[0.03] border border-white/10">
+                                <span class="text-[11px] text-slate-400 block font-medium">WebGPU Support</span>
+                                <div id="esc-localai-webgpu-val" class="text-xs font-bold text-emerald-400 mt-1 flex items-center space-x-1">
+                                    <span>✓ Enabled</span>
+                                </div>
+                            </div>
+                            <div class="p-3 rounded-xl bg-white/[0.03] border border-white/10">
+                                <span class="text-[11px] text-slate-400 block font-medium">GPU Hardware</span>
+                                <div id="esc-localai-gpu-name" class="text-xs font-bold text-slate-200 mt-1 truncate">
+                                    Detecting GPU...
+                                </div>
+                            </div>
+                            <div class="p-3 rounded-xl bg-white/[0.03] border border-white/10">
+                                <span class="text-[11px] text-slate-400 block font-medium">Estimated RAM</span>
+                                <div id="esc-localai-ram-val" class="text-xs font-bold text-slate-200 mt-1">
+                                    Detecting...
+                                </div>
+                            </div>
+                            <div class="p-3 rounded-xl bg-white/[0.03] border border-white/10">
+                                <span class="text-[11px] text-slate-400 block font-medium">Storage Available</span>
+                                <div id="esc-localai-storage-val" class="text-xs font-bold text-slate-200 mt-1">
+                                    Detecting...
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Offline Privacy Mode Card -->
+                        <div class="p-4 rounded-2xl bg-gradient-to-r from-cyan-950/40 via-purple-950/40 to-slate-900/40 border border-[#3ABEFF]/30 space-y-3">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-lg">🔒</span>
+                                    <span class="text-sm font-bold text-white">Offline Privacy Mode</span>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="esc-localai-offline-toggle" onchange="window.toggleOfflinePrivacyMode(this.checked)" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                                </label>
+                            </div>
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] text-slate-300 font-mono pt-1">
+                                <div class="flex items-center space-x-1.5"><span class="text-emerald-400">✓</span><span>100% Local Inference</span></div>
+                                <div class="flex items-center space-x-1.5"><span class="text-emerald-400">✓</span><span>No API Keys Required</span></div>
+                                <div class="flex items-center space-x-1.5"><span class="text-emerald-400">✓</span><span>No External API Calls</span></div>
+                                <div class="flex items-center space-x-1.5"><span class="text-emerald-400">✓</span><span>Zero Cloud Data Retention</span></div>
+                            </div>
+                        </div>
+
+                        <!-- Model Management & Download Section -->
+                        <div class="p-5 rounded-2xl bg-black/40 border border-white/10 space-y-4">
+                            <div class="flex items-center justify-between">
+                                <h4 class="text-xs font-bold uppercase tracking-wider text-[#3ABEFF]">Local Model Catalog & Storage Manager</h4>
+                                <button type="button" onclick="window.LocalAIEngine && window.LocalAIEngine.clearCache()" class="px-2.5 py-1 rounded-lg bg-rose-500/15 border border-rose-500/30 text-rose-300 hover:bg-rose-500/25 transition text-xs font-medium cursor-pointer">
+                                    🗑️ Clear Model Cache
+                                </button>
+                            </div>
+
+                            <!-- Model Selection Grid -->
+                            <div id="esc-localai-model-list" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <!-- Model Cards generated dynamically by LocalAIEngine -->
+                            </div>
+
+                            <!-- Download Progress Container -->
+                            <div id="esc-localai-progress-card" class="hidden p-4 rounded-xl bg-[#0B132B]/90 border border-[#3ABEFF]/40 space-y-2">
+                                <div class="flex items-center justify-between text-xs">
+                                    <span id="esc-localai-dl-title" class="font-bold text-white">Downloading Model Weights...</span>
+                                    <span id="esc-localai-dl-pct" class="font-mono text-[#3ABEFF]">0%</span>
+                                </div>
+                                <div class="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
+                                    <div id="esc-localai-dl-bar" class="h-full bg-gradient-to-r from-[#3ABEFF] to-[#9333EA] w-0 transition-all duration-300"></div>
+                                </div>
+                                <div class="flex items-center justify-between text-[11px] text-slate-400 font-mono">
+                                    <span id="esc-localai-dl-speed">Speed: 0.0 MB/s</span>
+                                    <span id="esc-localai-dl-details">0 MB / 0 MB</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Local AI Inference Parameters & Settings -->
+                        <div class="p-5 rounded-2xl bg-black/40 border border-white/10 space-y-4">
+                            <h4 class="text-xs font-bold uppercase tracking-wider text-[#3ABEFF]">Local AI Inference Configuration</h4>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                                <div>
+                                    <label class="block text-slate-300 font-medium mb-1">Default Local Model</label>
+                                    <select id="esc-localai-default-model" class="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white focus:outline-none focus:border-[#3ABEFF]/60">
+                                        <option value="llama-3.2-1b">Llama 3.2 1B (Ultra Fast, ~700MB)</option>
+                                        <option value="llama-3.2-3b">Llama 3.2 3B (Balanced, ~1.8GB)</option>
+                                        <option value="deepseek-r1-distill-1.5b">DeepSeek R1 Distill 1.5B (Reasoning, ~1.1GB)</option>
+                                        <option value="phi-4-mini">Phi-4 Mini 3.8B (High Logic, ~2.2GB)</option>
+                                        <option value="gemma-2-2b">Gemma 2 2B (Google, ~1.4GB)</option>
+                                        <option value="qwen-2.5-1.5b">Qwen 2.5 1.5B (Multilingual, ~950MB)</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="block text-slate-300 font-medium mb-1">Performance Mode</label>
+                                    <select id="esc-localai-perf-mode" class="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white focus:outline-none focus:border-[#3ABEFF]/60">
+                                        <option value="high">🔥 High Performance (Maximum FPS & VRAM)</option>
+                                        <option value="balanced" selected>⚖️ Balanced (Recommended)</option>
+                                        <option value="saver">🔋 Power Saver (Reduced GPU Clocks)</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <div class="flex justify-between text-slate-300 font-medium mb-1">
+                                        <span>Max Context Length</span>
+                                        <span id="esc-localai-ctx-val" class="text-[#3ABEFF] font-mono">2048 tokens</span>
+                                    </div>
+                                    <input type="range" id="esc-localai-max-context" min="512" max="8192" step="256" value="2048"
+                                        oninput="document.getElementById('esc-localai-ctx-val').innerText = this.value + ' tokens'"
+                                        class="w-full accent-[#3ABEFF] cursor-pointer">
+                                </div>
+
+                                <div>
+                                    <div class="flex justify-between text-slate-300 font-medium mb-1">
+                                        <span>Temperature</span>
+                                        <span id="esc-localai-temp-val" class="text-[#3ABEFF] font-mono">0.7</span>
+                                    </div>
+                                    <input type="range" id="esc-localai-temp" min="0.0" max="1.0" step="0.05" value="0.7"
+                                        oninput="document.getElementById('esc-localai-temp-val').innerText = this.value"
+                                        class="w-full accent-[#3ABEFF] cursor-pointer">
+                                </div>
+
+                                <div>
+                                    <div class="flex justify-between text-slate-300 font-medium mb-1">
+                                        <span>Top P</span>
+                                        <span id="esc-localai-topp-val" class="text-[#3ABEFF] font-mono">0.9</span>
+                                    </div>
+                                    <input type="range" id="esc-localai-topp" min="0.0" max="1.0" step="0.05" value="0.9"
+                                        oninput="document.getElementById('esc-localai-topp-val').innerText = this.value"
+                                        class="w-full accent-[#3ABEFF] cursor-pointer">
+                                </div>
+
+                                <div>
+                                    <div class="flex justify-between text-slate-300 font-medium mb-1">
+                                        <span>Max Generation Tokens</span>
+                                        <span id="esc-localai-[#esc-localai-tokens-val]" class="text-[#3ABEFF] font-mono">1024</span>
+                                    </div>
+                                    <input type="range" id="esc-localai-max-tokens" min="64" max="4096" step="64" value="1024"
+                                        oninput="document.getElementById('esc-localai-tokens-val').innerText = this.value"
+                                        class="w-full accent-[#3ABEFF] cursor-pointer">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-xs">
+                                <label class="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.02] border border-white/5 cursor-pointer">
+                                    <span class="text-slate-300">GPU Hardware Acceleration</span>
+                                    <input type="checkbox" id="esc-localai-gpu-accel" checked class="rounded border-slate-700 text-[#3ABEFF]">
+                                </label>
+                                <label class="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.02] border border-white/5 cursor-pointer">
+                                    <span class="text-slate-300">Streaming Output</span>
+                                    <input type="checkbox" id="esc-localai-streaming" checked class="rounded border-slate-700 text-[#3ABEFF]">
+                                </label>
+                                <label class="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.02] border border-white/5 cursor-pointer">
+                                    <span class="text-slate-300">Enable 4-bit Quantized Models</span>
+                                    <input type="checkbox" id="esc-localai-quantized" checked class="rounded border-slate-700 text-[#3ABEFF]">
+                                </label>
+                                <label class="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.02] border border-white/5 cursor-pointer">
+                                    <span class="text-slate-300">WASM CPU Fallback</span>
+                                    <input type="checkbox" id="esc-localai-wasm-fallback" checked class="rounded border-slate-700 text-[#3ABEFF]">
+                                </label>
+                                <label class="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.02] border border-white/5 cursor-pointer">
+                                    <span class="text-slate-300">Background Model Downloads</span>
+                                    <input type="checkbox" id="esc-localai-bg-downloads" class="rounded border-slate-700 text-[#3ABEFF]">
+                                </label>
+                                <label class="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.02] border border-white/5 cursor-pointer">
+                                    <span class="text-slate-300">Auto-Update Model Weights</span>
+                                    <input type="checkbox" id="esc-localai-auto-update" class="rounded border-slate-700 text-[#3ABEFF]">
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Tab 9: Sign Out -->
                     <div id="esc-panel-logout" class="esc-tab-panel hidden space-y-5">
                         <div class="p-6 rounded-2xl bg-gradient-to-tr from-rose-500/20 to-purple-500/20 border border-rose-500/30 text-center space-y-4">
@@ -1965,6 +2181,112 @@
                         <span>📄 Export Responsive Report</span>
                     </button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: STANDALONE LOCAL AI MANAGER -->
+    <div id="modal-local-ai-manager" class="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-panel w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col border border-[#3ABEFF]/30 rounded-3xl">
+            <!-- Header -->
+            <div class="h-16 px-6 border-b border-white/10 flex items-center justify-between bg-[#0F1629]/90 shrink-0">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#3ABEFF] to-[#9333EA] flex items-center justify-center text-white text-xl shadow-lg">
+                        💻
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-base text-white flex items-center space-x-2">
+                            <span>Local AI (Browser WebGPU Engine Manager)</span>
+                            <span id="standalone-localai-badge" class="px-2 py-0.5 rounded-full text-[10px] font-mono font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">Ready for Local AI</span>
+                        </h3>
+                        <p class="text-xs text-slate-400">Offline browser-based language models powered by WebGPU</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeModal('modal-local-ai-manager')" class="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition text-sm">
+                    ✕
+                </button>
+            </div>
+
+            <!-- Body -->
+            <div class="p-6 overflow-y-auto space-y-5 custom-scrollbar bg-[#0B132B]/60">
+                <!-- System Hardware Capability Box -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                    <div class="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10">
+                        <span class="text-[11px] text-slate-400 block font-medium">WebGPU Support</span>
+                        <div id="standalone-webgpu-val" class="text-xs font-bold text-emerald-400 mt-1">✓ WebGPU Supported</div>
+                    </div>
+                    <div class="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10">
+                        <span class="text-[11px] text-slate-400 block font-medium">GPU Hardware</span>
+                        <div id="standalone-gpu-val" class="text-xs font-bold text-slate-200 mt-1 truncate">Detecting GPU...</div>
+                    </div>
+                    <div class="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10">
+                        <span class="text-[11px] text-slate-400 block font-medium">Available System RAM</span>
+                        <div id="standalone-ram-val" class="text-xs font-bold text-slate-200 mt-1">Detecting...</div>
+                    </div>
+                    <div class="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10">
+                        <span class="text-[11px] text-slate-400 block font-medium">Available Storage</span>
+                        <div id="standalone-storage-val" class="text-xs font-bold text-slate-200 mt-1">Detecting...</div>
+                    </div>
+                </div>
+
+                <!-- Offline Mode Callout -->
+                <div class="p-4 rounded-2xl bg-gradient-to-r from-cyan-950/40 via-purple-950/40 to-slate-900/40 border border-[#3ABEFF]/30 flex items-center justify-between">
+                    <div>
+                        <h4 class="text-sm font-bold text-white flex items-center space-x-2">
+                            <span>🔒 Offline Privacy Mode</span>
+                        </h4>
+                        <p class="text-xs text-slate-300 mt-0.5">Runs 100% locally inside your browser after model download. No API keys, zero cloud requests.</p>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="standalone-offline-toggle" onchange="window.toggleOfflinePrivacyMode(this.checked)" class="sr-only peer">
+                        <div class="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                    </label>
+                </div>
+
+                <!-- Model Catalog Grid -->
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-[#3ABEFF]">Available Lightweight Models</h4>
+                        <button type="button" onclick="window.LocalAIEngine && window.LocalAIEngine.clearCache()" class="px-2.5 py-1 rounded-lg bg-rose-500/15 border border-rose-500/30 text-rose-300 hover:bg-rose-500/25 transition text-xs font-medium cursor-pointer">
+                            🗑️ Clear Cache
+                        </button>
+                    </div>
+                    <div id="standalone-model-list" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <!-- Populated by LocalAIEngine -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="flex items-center justify-between px-6 py-4 border-t border-white/10 bg-[#0F1629]/90 shrink-0">
+                <span class="text-xs text-slate-400">Model weights cached in IndexedDB / CacheStorage</span>
+                <button type="button" onclick="closeModal('modal-local-ai-manager')" class="px-5 py-2 rounded-xl bg-gradient-to-r from-[#3ABEFF] to-[#9333EA] text-white font-bold text-xs hover:opacity-90 transition">
+                    Done
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOCAL MODEL LOADING OVERLAY -->
+    <div id="local-ai-loading-overlay" class="fixed inset-0 bg-black/85 backdrop-blur-2xl z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-panel w-full max-w-md p-6 rounded-3xl border border-[#3ABEFF]/40 shadow-2xl text-center space-y-5">
+            <div class="relative w-20 h-20 mx-auto flex items-center justify-center">
+                <div class="absolute inset-0 rounded-2xl bg-gradient-to-tr from-[#3ABEFF] to-[#9333EA] animate-pulse opacity-40 blur-md"></div>
+                <div class="relative w-16 h-16 rounded-2xl bg-[#0F1629] border border-[#3ABEFF]/50 flex items-center justify-center text-3xl shadow-xl">
+                    💻
+                </div>
+            </div>
+            <div>
+                <h3 id="local-ai-overlay-title" class="text-lg font-bold text-white">Loading Local Model...</h3>
+                <p id="local-ai-overlay-step" class="text-xs text-[#3ABEFF] font-mono mt-1">Initializing WebGPU Hardware Pipeline...</p>
+            </div>
+            <div class="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
+                <div id="local-ai-overlay-progress-bar" class="h-full bg-gradient-to-r from-[#3ABEFF] to-[#9333EA] w-1/4 transition-all duration-500"></div>
+            </div>
+            <div class="pt-2">
+                <button type="button" onclick="window.switchToCloudAI()" class="px-4 py-2 rounded-xl bg-white/10 text-slate-300 hover:text-white hover:bg-white/20 transition text-xs font-medium cursor-pointer">
+                    ⚡ Switch to Cloud AI
+                </button>
             </div>
         </div>
     </div>
