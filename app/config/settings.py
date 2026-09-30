@@ -51,6 +51,15 @@ class Settings(BaseSettings):
     GOOGLE_GEMINI_API_KEY: str = ""
     ELEVENLABS_API_KEY: str = ""
 
+    # Firebase Authentication SDK Config
+    FIREBASE_API_KEY: str = "AIzaSyCdemmCjPLZpOjyi9kahAE19TmKmkpFABs"
+    FIREBASE_AUTH_DOMAIN: str = "aethermind-multi-modal-ai.firebaseapp.com"
+    FIREBASE_PROJECT_ID: str = "aethermind-multi-modal-ai"
+    FIREBASE_STORAGE_BUCKET: str = "aethermind-multi-modal-ai.firebasestorage.app"
+    FIREBASE_MESSAGING_SENDER_ID: str = "471859893946"
+    FIREBASE_APP_ID: str = "1:471859893946:web:561069de250f2606ec9483"
+    FIREBASE_MEASUREMENT_ID: str = "G-BWG2NJMMFK"
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

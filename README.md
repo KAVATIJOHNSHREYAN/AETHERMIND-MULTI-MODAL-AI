@@ -223,7 +223,28 @@ graph TD
    pip install -r requirements.txt
    ```
 
-2. **Run Server**:
+2. **Configure Environment Variables**:
+   Copy `.env.example` to `.env` and populate required keys:
+   ```bash
+   cp .env.example .env
+   ```
+
+   **Environment Variables**:
+   | Variable | Description |
+   | :--- | :--- |
+   | `FIREBASE_API_KEY` | Firebase Web API Key |
+   | `FIREBASE_AUTH_DOMAIN` | Firebase Auth Domain |
+   | `FIREBASE_PROJECT_ID` | Firebase Project ID |
+   | `FIREBASE_STORAGE_BUCKET` | Firebase Storage Bucket |
+   | `FIREBASE_MESSAGING_SENDER_ID` | Firebase Messaging Sender ID |
+   | `FIREBASE_APP_ID` | Firebase Web App ID |
+   | `FIREBASE_MEASUREMENT_ID` | Firebase Measurement ID |
+   | `SECRET_KEY` | JWT Secret Key for token signing |
+   | `DATABASE_URL` | SQLite / PostgreSQL connection URI |
+   | `QDRANT_URL` | Qdrant Vector DB HTTP endpoint |
+   | `REDIS_URL` | Redis server URI |
+
+3. **Run Server**:
    ```bash
    uvicorn app.main:app --reload --port 8000
    ```
