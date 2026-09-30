@@ -135,7 +135,8 @@ class DashboardService:
                     for u in recent_uploads
                 ],
                 "timeline": timeline[:10],
-                "activity_timeline": timeline[:10]
+                "activity_timeline": timeline[:10],
+                "recentActivity": timeline[:10]
             }
 
         except Exception as e:

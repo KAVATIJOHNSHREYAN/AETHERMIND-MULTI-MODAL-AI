@@ -39,6 +39,18 @@ async def global_workspace_search(
     return APIResponse(success=True, data=res, message=f"Global search executed ({res.get('total_matches')} matches found)")
 
 
+from app.workspace.dashboard_service import dashboard_service
+
+@router.get("/dashboard", response_model=APIResponse[dict])
+@router.get("/dashboard/overview", response_model=APIResponse[dict])
+async def get_workspace_dashboard_overview(
+    current_user: User = Depends(get_current_user_or_session),
+    db: AsyncSession = Depends(get_async_db)
+):
+    """Workspace Dashboard Endpoint Alias under /api/v1/workspace/dashboard."""
+    data = await dashboard_service.get_dashboard_overview(db=db, user_id=current_user.id)
+    return APIResponse(success=True, data=data, message="Workspace Dashboard overview loaded")
+
 @router.get("/timeline", response_model=APIResponse[List[dict]])
 async def get_activity_timeline(
     limit: int = 20,

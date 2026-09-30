@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 from fastapi.staticfiles import StaticFiles
@@ -94,6 +94,24 @@ async def serve_sw():
     """Serve Service Worker at Root Scope for Full Domain PWA Interception"""
     sw_path = os.path.join(static_dir, "sw.js")
     return FileResponse(sw_path, media_type="application/javascript", headers={"Service-Worker-Allowed": "/"})
+
+from app.core.dependencies import get_current_user_or_session
+from app.database.session import get_async_db
+from app.workspace.dashboard_service import dashboard_service
+from app.models.user import User
+from sqlalchemy.ext.asyncio import AsyncSession
+
+@app.get("/api/workspace/dashboard", include_in_schema=False)
+@app.get("/api/dashboard", include_in_schema=False)
+@app.get("/api/v1/workspace/dashboard", include_in_schema=False)
+async def serve_root_dashboard_alias(
+    request: Request,
+    current_user: User = Depends(get_current_user_or_session),
+    db: AsyncSession = Depends(get_async_db)
+):
+    """Direct Root Alias Endpoint for Workspace Dashboard Analytics."""
+    data = await dashboard_service.get_dashboard_overview(db=db, user_id=current_user.id)
+    return {"success": True, "data": data, "message": "Workspace Dashboard loaded"}
 
 @app.get("/login", include_in_schema=False)
 @app.get("/auth", include_in_schema=False)
