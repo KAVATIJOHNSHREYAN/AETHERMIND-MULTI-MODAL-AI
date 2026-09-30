@@ -34,7 +34,7 @@
 | **`SECRET_KEY`** | JWT & AES Secret | Master secret key used to sign JWT authentication tokens and encrypt user API keys. | `SYSTEM REQUIRED` |
 | **`DATABASE_URL`** | PostgreSQL URI | Async connection string for PostgreSQL (`postgresql+asyncpg://...`). Auto-falls back to SQLite (`aethermind.db`). | `AUTO-FALLBACK` |
 | **`REDIS_URL`** | Redis URI | Connection URI for Redis / Upstash Redis for caching, rate limiting, and async tasks. | `OPTIONAL` (`redis://localhost:6379/0`) |
-| **`CLERK_SECRET_KEY`** | OAuth Key | Clerk backend secret key for enterprise user authentication & MFA. | `OPTIONAL` |
+| **`FIREBASE_API_KEY`** | Auth Key | Official Firebase Web API key for authentication & JWT session management. | `SYSTEM REQUIRED` |
 
 ---
 

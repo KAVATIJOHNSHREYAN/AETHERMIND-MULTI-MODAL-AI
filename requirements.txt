@@ -1,4 +1,4 @@
-# SAMRAT AETHERMIND V3 - Unified Full Stack Dependencies
+# AetherMind Multimodal AI — Unified Full Stack Dependencies
 
 # Web & API Framework
 fastapi>=0.110.0
