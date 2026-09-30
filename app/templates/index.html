@@ -14,6 +14,26 @@
     <!-- Firebase Authentication SDK v10 -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script>
+        (function() {
+            const firebaseConfig = {
+                apiKey: "AIzaSyCdemmCjPLZpOjyi9kahAE19TmKmkpFABs",
+                authDomain: "aethermind-multi-modal-ai.firebaseapp.com",
+                projectId: "aethermind-multi-modal-ai",
+                storageBucket: "aethermind-multi-modal-ai.firebasestorage.app",
+                messagingSenderId: "471859893946",
+                appId: "1:471859893946:web:561069de250f2606ec9483",
+                measurementId: "G-BWG2NJMMFK"
+            };
+            if (window.firebase) {
+                try {
+                    if (!window.firebase.apps.length) {
+                        window.firebase.initializeApp(firebaseConfig);
+                    }
+                } catch(e) {}
+            }
+        })();
+    </script>
 </head>
 <body class="bg-[#070913] text-white font-sans antialiased overflow-hidden flex h-screen w-screen relative p-3 gap-3">
 

@@ -1951,69 +1951,28 @@ AetherMind Multimodal AI OS is an enterprise-grade artificial intelligence opera
         });
     }
 
-    // Modal Login Card Listeners
-    const btnModalGuestLogin = document.getElementById("btn-modal-guest-login");
+    // Modal OAuth Google Button Listener
     const btnModalOauthGoogle = document.getElementById("btn-modal-oauth-google");
 
-    if (btnModalGuestLogin) {
-        btnModalGuestLogin.addEventListener("click", () => {
-            document.cookie = "aethermind_token=token_guest_firebase; path=/; max-age=604800; SameSite=Lax";
-            localStorage.setItem("aethermind_user_email", "guest@aethermind.ai");
-            localStorage.setItem("aethermind_user_name", "Guest User");
-            showToast("⚡ Signed in as Guest!", "success");
-            hideAllModals();
-            setTimeout(() => { location.reload(); }, 300);
-        });
-    }
-
     if (btnModalOauthGoogle) {
-        btnModalOauthGoogle.addEventListener("click", () => {
-            document.cookie = "aethermind_token=token_firebase_google; path=/; max-age=604800; SameSite=Lax";
-            localStorage.setItem("aethermind_user_email", "google.user@aethermind.ai");
-            localStorage.setItem("aethermind_user_name", "Google User");
-            showToast("Signed in with Google Auth!", "success");
-            hideAllModals();
-            setTimeout(() => { location.reload(); }, 300);
-        });
-    }
-
-    if (authForm) {
-        authForm.addEventListener("submit", async (e) => {
-            e.preventDefault();
-            const emailInput = document.getElementById("auth-email");
-            const passwordInput = document.getElementById("auth-password");
-            const email = emailInput ? emailInput.value.trim() : "";
-            const password = passwordInput ? passwordInput.value : "";
-
-            if (!email) return;
-
-            const userDisplayName = email.split('@')[0] || "User";
-            localStorage.setItem("aethermind_user_email", email);
-            localStorage.setItem("aethermind_user_name", userDisplayName);
-            document.cookie = `aethermind_token=token_user_${Date.now()}; path=/; max-age=604800; SameSite=Lax`;
-
-            try {
-                const res = await authenticatedFetch("/api/v1/auth/login", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ email, password })
-                });
-                const data = await res.json();
-                if (data.success && data.data && data.data.user) {
-                    if (data.data.user.email) localStorage.setItem("aethermind_user_email", data.data.user.email);
-                    if (data.data.user.full_name) localStorage.setItem("aethermind_user_name", data.data.user.full_name);
+        btnModalOauthGoogle.addEventListener("click", async () => {
+            if (window.firebase && window.firebase.auth) {
+                try {
+                    const provider = new window.firebase.auth.GoogleAuthProvider();
+                    const result = await window.firebase.auth().signInWithPopup(provider);
+                    if (result && result.user) {
+                        const token = await result.user.getIdToken();
+                        document.cookie = `aethermind_token=${token}; path=/; max-age=604800; SameSite=Lax`;
+                        if (result.user.email) localStorage.setItem("aethermind_user_email", result.user.email);
+                        if (result.user.displayName) localStorage.setItem("aethermind_user_name", result.user.displayName);
+                        showToast("Firebase Google Sign-In Successful!", "success");
+                        hideAllModals();
+                        setTimeout(() => { location.reload(); }, 300);
+                    }
+                } catch (err) {
+                    showToast(err.message || "Google Sign-In failed", "error");
                 }
-            } catch (err) {}
-
-            showToast(`Welcome back, ${userDisplayName}!`, "success");
-            
-            // Update profile display name
-            const userDispName = document.getElementById("user-display-name");
-            const userDispRole = document.getElementById("user-display-role");
-            if (userDispName) userDispName.textContent = userDisplayName;
-            if (userDispRole) userDispRole.textContent = "Authenticated User";
-
-            if (modalAuth) modalAuth.classList.add("hidden");
+            }
         });
     }
 
@@ -2112,6 +2071,36 @@ AetherMind Multimodal AI OS is an enterprise-grade artificial intelligence opera
 
     // Initialize User Session & Sync Auth State
     async function initUserSession() {
+        // Firebase Auth Guard & Token Sync
+        if (window.firebase && window.firebase.auth) {
+            try {
+                window.firebase.auth().onAuthStateChanged((user) => {
+                    if (user) {
+                        user.getIdToken().then((token) => {
+                            document.cookie = `aethermind_token=${token}; path=/; max-age=604800; SameSite=Lax`;
+                            if (user.email) {
+                                localStorage.setItem("aethermind_user_email", user.email);
+                                const userDispEmail = document.getElementById("user-display-email");
+                                if (userDispEmail) userDispEmail.textContent = user.email;
+                            }
+                            if (user.displayName) {
+                                localStorage.setItem("aethermind_user_name", user.displayName);
+                                const userDispName = document.getElementById("user-display-name");
+                                if (userDispName) userDispName.textContent = user.displayName;
+                            }
+                        });
+                    } else {
+                        const hasToken = document.cookie.split(';').some(c => c.trim().startsWith('aethermind_token='));
+                        if (!hasToken && window.location.pathname !== "/login" && window.location.pathname !== "/auth") {
+                            window.location.href = "/login";
+                        }
+                    }
+                });
+            } catch (e) {
+                console.warn("Firebase Auth route guard warning:", e);
+            }
+        }
+
         const savedEmail = localStorage.getItem("aethermind_user_email");
         const savedName = localStorage.getItem("aethermind_user_name");
         

@@ -1,6 +1,6 @@
 /**
- * AETHERMIND MULTIMODAL AI — FIREBASE AUTHENTICATION ENGINE
- * Firebase Auth SDK v10 Integration (Email/Password, Google, GitHub, Guest & Workspace Launch)
+ * AETHERMIND MULTIMODAL AI — OFFICIAL FIREBASE AUTHENTICATION ENGINE
+ * Firebase Auth SDK v10 Integration (Email/Password, Google OAuth with Popup & Redirect Fallback)
  */
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -45,7 +45,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }, 4000);
     }
 
-    // 1. Initialize Firebase App & Auth
+    // 1. Initialize Firebase App, Auth & GoogleAuthProvider
     const firebaseConfig = {
         apiKey: "AIzaSyCdemmCjPLZpOjyi9kahAE19TmKmkpFABs",
         authDomain: "aethermind-multi-modal-ai.firebaseapp.com",
@@ -57,14 +57,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     };
 
     let firebaseAuth = null;
+    let googleAuthProvider = null;
+
     if (window.firebase) {
         try {
             if (!window.firebase.apps.length) {
                 window.firebase.initializeApp(firebaseConfig);
             }
             firebaseAuth = window.firebase.auth();
+            googleAuthProvider = new window.firebase.auth.GoogleAuthProvider();
+            googleAuthProvider.addScope("email");
+            googleAuthProvider.addScope("profile");
         } catch (e) {
-            console.warn("Firebase Auth init warning:", e);
+            console.error("Firebase Auth init error:", e);
         }
     }
 
@@ -76,11 +81,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     const isLogoutPage = window.location.pathname.includes("/logout") || urlParams.get("view") === "logout";
 
     if (isLogoutPage) {
-        // Enforce cleanup on dedicated logout page
+        // Enforce session revocation on logout
         document.cookie = "aethermind_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
         document.cookie = "aethermind_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
         localStorage.removeItem("aethermind_active_chat");
         localStorage.removeItem("aethermind_user_email");
+        localStorage.removeItem("aethermind_user_name");
         if (firebaseAuth) {
             firebaseAuth.signOut().catch(() => {});
         }
@@ -96,14 +102,38 @@ document.addEventListener("DOMContentLoaded", async () => {
         }, 300);
     }
 
-    // Check Firebase auth state listener
+    // Check Firebase Auth Redirect Result (for signInWithRedirect)
     if (firebaseAuth && !isLogoutPage) {
-        firebaseAuth.onAuthStateChanged((user) => {
+        firebaseAuth.getRedirectResult().then(async (result) => {
+            if (result && result.user) {
+                const token = await result.user.getIdToken();
+                document.cookie = `aethermind_token=${token}; path=/; max-age=604800; SameSite=Lax`;
+                localStorage.setItem("aethermind_user_email", result.user.email || "");
+                localStorage.setItem("aethermind_user_name", result.user.displayName || (result.user.email ? result.user.email.split('@')[0] : "Google User"));
+                showToast("Firebase Google Sign-In Successful!", "success");
+                runWorkspaceLoadingSequence();
+            }
+        }).catch((error) => {
+            console.error("Firebase redirect result error:", error);
+            const loginErrorBox = document.getElementById("login-error-box");
+            if (loginErrorBox) {
+                loginErrorBox.textContent = `Firebase Auth Error: ${error.message || "Google Sign-In failed."}`;
+                loginErrorBox.classList.remove("hidden");
+            }
+            showToast(error.message || "Google Sign-In failed", "error");
+        });
+
+        // Auth state listener
+        firebaseAuth.onAuthStateChanged(async (user) => {
             if (user) {
-                user.getIdToken().then((token) => {
+                try {
+                    const token = await user.getIdToken();
                     document.cookie = `aethermind_token=${token}; path=/; max-age=604800; SameSite=Lax`;
-                    localStorage.setItem("aethermind_user_email", user.email || "user@aethermind.ai");
-                }).catch(() => {});
+                    localStorage.setItem("aethermind_user_email", user.email || "");
+                    localStorage.setItem("aethermind_user_name", user.displayName || (user.email ? user.email.split('@')[0] : "Authenticated User"));
+                } catch (err) {
+                    console.error("Error setting Firebase ID token:", err);
+                }
             }
         });
     }
@@ -119,19 +149,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("btn-forgot-back")?.addEventListener("click", () => showView("login"));
     document.getElementById("btn-logout-relogin")?.addEventListener("click", () => showView("login"));
     document.getElementById("btn-logout-register")?.addEventListener("click", () => showView("register"));
-    document.getElementById("btn-logout-guest")?.addEventListener("click", async () => {
-        if (firebaseAuth) {
-            try {
-                await firebaseAuth.signInAnonymously();
-            } catch (e) {
-                console.warn("Firebase anonymous auth fallback:", e);
-            }
-        }
-        document.cookie = "aethermind_token=token_guest_firebase; path=/; max-age=604800; SameSite=Lax";
-        localStorage.setItem("aethermind_user_email", "guest@aethermind.ai");
-        showToast("⚡ Signed in as Guest!", "success");
-        runWorkspaceLoadingSequence();
-    });
 
     // Password Visibility Toggle
     const togglePassBtn = document.getElementById("toggle-login-password");
@@ -144,59 +161,77 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     }
 
-    // 1-Click Guest / Instant Login Handler
-    const btnGuestLogin = document.getElementById("btn-guest-login");
-    if (btnGuestLogin) {
-        btnGuestLogin.addEventListener("click", async () => {
-            if (firebaseAuth) {
-                try {
-                    await firebaseAuth.signInAnonymously();
-                } catch (e) {
-                    console.warn("Firebase anonymous auth fallback:", e);
-                }
-            }
-            document.cookie = "aethermind_token=token_guest_firebase; path=/; max-age=604800; SameSite=Lax";
-            localStorage.setItem("aethermind_user_email", "guest@aethermind.ai");
-            showToast("⚡ Signed in with Firebase Guest Auth!", "success");
-            runWorkspaceLoadingSequence();
-        });
-    }
-
-    // OAuth Authentication Handlers (Google)
+    // Official Firebase Google Authentication Handler
     const btnOauthGoogle = document.getElementById("btn-oauth-google");
 
-    async function handleOAuthSignIn(provider) {
-        const providerName = "Google";
-        showToast(`Signing in with Firebase Google Auth...`, "info");
+    async function handleGoogleSignIn() {
+        const loginErrorBox = document.getElementById("login-error-box");
+        if (loginErrorBox) loginErrorBox.classList.add("hidden");
 
-        if (firebaseAuth) {
-            try {
-                const authProvider = new firebase.auth.GoogleAuthProvider();
-                const result = await firebaseAuth.signInWithPopup(authProvider);
-                if (result.user) {
-                    localStorage.setItem("aethermind_user_email", result.user.email || "user.google@aethermind.ai");
-                    localStorage.setItem("aethermind_user_name", result.user.displayName || (result.user.email ? result.user.email.split('@')[0] : "Google User"));
-                    document.cookie = `aethermind_token=${await result.user.getIdToken()}; path=/; max-age=604800; SameSite=Lax`;
-                }
-                showToast(`Firebase Google Sign-In Successful!`, "success");
-                runWorkspaceLoadingSequence();
-                return;
-            } catch (e) {
-                console.warn(`Firebase Google popup warning, continuing via direct auth:`, e);
+        if (!firebaseAuth) {
+            const errMsg = "Firebase Authentication SDK failed to initialize.";
+            showToast(errMsg, "error");
+            if (loginErrorBox) {
+                loginErrorBox.textContent = `Firebase Auth Error: ${errMsg}`;
+                loginErrorBox.classList.remove("hidden");
             }
+            return;
         }
 
-        // Direct Auth Fallback for OAuth
-        document.cookie = `aethermind_token=token_firebase_google; path=/; max-age=604800; SameSite=Lax`;
-        localStorage.setItem("aethermind_user_email", "google.user@aethermind.ai");
-        localStorage.setItem("aethermind_user_name", "Google User");
-        showToast(`Signed in with Google!`, "success");
-        runWorkspaceLoadingSequence();
+        showToast("Connecting to Google via Firebase Auth...", "info");
+
+        try {
+            const provider = googleAuthProvider || new window.firebase.auth.GoogleAuthProvider();
+            // Step 1: Call official Firebase signInWithPopup
+            const result = await firebaseAuth.signInWithPopup(provider);
+            if (result && result.user) {
+                const token = await result.user.getIdToken();
+                document.cookie = `aethermind_token=${token}; path=/; max-age=604800; SameSite=Lax`;
+                localStorage.setItem("aethermind_user_email", result.user.email || "");
+                localStorage.setItem("aethermind_user_name", result.user.displayName || (result.user.email ? result.user.email.split('@')[0] : "Google User"));
+                showToast("Firebase Google Sign-In Successful!", "success");
+                runWorkspaceLoadingSequence();
+            } else {
+                throw new Error("No user returned from Firebase Google Sign-In.");
+            }
+        } catch (popupErr) {
+            console.warn("signInWithPopup warning or popup blocked, attempting signInWithRedirect fallback:", popupErr);
+            // Step 2: Automatic fallback to signInWithRedirect if popup is blocked, closed, or unsupported
+            if (
+                popupErr.code === 'auth/popup-blocked' ||
+                popupErr.code === 'auth/popup-closed-by-user' ||
+                popupErr.code === 'auth/operation-not-supported-in-this-environment' ||
+                popupErr.code === 'auth/cancelled-popup-request'
+            ) {
+                try {
+                    const provider = googleAuthProvider || new window.firebase.auth.GoogleAuthProvider();
+                    await firebaseAuth.signInWithRedirect(provider);
+                    return; // Browser will redirect to Google authentication
+                } catch (redirectErr) {
+                    console.error("Firebase signInWithRedirect error:", redirectErr);
+                    const errMsg = redirectErr.message || "Google Authentication failed.";
+                    if (loginErrorBox) {
+                        loginErrorBox.textContent = `Firebase Auth Error: ${errMsg}`;
+                        loginErrorBox.classList.remove("hidden");
+                    }
+                    showToast(errMsg, "error");
+                }
+            } else {
+                console.error("Firebase Google Auth Error:", popupErr);
+                const errMsg = popupErr.message || "Google Authentication failed.";
+                if (loginErrorBox) {
+                    loginErrorBox.textContent = `Firebase Auth Error: ${errMsg}`;
+                    loginErrorBox.classList.remove("hidden");
+                }
+                showToast(errMsg, "error");
+            }
+            // CRITICAL REQUIREMENT: Stay on login page if authentication fails. NEVER navigate manually!
+        }
     }
 
-    btnOauthGoogle?.addEventListener("click", () => handleOAuthSignIn("google"));
+    btnOauthGoogle?.addEventListener("click", handleGoogleSignIn);
 
-    // 3. Login Execution
+    // 3. Official Firebase Email & Password Sign In
     const formLogin = document.getElementById("form-login");
     const loginErrorBox = document.getElementById("login-error-box");
     const btnLoginSubmit = document.getElementById("btn-login-submit");
@@ -215,32 +250,23 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
 
             try {
-                if (firebaseAuth) {
-                    try {
-                        const userCred = await firebaseAuth.signInWithEmailAndPassword(email, password);
-                        if (userCred.user) {
-                            localStorage.setItem("aethermind_user_email", userCred.user.email || email);
-                            localStorage.setItem("aethermind_user_name", userCred.user.displayName || email.split('@')[0]);
-                            document.cookie = `aethermind_token=${await userCred.user.getIdToken()}; path=/; max-age=604800; SameSite=Lax`;
-                            showToast("Firebase Authentication Successful!", "success");
-                            runWorkspaceLoadingSequence();
-                            return;
-                        }
-                    } catch (fbErr) {
-                        console.warn("Firebase email auth warning, using direct auth fallback:", fbErr);
-                    }
+                if (!firebaseAuth) {
+                    throw new Error("Firebase Authentication SDK not initialized.");
                 }
-
-                // Direct Authentication Fallback
-                document.cookie = `aethermind_token=token_firebase_user_${Date.now()}; path=/; max-age=604800; SameSite=Lax`;
-                localStorage.setItem("aethermind_user_email", email);
-                localStorage.setItem("aethermind_user_name", email.split('@')[0]);
-                showToast(`Welcome back, ${email.split('@')[0]}!`, "success");
-                runWorkspaceLoadingSequence();
-
+                const userCred = await firebaseAuth.signInWithEmailAndPassword(email, password);
+                if (userCred && userCred.user) {
+                    const token = await userCred.user.getIdToken();
+                    document.cookie = `aethermind_token=${token}; path=/; max-age=604800; SameSite=Lax`;
+                    localStorage.setItem("aethermind_user_email", userCred.user.email || email);
+                    localStorage.setItem("aethermind_user_name", userCred.user.displayName || email.split('@')[0]);
+                    showToast("Firebase Authentication Successful!", "success");
+                    runWorkspaceLoadingSequence();
+                } else {
+                    throw new Error("Invalid response from Firebase Authentication.");
+                }
             } catch (err) {
-                console.error("Login error:", err);
-                const errorMsg = err.message || "Invalid email or password";
+                console.error("Firebase Login Error:", err);
+                const errorMsg = err.message || "Invalid email or password.";
                 if (loginErrorBox) {
                     loginErrorBox.textContent = `Firebase Auth Error: ${errorMsg}`;
                     loginErrorBox.classList.remove("hidden");
@@ -255,7 +281,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     }
 
-    // 4. REAL Clerk Registration Execution
+    // 4. Official Firebase Email Registration Execution
     const formRegister = document.getElementById("form-register");
     const regErrorBox = document.getElementById("register-error-box");
     const regPassInput = document.getElementById("reg-password");
@@ -298,37 +324,31 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             if (password !== confirmPass) {
                 if (regErrorBox) {
-                    regErrorBox.textContent = "Passwords do not match";
+                    regErrorBox.textContent = "Passwords do not match.";
                     regErrorBox.classList.remove("hidden");
                 }
                 return;
             }
 
+            if (regErrorBox) regErrorBox.classList.add("hidden");
+
             try {
-                if (window.Clerk && window.Clerk.client) {
-                    const signUp = await window.Clerk.client.signUp.create({
-                        emailAddress: email,
-                        password: password,
-                        firstName: firstName,
-                        lastName: lastName,
+                if (!firebaseAuth) {
+                    throw new Error("Firebase Authentication SDK not initialized.");
+                }
+                const userCred = await firebaseAuth.createUserWithEmailAndPassword(email, password);
+                if (userCred && userCred.user) {
+                    await userCred.user.updateProfile({
+                        displayName: `${firstName} ${lastName}`.trim()
                     });
-                    showToast("Account created in Clerk! Please sign in.", "success");
-                    showView("login");
-                } else {
-                    const res = await fetch("/api/v1/auth/register", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ email, password, full_name: `${firstName} ${lastName}` })
-                    });
-                    const data = await res.json();
-                    if (!res.ok) throw new Error(data.detail || "Registration failed");
-                    showToast("Registration successful! Redirecting to login...", "success");
+                    showToast("Firebase Account Created! Redirecting to sign in...", "success");
                     showView("login");
                 }
             } catch (err) {
-                const errorMsg = err.errors?.[0]?.longMessage || err.message || "Registration failed";
+                console.error("Firebase Registration Error:", err);
+                const errorMsg = err.message || "Registration failed.";
                 if (regErrorBox) {
-                    regErrorBox.textContent = errorMsg;
+                    regErrorBox.textContent = `Firebase Auth Error: ${errorMsg}`;
                     regErrorBox.classList.remove("hidden");
                 }
                 showToast(errorMsg, "error");
@@ -336,53 +356,58 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     }
 
-    // 5. OTP 2FA Controls & Auto-Focus
-    const otpInputs = document.querySelectorAll(".otp-input");
-    otpInputs.forEach((input, idx) => {
-        input.addEventListener("input", (e) => {
-            if (e.target.value && idx < otpInputs.length - 1) {
-                otpInputs[idx + 1].focus();
-            }
-        });
-        input.addEventListener("keydown", (e) => {
-            if (e.key === "Backspace" && !e.target.value && idx > 0) {
-                otpInputs[idx - 1].focus();
-            }
-        });
-    });
+    // 5. Password Reset Handler
+    const formForgot = document.getElementById("form-forgot");
+    const forgotErrorBox = document.getElementById("forgot-error-box");
+    const btnForgotSubmit = document.getElementById("btn-forgot-submit");
 
-    let otpInterval;
-    function startOtpCountdown() {
-        let timer = 59;
-        const timerElem = document.getElementById("otp-timer");
-        clearInterval(otpInterval);
-        otpInterval = setInterval(() => {
-            if (timer <= 0) {
-                clearInterval(otpInterval);
-                if (timerElem) timerElem.textContent = "00:00";
-            } else {
-                if (timerElem) timerElem.textContent = `00:${timer < 10 ? '0' : ''}${timer}`;
-                timer--;
+    if (formForgot) {
+        formForgot.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const email = document.getElementById("forgot-email")?.value.trim();
+            if (!email) return;
+
+            if (forgotErrorBox) forgotErrorBox.classList.add("hidden");
+            if (btnForgotSubmit) {
+                btnForgotSubmit.disabled = true;
+                btnForgotSubmit.textContent = "Sending Reset Email...";
             }
-        }, 1000);
+
+            try {
+                if (!firebaseAuth) {
+                    throw new Error("Firebase Authentication SDK not initialized.");
+                }
+                await firebaseAuth.sendPasswordResetEmail(email);
+                showToast("Password reset email sent via Firebase! Check your inbox.", "success");
+                showView("login");
+            } catch (err) {
+                console.error("Password reset error:", err);
+                const errorMsg = err.message || "Unable to send password reset email.";
+                if (forgotErrorBox) {
+                    forgotErrorBox.textContent = `Firebase Auth Error: ${errorMsg}`;
+                    forgotErrorBox.classList.remove("hidden");
+                }
+                showToast(errorMsg, "error");
+            } finally {
+                if (btnForgotSubmit) {
+                    btnForgotSubmit.disabled = false;
+                    btnForgotSubmit.textContent = "Send Reset Link";
+                }
+            }
+        });
     }
 
-    document.getElementById("btn-verify-otp")?.addEventListener("click", () => {
-        runWorkspaceLoadingSequence();
-    });
-
-    // 6. Workspace Initialization Animation Sequence
+    // 6. Workspace Loading Sequence (Only Executed Post-Authentication)
     function runWorkspaceLoadingSequence() {
         showView("loading");
         const bar = document.getElementById("workspace-load-bar");
         const statusText = document.getElementById("loading-stage-text");
 
         const stages = [
-            { text: "Initializing AetherMind Security Core...", progress: "20%" },
-            { text: "Loading AI Multimodal Providers...", progress: "45%" },
-            { text: "Connecting to Qdrant Vector Engine...", progress: "70%" },
-            { text: "Preparing Workspace Memory & Collections...", progress: "90%" },
-            { text: "Workspace Ready! Launching AetherMind...", progress: "100%" },
+            { text: "Verifying Firebase Authentication Token...", progress: "25%" },
+            { text: "Loading Multimodal AI Engine & Models...", progress: "55%" },
+            { text: "Connecting to Qdrant Memory Pipeline...", progress: "80%" },
+            { text: "Launching Workspace...", progress: "100%" },
         ];
 
         let index = 0;
@@ -395,8 +420,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                 clearInterval(interval);
                 setTimeout(() => {
                     window.location.href = "/";
-                }, 500);
+                }, 400);
             }
-        }, 400);
+        }, 350);
     }
 });
