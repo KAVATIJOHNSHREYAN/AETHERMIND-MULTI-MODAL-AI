@@ -2,12 +2,14 @@
 
 # 🧠 AetherMind Multimodal AI
 
-### Enterprise AI Operating System — Unified Multimodal Engine, Qdrant Vector RAG & Firebase Identity Portal
+### Enterprise AI Operating System — Unified Multimodal Engine, Installable PWA, Local AI (WebGPU), Workspace Dashboard & Firebase Identity Portal
 
 #### **Created & Maintained by Kavati John Shreyan**
 
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![PWA](https://img.shields.io/badge/PWA-Installable-5A0FC8?style=for-the-badge&logo=pwa&logoColor=white)](#-installable-progressive-web-application-pwa)
+[![Local AI](https://img.shields.io/badge/Local_AI-WebGPU_Offline-FF6C37?style=for-the-badge&logo=webgpu&logoColor=white)](#-5-local-ai-browser-webgpu-offline-engine)
 [![Streamlit Cloud](https://img.shields.io/badge/Streamlit_Cloud-Live_App-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)](https://aethermind-multi-modal-ai-fwt8jmcqdbbmoahwveobze.streamlit.app/)
 [![Firebase](https://img.shields.io/badge/Firebase_Auth-v10-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)](https://firebase.google.com)
 [![Supabase](https://img.shields.io/badge/Supabase-Cloud_DB-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com)
@@ -15,7 +17,7 @@
 [![Tests](https://img.shields.io/badge/Tests-34%2F34_Passing-22C55E?style=for-the-badge&logo=pytest&logoColor=white)](#-testing-suite)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
-**One Unified Multimodal AI Engine. Live Firebase Identity. Zero API Key Hassles.**
+**One Unified Multimodal AI Engine. Installable Desktop & Mobile App. Live Firebase Identity. Zero API Key Hassles.**
 
 [🌐 Live Streamlit Cloud Application](https://aethermind-multi-modal-ai-fwt8jmcqdbbmoahwveobze.streamlit.app/) • [📖 Detailed Paragraph Overview](./ABOUT%20PROJECT.md) • [🔥 Firebase Setup Guide](./FIREBASE_AUTHENTICATION_GUIDE.md)
 
@@ -25,7 +27,7 @@
 
 ## 📋 Executive Project Summary
 
-**AetherMind Multimodal AI** is a production-grade enterprise artificial intelligence operating system created by **Kavati John Shreyan**. It unifies text generation, multi-format document intelligence, computer vision OCR, API-less AI image synthesis, ChatGPT-style speech-to-text voice transcription, Qdrant vector Retrieval-Augmented Generation (RAG), Supabase cloud data persistence, a 12-preset **Responsive Device Studio**, an **Enterprise Settings Center**, and an in-browser **Local AI (WebGPU Offline)** engine into a single, ultra-responsive web platform.
+**AetherMind Multimodal AI** is a production-grade enterprise artificial intelligence operating system created by **Kavati John Shreyan**. It unifies text generation, multi-format document intelligence, computer vision OCR, API-less AI image synthesis, ChatGPT-style speech-to-text voice transcription, Qdrant vector Retrieval-Augmented Generation (RAG), Supabase cloud data persistence, an **Installable Progressive Web Application (PWA)**, an enterprise **Workspace Dashboard & Projects File Manager**, a 12-preset **Responsive Device Studio**, an **Enterprise Settings Center**, and an in-browser **Local AI (WebGPU Offline)** engine into a single, ultra-responsive web platform.
 
 Engineered with zero mandatory API key requirements, AetherMind provides an immediate free tier powered by Pollinations AI and browser-based WebGPU local models (Llama 3.2 1B, Llama 3.2 3B, DeepSeek R1 Distill 1.5B, Phi-4 Mini, Gemma 2 2B, Qwen 2.5 1.5B) alongside custom API key configuration options for 16+ AI models including Google Gemini, OpenAI, Anthropic Claude, Groq, Cohere, DeepSeek R1, and Mistral. The application features live Firebase Authentication (Email/Password, Google OAuth popup/redirect, and instant Guest demo mode), a dynamic device viewport switcher engine with live scrolling, and 100% multi-user data isolation.
 
@@ -45,17 +47,24 @@ Engineered with zero mandatory API key requirements, AetherMind provides an imme
 
 ## ⚡ Complete Feature Manifest
 
-### ⚙️ 1. Enterprise Settings Center (`Ctrl + Shift + S`)
-- **VS Code-Style Search Bar**: Search settings (`#esc-search-input`) by keyword (*"theme"*, *"api"*, *"notifications"*, *"profile"*, *"billing"*, *"shortcuts"*) to instantly jump to relevant tabs.
+### 📱 1. Installable Progressive Web Application (PWA)
+- **Cross-Platform Native Experience**: Fully installable native app behavior across **Windows, macOS, Linux, Android, iOS, and iPadOS**.
+- **Web App Manifest v2**: Custom icons (`manifest.json`) in all standard pixel densities (16x16 up to 512x512) including adaptive maskable icons.
+- **Service Worker Engine (`sw.js`)**: Root-scoped service worker caching static assets, providing network-first offline API resilience, background sync, and push notifications.
+- **Dedicated PWA Installation Dialog & Topbar Launcher**: `#modal-pwa-install` and topbar trigger (`#btn-pwa-install-topbar`) allowing 1-click desktop/mobile installation.
+- **Settings Center PWA Tab**: Tab 8.8 (`📱 PWA & Offline App`) providing installation status, storage audit, and manual cache purging.
+
+### ⚙️ 2. Enterprise Settings Center (`Ctrl + Shift + S`)
+- **VS Code-Style Search Bar**: Search settings (`#esc-search-input`) by keyword (*"theme"*, *"api"*, *"notifications"*, *"profile"*, *"billing"*, *"shortcuts"*, *"pwa"*) to instantly jump to relevant tabs.
 - **9 Fully Functional Tabs**:
   1. 👤 **Profile**: Dynamic user profile synchronization with Firebase Auth/Supabase, avatar upload, credentials, password reset, account export (`.json`), and deletion.
   2. 💼 **Workspace**: Default AI model selection, default image quality, voice assistant accent, auto-save, auto-sync, auto-backup, and workspace export/import.
   3. 🔔 **Notifications**: Desktop, push, email, sound effects, trigger checkboxes, and a live **`🔔 Test Live Notification`** action button.
   4. 🎨 **Theme & Visuals**: Dark Neon, Cyber Blue, Purple Galaxy, OLED Black presets, backdrop blur slider (0-30px), and glow intensity slider.
-  5. 🔑 **API Keys Manager**: Manage encrypted credentials for 16 AI & Cloud Providers (OpenAI, Gemini 2.5, Claude 3.5, Groq, Cohere, OpenRouter, Together AI, Mistral, DeepSeek R1, Qwen, ElevenLabs, AssemblyAI, Pollinations, Firebase, Supabase, Qdrant) with masked inputs, eye reveal toggle (👁️), copy (📋), and live **`⚡ Test`** latency pings.
-  6. 💳 **Billing & Subscriptions**: Tier status, monthly resource consumption bars (Images, Voice, Documents, Chats, Vectors, Tokens), and Stripe upgrade readiness.
-  7. ⚙️ **System & Diagnostics**: Live system health checks, database latency audit, cache clear actions (`Clear Cache`, `Clear Images`, `Reset Application`).
-  8. ⌨️ **Shortcuts**: Searchable reference and customizable keyboard shortcuts.
+  5. 🔑 **API Keys Manager**: Manage encrypted credentials for 16 AI & Cloud Providers with masked inputs and live latency pings.
+  6. 💳 **Billing & Subscriptions**: Tier status, monthly resource consumption bars (Images, Voice, Documents, Chats, Vectors, Tokens).
+  7. 📱 **PWA & Offline App**: Comprehensive PWA installation control, offline status, service worker state, and clear cache actions.
+  8. ⚙️ **System & Diagnostics**: Live system health checks, database latency audit, cache clear actions (`Clear Cache`, `Clear Images`, `Reset Application`).
   9. 🚪 **Sign Out**: Clean logout dialog with token revocation and session cache wiping.
 
 ### 💻📱 2. Responsive Device Studio (`Ctrl + Shift + R`)
