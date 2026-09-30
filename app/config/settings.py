@@ -51,10 +51,7 @@ class Settings(BaseSettings):
     GOOGLE_GEMINI_API_KEY: str = ""
     ELEVENLABS_API_KEY: str = ""
 
-    # OAuth & Clerk Auth Configuration
-    CLERK_SECRET_KEY: str = "sk_test_mock_clerk_secret_key_aethermind"
-    CLERK_PUBLISHABLE_KEY: str = "pk_test_mock_clerk_publishable_key"
-    CLERK_ISSUER_URL: str = "https://clerk.aethermind.ai"
+    # OAuth Configuration
     MICROSOFT_CLIENT_ID: str = ""
 
     model_config = SettingsConfigDict(

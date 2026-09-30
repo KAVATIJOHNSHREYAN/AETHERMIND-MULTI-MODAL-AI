@@ -6,7 +6,6 @@ from sqlalchemy.future import select
 
 from app.database.session import get_async_db
 from app.auth.jwt import decode_access_token
-from app.auth.clerk import clerk_auth_provider
 from app.auth.session_manager import session_manager
 from app.models.user import User
 
@@ -33,7 +32,7 @@ async def get_current_user(
     bearer_token: Optional[str] = Depends(oauth2_scheme),
     db: AsyncSession = Depends(get_db)
 ) -> User:
-    """Dependency validating user identity from JWT Token, Session Cookie, or Clerk Auth"""
+    """Dependency validating user identity from JWT Token or Session Cookie"""
     token = await extract_token_from_request(request, bearer_token)
     if not token:
         raise HTTPException(
@@ -47,7 +46,7 @@ async def get_current_user(
     user = None
     if payload and "sub" in payload:
         user_id = payload["sub"]
-        result = await db.execute(select(User).filter((User.id == user_id) | (User.clerk_id == user_id)))
+        result = await db.execute(select(User).filter(User.id == user_id))
         user = result.scalars().first()
 
     # 2. Try DB Session token lookup
@@ -56,12 +55,6 @@ async def get_current_user(
         if session:
             result = await db.execute(select(User).filter(User.id == session.user_id))
             user = result.scalars().first()
-
-    # 3. Try Clerk Token / OAuth fallback
-    if not user:
-        clerk_payload = await clerk_auth_provider.verify_session_token(token)
-        if clerk_payload:
-            user = await clerk_auth_provider.authenticate_or_sync_clerk_user(db, token, payload_override=clerk_payload)
 
     if not user:
         raise HTTPException(
@@ -95,7 +88,7 @@ async def get_current_user_or_session(
     db: AsyncSession = Depends(get_db)
 ) -> User:
     """
-    Returns the authenticated Clerk / JWT user.
+    Returns the authenticated JWT user.
     If no token is provided, returns a session-isolated user scoped to the client.
     """
     user = await get_optional_user(request, bearer_token, db)

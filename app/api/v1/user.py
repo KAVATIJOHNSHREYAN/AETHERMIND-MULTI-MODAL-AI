@@ -20,7 +20,6 @@ async def get_my_profile(current_user: User = Depends(get_current_user), db: Asy
 
     profile_dict = {
         "id": current_user.id,
-        "clerk_id": current_user.clerk_id,
         "email": current_user.email,
         "full_name": current_user.full_name,
         "avatar_url": current_user.avatar_url,
@@ -60,7 +59,6 @@ async def update_my_profile(
 
     profile_dict = {
         "id": current_user.id,
-        "clerk_id": current_user.clerk_id,
         "email": current_user.email,
         "full_name": current_user.full_name,
         "avatar_url": current_user.avatar_url,

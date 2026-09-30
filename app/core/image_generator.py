@@ -155,9 +155,9 @@ class ImageGeneratorEngine:
             f"?width={width}&height={height}&model={model_id}&nologo=true&seed={seed}"
         )
 
-        # On cloud serverless environments (Vercel), use /tmp if root static directory is read-only
-        if os.environ.get("VERCEL") or not os.access(os.path.dirname(self.upload_dir), os.W_OK):
-            self.upload_dir = "/tmp"
+        # If static directory is read-only, fallback to temp directory
+        if not os.access(os.path.dirname(self.upload_dir), os.W_OK):
+            self.upload_dir = tempfile.gettempdir()
             os.makedirs(self.upload_dir, exist_ok=True)
             filepath = os.path.join(self.upload_dir, filename)
 

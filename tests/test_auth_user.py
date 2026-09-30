@@ -70,19 +70,6 @@ def test_invalid_login_credentials_fail():
     })
     assert response.status_code == 401
 
-def test_clerk_auth_integration():
-    """Test Clerk authentication endpoint and user provision"""
-    response = client.post("/api/v1/auth/clerk", json={
-        "token": "clerk_mock_test_token_123",
-        "email": f"clerk_{id(client)}@aethermind.ai",
-        "full_name": "Clerk Test User",
-        "avatar_url": "https://api.dicebear.com/7.x/avataaars/svg?seed=clerk"
-    })
-    assert response.status_code == 200
-    data = response.json()
-    assert data["success"] is True
-    assert "access_token" in data["data"]
-
 def test_google_oauth_login():
     """Test Google OAuth login endpoint"""
     response = client.post("/api/v1/auth/oauth/google", json={

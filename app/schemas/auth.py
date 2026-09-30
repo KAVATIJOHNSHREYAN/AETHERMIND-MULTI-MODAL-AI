@@ -12,14 +12,8 @@ class UserLogin(BaseModel):
     password: str
     remember_me: Optional[bool] = False
 
-class ClerkAuthRequest(BaseModel):
-    token: str
-    email: Optional[EmailStr] = None
-    full_name: Optional[str] = None
-    avatar_url: Optional[str] = None
-
 class OAuthLoginRequest(BaseModel):
-    provider: str  # 'google', 'github', 'microsoft', 'clerk'
+    provider: str  # 'google', 'github', 'microsoft'
     id_token: str
     email: Optional[EmailStr] = None
     full_name: Optional[str] = None
@@ -47,7 +41,6 @@ class TokenResponse(BaseModel):
 
 class UserProfileResponse(BaseModel):
     id: str
-    clerk_id: Optional[str] = None
     email: str
     full_name: Optional[str] = None
     avatar_url: Optional[str] = None

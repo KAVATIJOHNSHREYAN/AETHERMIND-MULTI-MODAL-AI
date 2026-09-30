@@ -6,14 +6,13 @@ from datetime import datetime, timedelta
 from app.schemas.common import APIResponse
 from app.schemas.auth import (
     UserRegister, UserLogin, TokenResponse, OAuthLoginRequest,
-    ClerkAuthRequest, PasswordResetRequest, PasswordResetConfirm, EmailVerificationRequest
+    PasswordResetRequest, PasswordResetConfirm, EmailVerificationRequest
 )
 from app.core.dependencies import get_db, get_current_user
 from app.models.user import User, UserSession
 from app.models.settings import UserSettings
 from app.models.auth_metadata import AuthMetadata
 from app.auth.jwt import hash_password, verify_password, create_access_token, generate_secure_token
-from app.auth.clerk import clerk_auth_provider
 from app.auth.session_manager import session_manager
 import uuid
 
@@ -116,40 +115,6 @@ async def login_user(payload: UserLogin, response: Response, request: Request, d
     return APIResponse(
         success=True,
         message="Login successful",
-        data=TokenResponse(
-            access_token=token,
-            user_id=user.id,
-            email=user.email,
-            full_name=user.full_name,
-            avatar_url=user.avatar_url,
-            role=user.role,
-            is_verified=user.is_verified,
-        )
-    )
-
-@router.post("/clerk", response_model=APIResponse[TokenResponse])
-async def clerk_auth_login(payload: ClerkAuthRequest, response: Response, request: Request, db: AsyncSession = Depends(get_db)):
-    """Authenticate or Register user via Clerk Session Token"""
-    verified_claims = await clerk_auth_provider.verify_session_token(payload.token)
-    if payload.email and not verified_claims:
-        verified_claims = {
-            "sub": f"clerk_{uuid.uuid4().hex[:8]}",
-            "email": payload.email,
-            "full_name": payload.full_name or "Clerk User",
-            "avatar_url": payload.avatar_url,
-            "provider": "clerk"
-        }
-    
-    user = await clerk_auth_provider.authenticate_or_sync_clerk_user(db, payload.token, payload_override=verified_claims)
-    if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid Clerk authentication token")
-
-    token = create_access_token({"sub": user.id, "email": user.email, "role": user.role})
-    response.set_cookie(key="aethermind_token", value=token, httponly=True, samesite="lax", max_age=86400 * 7)
-
-    return APIResponse(
-        success=True,
-        message="Clerk authentication successful",
         data=TokenResponse(
             access_token=token,
             user_id=user.id,

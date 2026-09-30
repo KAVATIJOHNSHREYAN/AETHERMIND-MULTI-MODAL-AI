@@ -25,7 +25,7 @@ async def health_check():
 
 @router.get("/liveness", response_model=APIResponse[dict])
 async def liveness_probe():
-    """Kubernetes / Railway Liveness Probe"""
+    """Liveness Probe"""
     return APIResponse(
         success=True,
         message="Process is alive",

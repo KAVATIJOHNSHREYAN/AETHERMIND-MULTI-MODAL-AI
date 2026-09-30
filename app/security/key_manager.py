@@ -5,7 +5,7 @@ from app.config.settings import settings
 from app.logging.logger import logger
 
 # Generate or derive symmetric Fernet key for API key encryption
-KEY_SEED = (settings.CLERK_SECRET_KEY or "aethermind-enterprise-fernet-key-seed-32bytes!!").encode('utf-8')
+KEY_SEED = (settings.SECRET_KEY or "aethermind-enterprise-fernet-key-seed-32bytes!!").encode('utf-8')
 FERNET_KEY = base64.urlsafe_b64encode(KEY_SEED[:32].ljust(32, b'0'))
 cipher = Fernet(FERNET_KEY)
 

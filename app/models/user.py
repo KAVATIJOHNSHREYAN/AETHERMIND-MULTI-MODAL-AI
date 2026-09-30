@@ -8,12 +8,11 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(String(255), primary_key=True, default=lambda: str(uuid.uuid4()))
-    clerk_id = Column(String(255), unique=True, nullable=True, index=True)
     email = Column(String(255), unique=True, nullable=False, index=True)
     password_hash = Column(String(255), nullable=True)
     full_name = Column(String(255), nullable=True)
     avatar_url = Column(String(1024), nullable=True)
-    provider_type = Column(String(50), default="credentials", nullable=False) # 'credentials', 'google', 'github', 'microsoft', 'clerk'
+    provider_type = Column(String(50), default="credentials", nullable=False) # 'credentials', 'google', 'github', 'microsoft'
     role = Column(String(50), default="user", nullable=False) # 'user', 'admin', 'moderator'
     is_active = Column(Boolean, default=True)
     is_verified = Column(Boolean, default=False)

@@ -87,17 +87,17 @@ templates = Jinja2Templates(directory=templates_dir)
 async def serve_auth(request: Request):
     """Serve Full-Screen Authentication Page"""
     try:
-        return templates.TemplateResponse("auth.html", {"request": request, "clerk_publishable_key": settings.CLERK_PUBLISHABLE_KEY})
+        return templates.TemplateResponse("auth.html", {"request": request})
     except Exception:
-        return templates.TemplateResponse(request=request, name="auth.html", context={"clerk_publishable_key": settings.CLERK_PUBLISHABLE_KEY})
+        return templates.TemplateResponse(request=request, name="auth.html", context={})
 
 @app.get("/logout", include_in_schema=False)
 async def serve_logout(request: Request):
     """Serve Full-Screen Dedicated Logout Page and clear session cookies"""
     try:
-        response = templates.TemplateResponse("auth.html", {"request": request, "view": "logout", "clerk_publishable_key": settings.CLERK_PUBLISHABLE_KEY})
+        response = templates.TemplateResponse("auth.html", {"request": request, "view": "logout"})
     except Exception:
-        response = templates.TemplateResponse(request=request, name="auth.html", context={"view": "logout", "clerk_publishable_key": settings.CLERK_PUBLISHABLE_KEY})
+        response = templates.TemplateResponse(request=request, name="auth.html", context={"view": "logout"})
     response.delete_cookie("aethermind_token")
     response.delete_cookie("aethermind_session")
     return response
@@ -106,9 +106,9 @@ async def serve_logout(request: Request):
 async def serve_ui(request: Request):
     """Serve Unified Full Stack Application Root Workspace"""
     try:
-        return templates.TemplateResponse(request=request, name="index.html", context={"clerk_publishable_key": settings.CLERK_PUBLISHABLE_KEY})
+        return templates.TemplateResponse(request=request, name="index.html", context={})
     except Exception:
-        return templates.TemplateResponse("index.html", {"request": request, "clerk_publishable_key": settings.CLERK_PUBLISHABLE_KEY})
+        return templates.TemplateResponse("index.html", {"request": request})
 
 if __name__ == "__main__":
     import uvicorn

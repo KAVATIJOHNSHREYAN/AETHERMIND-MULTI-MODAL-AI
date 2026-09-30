@@ -117,9 +117,9 @@ async def upload_file(
     file_id = str(uuid.uuid4())
     safe_filename = f"{file_id[:8]}_{filename.replace(' ', '_')}"
 
-    # Serverless Vercel Writable Directory Fallback
+    # Writable Directory Fallback
     target_dir = UPLOAD_DIR
-    if os.environ.get("VERCEL") or not os.access(os.path.dirname(UPLOAD_DIR), os.W_OK):
+    if not os.access(os.path.dirname(UPLOAD_DIR), os.W_OK):
         target_dir = tempfile.gettempdir()
     else:
         try:

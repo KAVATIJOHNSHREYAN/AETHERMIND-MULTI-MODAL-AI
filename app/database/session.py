@@ -5,22 +5,11 @@ from app.logging.logger import logger
 from app.database.base import Base
 
 def get_sqlite_url() -> str:
-    """Return appropriate SQLite database URL based on environment (local vs Vercel/serverless /tmp)."""
-    is_serverless = bool(os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME") or os.getenv("VERCEL_ENV"))
-    if is_serverless:
-        return "sqlite+aiosqlite:////tmp/aethermind.db"
+    """Return SQLite database URL."""
     return "sqlite+aiosqlite:///./aethermind.db"
 
 # Determine Database URL (Support postgresql+asyncpg with fallback to sqlite+aiosqlite)
 db_url = settings.DATABASE_URL
-is_serverless = bool(os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME") or os.getenv("VERCEL_ENV"))
-
-if os.getenv("TESTING", "0") == "1":
-    db_url = "sqlite+aiosqlite:///:memory:"
-elif is_serverless:
-    # On Vercel, if default local postgres is configured, immediately switch to /tmp SQLite
-    if "localhost" in db_url or "127.0.0.1" in db_url or "postgres:password" in db_url:
-        db_url = get_sqlite_url()
 
 try:
     if "postgresql" in db_url:
