@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,8 +15,10 @@
     <!-- Firebase Authentication SDK v10 -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <!-- Supabase JS Client (for cloud chat storage) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        (function() {
+        (function () {
             const firebaseConfig = {
                 apiKey: "AIzaSyCdemmCjPLZpOjyi9kahAE19TmKmkpFABs",
                 authDomain: "aethermind-multi-modal-ai.firebaseapp.com",
@@ -30,11 +33,20 @@
                     if (!window.firebase.apps.length) {
                         window.firebase.initializeApp(firebaseConfig);
                     }
-                } catch(e) {}
+                } catch (e) { }
             }
+            // Initialize Supabase client globally
+            try {
+                const SUPABASE_URL = "https://zxwzlxamaymrzfcrdalb.supabase.co";
+                const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp4d3pseGFtYXltcnpmY3JkYWxiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMyNjI0MDMsImV4cCI6MjA1ODgzODQwM30.CQiDDgVBvNFi5drBWxjcO1n7FuJDQ_dPjPwz64iiWIc";
+                if (window.supabase) {
+                    window._aetherSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                }
+            } catch (e) { console.warn('Supabase init error:', e); }
         })();
     </script>
 </head>
+
 <body class="bg-[#070913] text-white font-sans antialiased overflow-hidden flex h-screen w-screen relative p-3 gap-3">
 
     <!-- Background Wallpaper & Glass Dark Overlay -->
@@ -42,52 +54,244 @@
     <div class="app-background-overlay"></div>
 
     <!-- Toast Notification Container -->
-    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col space-y-3 pointer-events-none max-w-sm"></div>
+    <div id="toast-container" class="fixed top-5 right-5 z-[9999] flex flex-col space-y-3 pointer-events-none max-w-sm">
+    </div>
+
+    <!-- =========================================================================
+         FIREBASE AUTH GATE — Blocks entire app until authentication confirmed
+         ========================================================================= -->
+    <div id="auth-gate" class="fixed inset-0 z-[9990] flex items-center justify-center p-4"
+        style="background: rgba(7,9,19,0.97); backdrop-filter: blur(32px);">
+        <!-- Wallpaper layers inside gate too -->
+        <div class="app-background-layer" style="opacity:0.3;"></div>
+        <div class="app-background-overlay" style="opacity:0.5;"></div>
+
+        <div class="relative z-10 w-full max-w-md">
+            <!-- Auth checking spinner (shown during firebase check) -->
+            <div id="auth-gate-checking" class="text-center space-y-4">
+                <div
+                    class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-tr from-[#3ABEFF] to-[#6D5DF6] flex items-center justify-center shadow-2xl animate-pulse">
+                    <span class="text-3xl font-bold text-white">Æ</span>
+                </div>
+                <p class="text-sm text-slate-400 font-mono">Verifying session…</p>
+            </div>
+
+            <!-- Login Panel (hidden until firebase check completes without user) -->
+            <div id="auth-gate-panel" class="hidden"
+                style="background:rgba(10,15,30,0.85);border:1px solid rgba(255,255,255,0.12);border-radius:24px;padding:2rem;box-shadow:0 25px 80px rgba(0,0,0,0.7);">
+
+                <!-- Brand -->
+                <div class="text-center mb-6 space-y-2">
+                    <div
+                        class="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-tr from-[#3ABEFF] to-[#6D5DF6] flex items-center justify-center shadow-xl">
+                        <span class="text-2xl font-bold text-white">Æ</span>
+                    </div>
+                    <h2 class="text-2xl font-bold text-white tracking-tight">Welcome to AetherMind</h2>
+                    <p class="text-xs text-slate-400">Sign in to access your AI workspace</p>
+                </div>
+
+                <!-- Error box -->
+                <div id="gate-error-box"
+                    class="hidden mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs">
+                </div>
+
+                <!-- Login/Register view toggle tabs -->
+                <div class="flex mb-5 bg-white/5 rounded-xl p-1 gap-1">
+                    <button id="gate-tab-login"
+                        class="flex-1 py-2 text-xs font-semibold rounded-lg bg-[#3ABEFF]/20 text-[#3ABEFF] border border-[#3ABEFF]/30 transition">Sign
+                        In</button>
+                    <button id="gate-tab-register"
+                        class="flex-1 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition">Register</button>
+                </div>
+
+                <!-- LOGIN FORM -->
+                <form id="gate-login-form" class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Email Address</label>
+                        <input type="email" id="gate-login-email" required autocomplete="email"
+                            placeholder="you@example.com"
+                            class="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/15 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-[#3ABEFF] transition">
+                    </div>
+                    <div class="relative">
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Password</label>
+                        <input type="password" id="gate-login-password" required autocomplete="current-password"
+                            placeholder="••••••••"
+                            class="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/15 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-[#3ABEFF] transition pr-16">
+                        <button type="button" id="gate-toggle-password"
+                            class="absolute right-3 bottom-2.5 text-xs text-slate-400 hover:text-white transition font-medium">Show</button>
+                    </div>
+                    <div class="text-right">
+                        <button type="button" id="gate-forgot-btn" class="text-xs text-[#3ABEFF] hover:underline">Forgot
+                            password?</button>
+                    </div>
+                    <button type="submit" id="gate-login-submit"
+                        class="w-full py-3 rounded-xl bg-gradient-to-r from-[#3ABEFF] to-[#6D5DF6] text-white text-sm font-bold hover:opacity-90 transition shadow-lg shadow-[#3ABEFF]/20">
+                        Sign In
+                    </button>
+                </form>
+
+                <!-- REGISTER FORM (hidden by default) -->
+                <form id="gate-register-form" class="hidden space-y-3">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 mb-1">First Name</label>
+                            <input type="text" id="gate-reg-fname" required placeholder="First"
+                                class="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/15 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-[#3ABEFF] transition">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 mb-1">Last Name</label>
+                            <input type="text" id="gate-reg-lname" required placeholder="Last"
+                                class="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/15 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-[#3ABEFF] transition">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Email Address</label>
+                        <input type="email" id="gate-reg-email" required autocomplete="email"
+                            placeholder="you@example.com"
+                            class="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/15 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-[#3ABEFF] transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Password</label>
+                        <input type="password" id="gate-reg-password" required placeholder="Min 8 chars"
+                            class="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/15 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-[#3ABEFF] transition">
+                        <!-- Password Strength Bar -->
+                        <div class="mt-1.5 flex items-center space-x-2">
+                            <div class="flex-1 bg-white/10 h-1 rounded-full overflow-hidden">
+                                <div id="gate-pass-strength-bar"
+                                    class="bg-red-500 h-full w-0 transition-all duration-300"></div>
+                            </div>
+                            <span id="gate-pass-strength-label"
+                                class="text-xs text-red-400 font-semibold w-14 text-right">Weak</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Confirm Password</label>
+                        <input type="password" id="gate-reg-confirm" required placeholder="Repeat password"
+                            class="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/15 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-[#3ABEFF] transition">
+                    </div>
+                    <button type="submit" id="gate-register-submit"
+                        class="w-full py-3 rounded-xl bg-gradient-to-r from-[#22C55E] to-[#3ABEFF] text-white text-sm font-bold hover:opacity-90 transition shadow-lg shadow-[#22C55E]/20">
+                        Create Account
+                    </button>
+                </form>
+
+                <!-- Forgot Password Form -->
+                <form id="gate-forgot-form" class="hidden space-y-3">
+                    <p class="text-xs text-slate-400">Enter your email and we'll send a password reset link.</p>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Email Address</label>
+                        <input type="email" id="gate-forgot-email" required placeholder="you@example.com"
+                            class="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/15 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-[#3ABEFF] transition">
+                    </div>
+                    <button type="submit" id="gate-forgot-submit"
+                        class="w-full py-3 rounded-xl bg-gradient-to-r from-[#3ABEFF] to-[#6D5DF6] text-white text-sm font-bold hover:opacity-90 transition">
+                        Send Reset Email
+                    </button>
+                    <button type="button" id="gate-forgot-back"
+                        class="w-full py-2 text-xs text-slate-400 hover:text-white transition">← Back to Sign
+                        In</button>
+                </form>
+
+                <!-- Divider -->
+                <div class="flex items-center my-4 gap-3">
+                    <div class="flex-1 h-px bg-white/10"></div>
+                    <span class="text-xs text-slate-500 font-mono">OR</span>
+                    <div class="flex-1 h-px bg-white/10"></div>
+                </div>
+
+                <!-- Google Sign-In -->
+                <button id="gate-btn-google" type="button"
+                    class="w-full py-2.5 rounded-xl bg-white/5 border border-white/15 text-white text-sm font-semibold hover:bg-white/10 transition flex items-center justify-center space-x-2 mb-3">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24">
+                        <path fill="#4285F4"
+                            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                        <path fill="#34A853"
+                            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                        <path fill="#FBBC05"
+                            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" />
+                        <path fill="#EA4335"
+                            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                    </svg>
+                    <span>Continue with Google</span>
+                </button>
+
+                <!-- Guest Mode -->
+                <button id="gate-btn-guest" type="button"
+                    class="w-full py-2.5 rounded-xl bg-[#6D5DF6]/10 border border-[#6D5DF6]/30 text-[#A78BFA] text-sm font-semibold hover:bg-[#6D5DF6]/20 transition flex items-center justify-center space-x-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    <span>Instant Guest / Demo Workspace</span>
+                </button>
+
+                <p class="text-center text-[10px] text-slate-500 mt-4">
+                    Guest sessions are temporary and not saved to the cloud.
+                </p>
+            </div>
+        </div>
+    </div>
+    <!-- END AUTH GATE -->
 
     <!-- Drag and Drop Fullscreen Overlay -->
-    <div id="dropzone-overlay" class="fixed inset-0 bg-[#070913]/90 backdrop-blur-xl z-50 border-2 border-dashed border-[#3ABEFF] flex flex-col items-center justify-center space-y-4 hidden transition-all duration-300 rounded-3xl">
-        <div class="w-20 h-20 rounded-full bg-[#3ABEFF]/20 flex items-center justify-center text-[#3ABEFF] animate-bounce shadow-lg shadow-[#3ABEFF]/30">
-            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+    <div id="dropzone-overlay"
+        class="fixed inset-0 bg-[#070913]/90 backdrop-blur-xl z-50 border-2 border-dashed border-[#3ABEFF] flex flex-col items-center justify-center space-y-4 hidden transition-all duration-300 rounded-3xl">
+        <div
+            class="w-20 h-20 rounded-full bg-[#3ABEFF]/20 flex items-center justify-center text-[#3ABEFF] animate-bounce shadow-lg shadow-[#3ABEFF]/30">
+            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            </svg>
         </div>
         <h2 class="text-2xl font-heading font-bold text-white tracking-wide">Drop Files into AetherMind OS</h2>
-        <p class="text-[#B7C2D8] text-sm font-medium">PDF, DOCX, PPTX, CSV, Excel, TXT, JSON, MD, PNG, JPG, MP3, WAV, MP4, ZIP</p>
+        <p class="text-[#B7C2D8] text-sm font-medium">PDF, DOCX, PPTX, CSV, Excel, TXT, JSON, MD, PNG, JPG, MP3, WAV,
+            MP4, ZIP</p>
     </div>
 
     <!-- =========================================================================
          1. FLOATING GLASS SIDEBAR NAVIGATION (280px)
          ========================================================================= -->
-    <aside id="sidebar" class="w-[280px] h-full glass-panel flex flex-col transition-all duration-300 z-30 shrink-0 relative overflow-hidden">
-        
+    <aside id="sidebar"
+        class="w-[280px] h-full glass-panel flex flex-col transition-all duration-300 z-30 shrink-0 relative overflow-hidden">
+
         <!-- Sidebar Header & Brand Logo -->
         <div class="h-16 flex items-center justify-between px-5 border-b border-white/10">
             <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#3ABEFF] to-[#6D5DF6] flex items-center justify-center shadow-lg shadow-[#6D5DF6]/30 overflow-hidden p-0.5">
-                    <img src="/static/img/app-icon.png?v=circular_a_v10" alt="AetherMind Logo" class="w-full h-full object-cover rounded-xl">
+                <div
+                    class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#3ABEFF] to-[#6D5DF6] flex items-center justify-center shadow-lg shadow-[#6D5DF6]/30 overflow-hidden p-0.5 shrink-0">
+                    <img src="/static/img/app-icon.png?v=circular_a_v10" alt="AetherMind Logo"
+                        class="w-full h-full object-cover rounded-xl">
                 </div>
-                <div>
-                    <h1 class="font-heading font-bold text-base tracking-tight text-white">AetherMind</h1>
-                    <span class="text-[10px] uppercase font-mono tracking-widest text-[#3ABEFF]">Cortex OS v4.0</span>
-                </div>
+                <h1 class="font-heading font-bold text-base tracking-tight text-white leading-none">AetherMind</h1>
             </div>
-            <button id="sidebar-toggle-btn" class="p-2 rounded-xl text-[#B7C2D8] hover:text-white hover:bg-white/10 transition" title="Close Sidebar">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/></svg>
+            <button id="sidebar-toggle-btn"
+                class="p-2 rounded-xl text-[#B7C2D8] hover:text-white hover:bg-white/10 transition"
+                title="Close Sidebar">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+                </svg>
             </button>
         </div>
 
         <!-- New Conversation Button -->
         <div class="p-4">
-            <button id="btn-new-chat" class="w-full py-3 px-4 btn-primary flex items-center justify-center space-x-2 text-xs uppercase tracking-wider">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+            <button id="btn-new-chat"
+                class="w-full py-3 px-4 btn-primary flex items-center justify-center space-x-2 text-xs uppercase tracking-wider">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+                </svg>
                 <span>New Chat</span>
             </button>
         </div>
 
         <!-- Workspace & Navigation Sections -->
         <div class="flex-1 overflow-y-auto px-3 space-y-4">
-            
+
             <!-- Pinned & Recent Chats Section -->
             <div class="space-y-1">
-                <div class="px-3 text-[11px] font-mono font-semibold text-[#7E8CA5] uppercase tracking-wider">Recent Conversations</div>
+                <div class="px-3 text-[11px] font-mono font-semibold text-[#7E8CA5] uppercase tracking-wider">Recent
+                    Conversations</div>
                 <div id="conversation-list" class="space-y-1 pt-1">
                     <!-- Conversations rendered dynamically -->
                 </div>
@@ -95,45 +299,79 @@
 
             <!-- Workspace Features Section -->
             <div class="space-y-1 pt-2 border-t border-white/10">
-                <div class="px-3 text-[11px] font-mono font-semibold text-[#7E8CA5] uppercase tracking-wider">Workspace Modules</div>
+                <div class="px-3 text-[11px] font-mono font-semibold text-[#7E8CA5] uppercase tracking-wider">Workspace
+                    Modules</div>
 
-                <button id="open-dashboard-btn" class="w-full py-2.5 px-3 sidebar-nav-item text-xs font-medium text-[#B7C2D8] flex items-center space-x-3">
-                    <svg class="w-4 h-4 text-[#3ABEFF]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                <button id="open-dashboard-btn"
+                    class="w-full py-2.5 px-3 sidebar-nav-item text-xs font-medium text-[#B7C2D8] flex items-center space-x-3">
+                    <svg class="w-4 h-4 text-[#3ABEFF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
                     <span>Workspace Dashboard</span>
                 </button>
 
-                <button id="open-doc-lib-btn" class="w-full py-2.5 px-3 sidebar-nav-item text-xs font-medium text-[#B7C2D8] flex items-center space-x-3">
-                    <svg class="w-4 h-4 text-[#22C55E]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <button id="open-doc-lib-btn"
+                    class="w-full py-2.5 px-3 sidebar-nav-item text-xs font-medium text-[#B7C2D8] flex items-center space-x-3">
+                    <svg class="w-4 h-4 text-[#22C55E]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
                     <span>Documents Intelligence</span>
                 </button>
 
-                <button id="open-media-btn" class="w-full py-2.5 px-3 sidebar-nav-item text-xs font-medium text-[#B7C2D8] flex items-center space-x-3">
-                    <svg class="w-4 h-4 text-[#6D5DF6]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                <button id="open-media-btn"
+                    class="w-full py-2.5 px-3 sidebar-nav-item text-xs font-medium text-[#B7C2D8] flex items-center space-x-3">
+                    <svg class="w-4 h-4 text-[#6D5DF6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
                     <span>Images & AI Artwork</span>
                 </button>
 
-                <button id="open-audio-lib-btn" class="w-full py-2.5 px-3 sidebar-nav-item text-xs font-medium text-[#B7C2D8] flex items-center space-x-3">
-                    <svg class="w-4 h-4 text-[#EF4444]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+                <button id="open-audio-lib-btn"
+                    class="w-full py-2.5 px-3 sidebar-nav-item text-xs font-medium text-[#B7C2D8] flex items-center space-x-3">
+                    <svg class="w-4 h-4 text-[#EF4444]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                    </svg>
                     <span>Audio & Voice Studio</span>
                 </button>
 
-                <button id="open-memory-btn" class="w-full py-2.5 px-3 sidebar-nav-item text-xs font-medium text-[#B7C2D8] flex items-center space-x-3">
-                    <svg class="w-4 h-4 text-[#FACC15]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                <button id="open-memory-btn"
+                    class="w-full py-2.5 px-3 sidebar-nav-item text-xs font-medium text-[#B7C2D8] flex items-center space-x-3">
+                    <svg class="w-4 h-4 text-[#FACC15]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    </svg>
                     <span>Memory & Knowledge</span>
                 </button>
 
-                <button id="open-projects-btn" class="w-full py-2.5 px-3 sidebar-nav-item text-xs font-medium text-[#B7C2D8] flex items-center space-x-3">
-                    <svg class="w-4 h-4 text-[#3ABEFF]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+                <button id="open-projects-btn"
+                    class="w-full py-2.5 px-3 sidebar-nav-item text-xs font-medium text-[#B7C2D8] flex items-center space-x-3">
+                    <svg class="w-4 h-4 text-[#3ABEFF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                    </svg>
                     <span>Projects & Folders</span>
                 </button>
 
-                <button id="open-settings-btn" class="w-full py-2.5 px-3 sidebar-nav-item text-xs font-medium text-[#B7C2D8] flex items-center space-x-3">
-                    <svg class="w-4 h-4 text-[#7E8CA5]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+                <button id="open-settings-btn"
+                    class="w-full py-2.5 px-3 sidebar-nav-item text-xs font-medium text-[#B7C2D8] flex items-center space-x-3">
+                    <svg class="w-4 h-4 text-[#7E8CA5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <circle cx="12" cy="12" r="3" />
+                    </svg>
                     <span>System Settings</span>
                 </button>
 
-                <button id="open-about-btn" class="w-full py-2.5 px-3 sidebar-nav-item text-xs font-medium text-[#B7C2D8] flex items-center space-x-3">
-                    <svg class="w-4 h-4 text-[#A855F7]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <button id="open-about-btn"
+                    class="w-full py-2.5 px-3 sidebar-nav-item text-xs font-medium text-[#B7C2D8] flex items-center space-x-3">
+                    <svg class="w-4 h-4 text-[#A855F7]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
                     <span>About AetherMind</span>
                 </button>
             </div>
@@ -145,58 +383,85 @@
             <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-3 cursor-pointer group" id="user-profile-badge" title="User Menu">
                     <div class="relative">
-                        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#3ABEFF] to-[#6D5DF6] flex items-center justify-center font-bold text-white text-xs border border-white/20 shadow-md">
+                        <div
+                            class="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#3ABEFF] to-[#6D5DF6] flex items-center justify-center font-bold text-white text-xs border border-white/20 shadow-md">
                             JS
                         </div>
-                        <span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-[#22C55E] ring-2 ring-[#070913]"></span>
+                        <span
+                            class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-[#22C55E] ring-2 ring-[#070913]"></span>
                     </div>
                     <div class="text-xs">
-                        <div class="font-bold text-white leading-tight flex items-center space-x-1" id="user-display-name">
+                        <div class="font-bold text-white leading-tight flex items-center space-x-1"
+                            id="user-display-name">
                             <span>John Shreyan</span>
-                            <svg class="w-3 h-3 text-[#7E8CA5] group-hover:text-white transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            <svg class="w-3 h-3 text-[#7E8CA5] group-hover:text-white transition" fill="none"
+                                stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 9l-7 7-7-7" />
+                            </svg>
                         </div>
                         <div class="text-[10px] text-[#7E8CA5]" id="user-display-role">Enterprise Architect</div>
                     </div>
                 </div>
-                
+
                 <div class="flex items-center space-x-1">
-                    <button id="open-recycle-btn" class="p-1.5 rounded-xl text-[#7E8CA5] hover:text-[#EF4444] hover:bg-white/5 transition" title="Recycle Bin">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    <button id="open-recycle-btn"
+                        class="p-1.5 rounded-xl text-[#7E8CA5] hover:text-[#EF4444] hover:bg-white/5 transition"
+                        title="Recycle Bin">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
                     </button>
-                    <button id="btn-logout" class="p-1.5 rounded-xl text-[#7E8CA5] hover:text-[#F87171] hover:bg-[#EF4444]/10 transition flex items-center space-x-1" title="Sign Out / Logout">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                    <button id="btn-logout"
+                        class="p-1.5 rounded-xl text-[#7E8CA5] hover:text-[#F87171] hover:bg-[#EF4444]/10 transition flex items-center space-x-1"
+                        title="Sign Out / Logout">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
                     </button>
                 </div>
             </div>
 
             <!-- Profile Dropdown Popup Menu -->
-            <div id="user-dropdown-menu" class="absolute bottom-16 left-3 right-3 glass-panel p-2 rounded-2xl border border-white/15 shadow-2xl space-y-1 hidden z-50">
-                <button class="w-full text-left px-3 py-2 text-xs font-medium text-white hover:bg-white/10 rounded-xl flex items-center space-x-2">
+            <div id="user-dropdown-menu"
+                class="absolute bottom-16 left-3 right-3 glass-panel p-2 rounded-2xl border border-white/15 shadow-2xl space-y-1 hidden z-50">
+                <button
+                    class="w-full text-left px-3 py-2 text-xs font-medium text-white hover:bg-white/10 rounded-xl flex items-center space-x-2">
                     <span>👤</span> <span>Profile</span>
                 </button>
-                <button class="w-full text-left px-3 py-2 text-xs font-medium text-white hover:bg-white/10 rounded-xl flex items-center space-x-2">
+                <button
+                    class="w-full text-left px-3 py-2 text-xs font-medium text-white hover:bg-white/10 rounded-xl flex items-center space-x-2">
                     <span>🚀</span> <span>Workspace Settings</span>
                 </button>
-                <button class="w-full text-left px-3 py-2 text-xs font-medium text-white hover:bg-white/10 rounded-xl flex items-center space-x-2">
+                <button
+                    class="w-full text-left px-3 py-2 text-xs font-medium text-white hover:bg-white/10 rounded-xl flex items-center space-x-2">
                     <span>🔔</span> <span>Notifications</span>
                 </button>
-                <button class="w-full text-left px-3 py-2 text-xs font-medium text-white hover:bg-white/10 rounded-xl flex items-center space-x-2">
+                <button
+                    class="w-full text-left px-3 py-2 text-xs font-medium text-white hover:bg-white/10 rounded-xl flex items-center space-x-2">
                     <span>🌙</span> <span>Theme (Dark Neon)</span>
                 </button>
-                <button id="dropdown-open-keys" class="w-full text-left px-3 py-2 text-xs font-medium text-white hover:bg-white/10 rounded-xl flex items-center space-x-2">
+                <button id="dropdown-open-keys"
+                    class="w-full text-left px-3 py-2 text-xs font-medium text-white hover:bg-white/10 rounded-xl flex items-center space-x-2">
                     <span>🔑</span> <span>API Keys</span>
                 </button>
-                <button class="w-full text-left px-3 py-2 text-xs font-medium text-white hover:bg-white/10 rounded-xl flex items-center space-x-2">
+                <button
+                    class="w-full text-left px-3 py-2 text-xs font-medium text-white hover:bg-white/10 rounded-xl flex items-center space-x-2">
                     <span>💳</span> <span>Billing & Subscriptions</span>
                 </button>
-                <button id="dropdown-open-settings" class="w-full text-left px-3 py-2 text-xs font-medium text-white hover:bg-white/10 rounded-xl flex items-center space-x-2">
+                <button id="dropdown-open-settings"
+                    class="w-full text-left px-3 py-2 text-xs font-medium text-white hover:bg-white/10 rounded-xl flex items-center space-x-2">
                     <span>⚙️</span> <span>System Settings</span>
                 </button>
-                <button class="w-full text-left px-3 py-2 text-xs font-medium text-white hover:bg-white/10 rounded-xl flex items-center space-x-2">
+                <button
+                    class="w-full text-left px-3 py-2 text-xs font-medium text-white hover:bg-white/10 rounded-xl flex items-center space-x-2">
                     <span>⌨️</span> <span>Keyboard Shortcuts</span>
                 </button>
                 <div class="border-t border-white/10 my-1"></div>
-                <button id="dropdown-btn-logout" class="w-full text-left px-3 py-2 text-xs font-semibold text-red-400 hover:bg-red-500/10 rounded-xl flex items-center space-x-2">
+                <button id="dropdown-btn-logout"
+                    class="w-full text-left px-3 py-2 text-xs font-semibold text-red-400 hover:bg-red-500/10 rounded-xl flex items-center space-x-2">
                     <span>🚪</span> <span>Sign Out</span>
                 </button>
             </div>
@@ -206,18 +471,25 @@
     <!-- =========================================================================
          2. MAIN UNIFIED MULTIMODAL CONVERSATION CANVAS
          ========================================================================= -->
-    <main id="main-canvas" class="flex-1 flex flex-col h-full relative overflow-hidden gap-3 transition-all duration-300 mx-auto w-full">
-        
+    <main id="main-canvas"
+        class="flex-1 flex flex-col h-full relative overflow-hidden gap-3 transition-all duration-300 mx-auto w-full">
+
         <!-- Floating Glass Top Navigation Bar -->
         <header class="h-16 glass-panel px-6 flex items-center justify-between z-20 shrink-0">
-            
+
             <!-- AI Model Selector & Status Badge -->
             <div class="flex items-center space-x-3">
-                <button id="sidebar-open-btn" class="p-2 rounded-xl text-[#3ABEFF] hover:text-white hover:bg-white/10 transition hidden shrink-0" title="Expand Sidebar">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"/></svg>
+                <button id="sidebar-open-btn"
+                    class="p-2 rounded-xl text-[#3ABEFF] hover:text-white hover:bg-white/10 transition hidden shrink-0"
+                    title="Expand Sidebar">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                    </svg>
                 </button>
                 <div class="relative">
-                    <select id="model-select" class="glass-input text-xs font-semibold py-2 px-4 pr-8 appearance-none focus:outline-none cursor-pointer text-[#3ABEFF]">
+                    <select id="model-select"
+                        class="glass-input text-xs font-semibold py-2 px-4 pr-8 appearance-none focus:outline-none cursor-pointer text-[#3ABEFF]">
                         <option value="auto" selected>✨ AetherMind Auto Engine (Smart Multimodal)</option>
                         <option value="apiless-gpt4o">⚡ GPT-4o Engine</option>
                         <option value="gemini-2.5-flash">✨ Google Gemini 2.5 Multimodal</option>
@@ -227,7 +499,8 @@
                         <option value="groq-llama-3.3-70b">🚀 Groq Llama 3.3 70B (Ultra Fast)</option>
                     </select>
                 </div>
-                <span class="hidden lg:inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-[10px] font-mono font-medium bg-[#3ABEFF]/15 text-[#3ABEFF] border border-[#3ABEFF]/30 whitespace-nowrap shrink-0">
+                <span
+                    class="hidden lg:inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-[10px] font-mono font-medium bg-[#3ABEFF]/15 text-[#3ABEFF] border border-[#3ABEFF]/30 whitespace-nowrap shrink-0">
                     <span class="w-2 h-2 rounded-full bg-[#3ABEFF] animate-pulse"></span>
                     <span>Qdrant Vector RAG Active</span>
                 </span>
@@ -236,43 +509,75 @@
             <!-- Topbar Right Control Actions (Device Viewport Sizes, Search, Knowledge, Memory) -->
             <div class="flex items-center space-x-2 shrink-0">
                 <!-- Compact Device Viewport Icon Controller -->
-                <div class="flex items-center space-x-1 p-1 rounded-xl bg-[#0F1629]/90 border border-[#3ABEFF]/40 shadow-md shadow-[#3ABEFF]/10 text-xs">
-                    <button type="button" id="btn-size-desktop" class="px-2 py-1 rounded-lg bg-[#3ABEFF]/25 text-[#3ABEFF] border border-[#3ABEFF]/40 font-bold text-xs hover:bg-[#3ABEFF]/40 transition flex items-center justify-center cursor-pointer" title="Desktop Viewport (100% Fullscreen)">
+                <div
+                    class="flex items-center space-x-1 p-1 rounded-xl bg-[#0F1629]/90 border border-[#3ABEFF]/40 shadow-md shadow-[#3ABEFF]/10 text-xs">
+                    <button type="button" id="btn-size-desktop"
+                        class="px-2 py-1 rounded-lg bg-[#3ABEFF]/25 text-[#3ABEFF] border border-[#3ABEFF]/40 font-bold text-xs hover:bg-[#3ABEFF]/40 transition flex items-center justify-center cursor-pointer"
+                        title="Desktop Viewport (100% Fullscreen)">
                         <span class="text-xs">🖥️</span>
                     </button>
-                    <button type="button" id="btn-size-laptop" class="px-2 py-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition flex items-center justify-center cursor-pointer" title="Laptop Viewport (1280px)">
+                    <button type="button" id="btn-size-laptop"
+                        class="px-2 py-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition flex items-center justify-center cursor-pointer"
+                        title="Laptop Viewport (1280px)">
                         <span class="text-xs">💻</span>
                     </button>
-                    <button type="button" id="btn-size-tablet" class="px-2 py-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition flex items-center justify-center cursor-pointer" title="Tablet Viewport (768px)">
+                    <button type="button" id="btn-size-tablet"
+                        class="px-2 py-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition flex items-center justify-center cursor-pointer"
+                        title="Tablet Viewport (768px)">
                         <span class="text-xs">📱</span>
                     </button>
-                    <button type="button" id="btn-size-phone" class="px-2 py-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition flex items-center justify-center cursor-pointer" title="Mobile Phone Viewport (390px)">
+                    <button type="button" id="btn-size-phone"
+                        class="px-2 py-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition flex items-center justify-center cursor-pointer"
+                        title="Mobile Phone Viewport (390px)">
                         <span class="text-xs">📱</span>
                     </button>
-                    <button type="button" id="btn-size-hybrid" class="px-2 py-1 rounded-lg text-purple-300 hover:text-white hover:bg-purple-500/20 border border-purple-500/30 transition flex items-center justify-center cursor-pointer" title="Laptop + Phone Mix Viewport (480px Hybrid)">
+                    <button type="button" id="btn-size-hybrid"
+                        class="px-2 py-1 rounded-lg text-purple-300 hover:text-white hover:bg-purple-500/20 border border-purple-500/30 transition flex items-center justify-center cursor-pointer"
+                        title="Laptop + Phone Mix Viewport (480px Hybrid)">
                         <span class="text-xs">💻📱</span>
                     </button>
                 </div>
 
-                <button id="open-global-search-btn" class="p-2 rounded-xl text-[#B7C2D8] hover:text-white hover:bg-white/5 transition flex items-center space-x-1 text-xs" title="Global Search">
-                    <svg class="w-4 h-4 text-[#3ABEFF]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                <button id="open-global-search-btn"
+                    class="p-2 rounded-xl text-[#B7C2D8] hover:text-white hover:bg-white/5 transition flex items-center space-x-1 text-xs"
+                    title="Global Search">
+                    <svg class="w-4 h-4 text-[#3ABEFF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
                 </button>
-                <button id="open-knowledge-btn" class="p-2 rounded-xl text-[#B7C2D8] hover:text-white hover:bg-white/5 transition flex items-center space-x-1 text-xs" title="Knowledge Base">
-                    <svg class="w-4 h-4 text-[#6D5DF6]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                <button id="open-knowledge-btn"
+                    class="p-2 rounded-xl text-[#B7C2D8] hover:text-white hover:bg-white/5 transition flex items-center space-x-1 text-xs"
+                    title="Knowledge Base">
+                    <svg class="w-4 h-4 text-[#6D5DF6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
                 </button>
-                <button id="btn-compress-memory" class="py-1.5 px-3 rounded-xl bg-[#6D5DF6]/20 hover:bg-[#6D5DF6]/30 text-[#6D5DF6] text-xs font-semibold transition flex items-center space-x-1 border border-[#6D5DF6]/30" title="Compress Memory">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                <button id="btn-compress-memory"
+                    class="py-1.5 px-3 rounded-xl bg-[#6D5DF6]/20 hover:bg-[#6D5DF6]/30 text-[#6D5DF6] text-xs font-semibold transition flex items-center space-x-1 border border-[#6D5DF6]/30"
+                    title="Compress Memory">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
                     <span class="hidden lg:inline">Compress Memory</span>
                 </button>
-                <button id="btn-clear-chat" class="p-2 rounded-xl text-[#7E8CA5] hover:text-[#EF4444] hover:bg-white/5 transition text-xs font-medium flex items-center space-x-1" title="Clear Chat">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                <button id="btn-clear-chat"
+                    class="p-2 rounded-xl text-[#7E8CA5] hover:text-[#EF4444] hover:bg-white/5 transition text-xs font-medium flex items-center space-x-1"
+                    title="Clear Chat">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
                 </button>
             </div>
         </header>
 
         <!-- Messages Trajectory Canvas (Centered Max-Width 900px) -->
-        <div id="messages-container" class="flex-1 overflow-y-auto p-6 space-y-6 max-w-[900px] mx-auto w-full scroll-smooth">
-            
+        <div id="messages-container"
+            class="flex-1 overflow-y-auto p-6 space-y-6 max-w-[900px] mx-auto w-full scroll-smooth">
+
             <!-- Welcome Hero Component -->
             <div id="welcome-hero" class="text-center py-10 space-y-6 animate-fade-in">
                 <div class="space-y-2">
@@ -281,76 +586,112 @@
 
                 <!-- Quick Action Cards Grid -->
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3.5 max-w-2xl mx-auto pt-4">
-                    <button class="glass-card p-4 text-left transition space-y-1 group" onclick="triggerQuickAction('dashboard')">
-                        <div class="font-heading font-bold text-xs text-white group-hover:text-[#3ABEFF]">Dashboard</div>
+                    <button class="glass-card p-4 text-left transition space-y-1 group"
+                        onclick="triggerQuickAction('dashboard')">
+                        <div class="font-heading font-bold text-xs text-white group-hover:text-[#3ABEFF]">Dashboard
+                        </div>
                         <div class="text-[10px] text-[#7E8CA5]">Storage & Usage Stats</div>
                     </button>
 
-                    <button class="glass-card p-4 text-left transition space-y-1 group" onclick="triggerQuickAction('projects')">
+                    <button class="glass-card p-4 text-left transition space-y-1 group"
+                        onclick="triggerQuickAction('projects')">
                         <div class="font-heading font-bold text-xs text-white group-hover:text-[#6D5DF6]">Projects</div>
                         <div class="text-[10px] text-[#7E8CA5]">Organize Workspace</div>
                     </button>
 
-                    <button class="glass-card p-4 text-left transition space-y-1 group" onclick="triggerQuickAction('media')">
-                        <div class="font-heading font-bold text-xs text-white group-hover:text-[#22C55E]">Media Gallery</div>
+                    <button class="glass-card p-4 text-left transition space-y-1 group"
+                        onclick="triggerQuickAction('media')">
+                        <div class="font-heading font-bold text-xs text-white group-hover:text-[#22C55E]">Media Gallery
+                        </div>
                         <div class="text-[10px] text-[#7E8CA5]">AI Artwork & Images</div>
                     </button>
 
-                    <button class="glass-card p-4 text-left transition space-y-1 group" onclick="triggerQuickAction('doclib')">
-                        <div class="font-heading font-bold text-xs text-white group-hover:text-[#FACC15]">Document Library</div>
+                    <button class="glass-card p-4 text-left transition space-y-1 group"
+                        onclick="triggerQuickAction('doclib')">
+                        <div class="font-heading font-bold text-xs text-white group-hover:text-[#FACC15]">Document
+                            Library</div>
                         <div class="text-[10px] text-[#7E8CA5]">PDF, DOCX, CSV, Excel</div>
                     </button>
                 </div>
             </div>
-            </div>
+        </div>
         </div>
 
         <!-- =========================================================================
              3. FLOATING SEARCH-STYLE CHAT INPUT AREA (Max-Width 900px)
              ========================================================================= -->
         <div class="p-2 sm:p-3 max-w-[900px] mx-auto w-full shrink-0 z-20">
-            
+
             <!-- Pending File Attachment Tray -->
             <div id="attachment-tray" class="flex flex-wrap gap-2 mb-2 hidden animate-fade-in">
                 <!-- Attachment chips rendered dynamically -->
             </div>
 
             <!-- Floating Search Input Box -->
-            <form id="chat-form" class="glass-panel p-2 flex flex-col gap-1.5 rounded-[22px] border border-white/10 focus-within:border-[#3ABEFF]/60 shadow-2xl transition">
-                <textarea id="chat-input" rows="1" placeholder="Ask questions, analyze uploaded documents, generate images, or transcribe voice audio..." class="w-full bg-transparent px-4 py-1.5 text-sm text-white placeholder-[#7E8CA5] focus:outline-none resize-none min-h-[40px] max-h-28"></textarea>
+            <form id="chat-form"
+                class="glass-panel p-2 flex flex-col gap-1.5 rounded-[22px] border border-white/10 focus-within:border-[#3ABEFF]/60 shadow-2xl transition">
+                <textarea id="chat-input" rows="1"
+                    placeholder="Ask questions, analyze uploaded documents, generate images, or transcribe voice audio..."
+                    class="w-full bg-transparent px-4 py-1.5 text-sm text-white placeholder-[#7E8CA5] focus:outline-none resize-none min-h-[40px] max-h-28"></textarea>
 
                 <!-- Toolbar Actions Row -->
                 <div class="flex items-center justify-between px-2 pt-1 border-t border-white/5">
-                    
+
                     <!-- Left Attachment & Multimodal Tools -->
                     <div class="flex items-center space-x-1">
-                        <input type="file" id="file-upload-input" class="hidden" multiple accept=".pdf,.docx,.pptx,.txt,.csv,.xlsx,.xls,.json,.md,.png,.jpg,.jpeg,.webp,.svg,.mp3,.wav,.m4a,.flac,.mp4,.mov,.avi,.mkv">
-                        
-                        <button type="button" id="btn-attach-file" class="p-1.5 sm:p-2 rounded-xl text-[#B7C2D8] hover:text-[#3ABEFF] hover:bg-white/5 transition flex items-center space-x-1 text-xs" title="Attach File">
-                            <svg class="w-4 h-4 text-[#3ABEFF]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+                        <input type="file" id="file-upload-input" class="hidden" multiple
+                            accept=".pdf,.docx,.pptx,.txt,.csv,.xlsx,.xls,.json,.md,.png,.jpg,.jpeg,.webp,.svg,.mp3,.wav,.m4a,.flac,.mp4,.mov,.avi,.mkv">
+
+                        <button type="button" id="btn-attach-file"
+                            class="p-1.5 sm:p-2 rounded-xl text-[#B7C2D8] hover:text-[#3ABEFF] hover:bg-white/5 transition flex items-center space-x-1 text-xs"
+                            title="Attach File">
+                            <svg class="w-4 h-4 text-[#3ABEFF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                            </svg>
                             <span class="inline font-medium text-[11px] sm:text-xs">Attach</span>
                         </button>
 
-                        <button type="button" id="btn-open-camera" class="p-1.5 sm:p-2 rounded-xl text-[#B7C2D8] hover:text-[#6D5DF6] hover:bg-white/5 transition text-xs flex items-center space-x-1" title="Camera Snapshot">
-                            <svg class="w-4 h-4 text-[#6D5DF6]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><circle cx="12" cy="13" r="3"/></svg>
+                        <button type="button" id="btn-open-camera"
+                            class="p-1.5 sm:p-2 rounded-xl text-[#B7C2D8] hover:text-[#6D5DF6] hover:bg-white/5 transition text-xs flex items-center space-x-1"
+                            title="Camera Snapshot">
+                            <svg class="w-4 h-4 text-[#6D5DF6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                <circle cx="12" cy="13" r="3" />
+                            </svg>
                             <span class="inline font-medium text-[11px] sm:text-xs">Camera</span>
                         </button>
 
-                        <button type="button" id="btn-open-image-gen" class="p-1.5 sm:p-2 rounded-xl text-[#B7C2D8] hover:text-[#22C55E] hover:bg-white/5 transition text-xs flex items-center space-x-1" title="Image Generation">
-                            <svg class="w-4 h-4 text-[#22C55E]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                        <button type="button" id="btn-open-image-gen"
+                            class="p-1.5 sm:p-2 rounded-xl text-[#B7C2D8] hover:text-[#22C55E] hover:bg-white/5 transition text-xs flex items-center space-x-1"
+                            title="Image Generation">
+                            <svg class="w-4 h-4 text-[#22C55E]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
                             <span class="inline font-medium text-[11px] sm:text-xs">Generate</span>
                         </button>
 
-                        <button type="button" id="btn-record-voice" class="p-1.5 sm:p-2 rounded-xl text-[#B7C2D8] hover:text-[#EF4444] hover:bg-white/5 transition text-xs flex items-center space-x-1" title="Voice Audio">
-                            <svg class="w-4 h-4 text-[#EF4444]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+                        <button type="button" id="btn-record-voice"
+                            class="p-1.5 sm:p-2 rounded-xl text-[#B7C2D8] hover:text-[#EF4444] hover:bg-white/5 transition text-xs flex items-center space-x-1"
+                            title="Voice Audio">
+                            <svg class="w-4 h-4 text-[#EF4444]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                            </svg>
                             <span class="inline font-medium text-[11px] sm:text-xs">Voice</span>
                         </button>
                     </div>
 
                     <!-- Glowing Send Button -->
-                    <button type="submit" id="btn-send-message" class="py-2 px-4 btn-primary text-xs font-bold uppercase tracking-wider flex items-center space-x-1.5 shadow-md">
+                    <button type="submit" id="btn-send-message"
+                        class="py-2 px-4 btn-primary text-xs font-bold uppercase tracking-wider flex items-center space-x-1.5 shadow-md">
                         <span>Send</span>
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                        </svg>
                     </button>
                 </div>
             </form>
@@ -360,11 +701,15 @@
     <!-- =========================================================================
          4. MODAL: WORKSPACE DASHBOARD
          ========================================================================= -->
-    <div id="modal-workspace-dashboard" class="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
+    <div id="modal-workspace-dashboard"
+        class="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
         <div class="glass-panel w-full max-w-4xl overflow-hidden shadow-2xl animate-fade-in flex flex-col h-[85vh]">
             <div class="h-14 px-6 border-b border-white/10 flex items-center justify-between shrink-0 bg-[#0F1220]">
                 <div class="flex items-center space-x-3">
-                    <svg class="w-5 h-5 text-[#3ABEFF]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                    <svg class="w-5 h-5 text-[#3ABEFF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
                     <h3 class="font-heading font-bold text-white text-base">Workspace Dashboard & Analytics</h3>
                 </div>
                 <button id="close-dashboard-btn" class="p-2 text-[#7E8CA5] hover:text-white">✕</button>
@@ -400,7 +745,9 @@
                         <span id="storage-usage-text" class="text-[#3ABEFF] font-mono">0 MB / 50 GB (0%)</span>
                     </div>
                     <div class="w-full h-3 bg-black/50 rounded-full overflow-hidden border border-white/10">
-                        <div id="storage-gauge-bar" class="h-full bg-gradient-to-r from-[#3ABEFF] to-[#6D5DF6] transition-all duration-500" style="width: 0%"></div>
+                        <div id="storage-gauge-bar"
+                            class="h-full bg-gradient-to-r from-[#3ABEFF] to-[#6D5DF6] transition-all duration-500"
+                            style="width: 0%"></div>
                     </div>
                 </div>
 
@@ -415,11 +762,15 @@
     <!-- =========================================================================
          5. MODAL: PROJECTS & FOLDERS WORKSPACE
          ========================================================================= -->
-    <div id="modal-projects-workspace" class="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
+    <div id="modal-projects-workspace"
+        class="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
         <div class="glass-panel w-full max-w-4xl overflow-hidden shadow-2xl animate-fade-in flex flex-col h-[85vh]">
             <div class="h-14 px-6 border-b border-white/10 flex items-center justify-between shrink-0 bg-[#0F1220]">
                 <div class="flex items-center space-x-3">
-                    <svg class="w-5 h-5 text-[#3ABEFF]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+                    <svg class="w-5 h-5 text-[#3ABEFF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                    </svg>
                     <h3 class="font-heading font-bold text-white text-base">Projects & File Manager</h3>
                 </div>
                 <button id="close-projects-btn" class="p-2 text-[#7E8CA5] hover:text-white">✕</button>
@@ -429,14 +780,17 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <form id="form-create-project" class="glass-card p-4 space-y-3">
                         <h4 class="font-heading font-bold text-sm text-white">Create Project</h4>
-                        <input type="text" id="proj-name-input" required placeholder="Project Name" class="w-full glass-input p-2.5 text-white">
-                        <textarea id="proj-desc-input" rows="1" placeholder="Project description..." class="w-full glass-input p-2.5 text-white resize-none"></textarea>
+                        <input type="text" id="proj-name-input" required placeholder="Project Name"
+                            class="w-full glass-input p-2.5 text-white">
+                        <textarea id="proj-desc-input" rows="1" placeholder="Project description..."
+                            class="w-full glass-input p-2.5 text-white resize-none"></textarea>
                         <button type="submit" class="py-2 px-4 btn-primary text-xs">Create Project</button>
                     </form>
 
                     <form id="form-create-folder" class="glass-card p-4 space-y-3">
                         <h4 class="font-heading font-bold text-sm text-white">Create Folder</h4>
-                        <input type="text" id="folder-name-input" required placeholder="Folder Name" class="w-full glass-input p-2.5 text-white">
+                        <input type="text" id="folder-name-input" required placeholder="Folder Name"
+                            class="w-full glass-input p-2.5 text-white">
                         <select id="folder-proj-select" class="w-full glass-input p-2.5 text-white">
                             <option value="">No Project (Root)</option>
                         </select>
@@ -452,7 +806,8 @@
                 <div class="space-y-3 pt-4 border-t border-white/10">
                     <div class="flex items-center justify-between">
                         <h4 class="font-heading font-bold text-sm text-white">Workspace Files</h4>
-                        <button id="btn-bulk-download" class="py-1.5 px-3 btn-secondary text-xs">Bulk Download ZIP</button>
+                        <button id="btn-bulk-download" class="py-1.5 px-3 btn-secondary text-xs">Bulk Download
+                            ZIP</button>
                     </div>
                     <div id="file-manager-grid" class="space-y-2"></div>
                 </div>
@@ -463,25 +818,33 @@
     <!-- =========================================================================
          6. MODAL: MEDIA GALLERY
          ========================================================================= -->
-    <div id="modal-media-gallery" class="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
+    <div id="modal-media-gallery"
+        class="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
         <div class="glass-panel w-full max-w-5xl overflow-hidden shadow-2xl animate-fade-in flex flex-col h-[85vh]">
             <div class="h-14 px-6 border-b border-white/10 flex items-center justify-between shrink-0 bg-[#0F1220]">
                 <div class="flex items-center space-x-3">
-                    <svg class="w-5 h-5 text-[#6D5DF6]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    <svg class="w-5 h-5 text-[#6D5DF6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
                     <h3 class="font-heading font-bold text-white text-base">Media Gallery & AI Studio</h3>
                 </div>
                 <button id="close-media-btn" class="p-2 text-[#7E8CA5] hover:text-white">✕</button>
             </div>
             <!-- Media Action Header -->
-            <div class="px-6 py-3 border-b border-white/10 bg-white/5 flex flex-wrap items-center justify-between gap-3 shrink-0 text-xs">
+            <div
+                class="px-6 py-3 border-b border-white/10 bg-white/5 flex flex-wrap items-center justify-between gap-3 shrink-0 text-xs">
                 <div class="flex items-center space-x-2 flex-1 min-w-[200px]">
-                    <input type="text" id="media-gallery-search" placeholder="Search artwork & photos..." class="w-full glass-input px-3 py-1.5 text-xs">
+                    <input type="text" id="media-gallery-search" placeholder="Search artwork & photos..."
+                        class="w-full glass-input px-3 py-1.5 text-xs">
                 </div>
                 <div class="flex items-center space-x-2">
-                    <button type="button" onclick="openModal('modal-image-gen')" class="py-1.5 px-3.5 btn-primary font-bold text-xs flex items-center space-x-1.5">
+                    <button type="button" onclick="openModal('modal-image-gen')"
+                        class="py-1.5 px-3.5 btn-primary font-bold text-xs flex items-center space-x-1.5">
                         <span>✨ Generate AI Image</span>
                     </button>
-                    <label class="py-1.5 px-3.5 btn-secondary font-bold text-xs cursor-pointer flex items-center space-x-1.5">
+                    <label
+                        class="py-1.5 px-3.5 btn-secondary font-bold text-xs cursor-pointer flex items-center space-x-1.5">
                         <span>🖼️ Upload Image</span>
                         <input type="file" id="media-upload-input" accept="image/*" class="hidden">
                     </label>
@@ -496,26 +859,35 @@
     <!-- =========================================================================
          7. MODAL: DOCUMENT LIBRARY
          ========================================================================= -->
-    <div id="modal-doc-library" class="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
+    <div id="modal-doc-library"
+        class="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
         <div class="glass-panel w-full max-w-4xl overflow-hidden shadow-2xl animate-fade-in flex flex-col h-[85vh]">
             <div class="h-14 px-6 border-b border-white/10 flex items-center justify-between shrink-0 bg-[#0F1220]">
                 <div class="flex items-center space-x-3">
-                    <svg class="w-5 h-5 text-[#22C55E]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    <svg class="w-5 h-5 text-[#22C55E]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
                     <h3 class="font-heading font-bold text-white text-base">Document Intelligence Library</h3>
                 </div>
                 <button id="close-doc-lib-btn" class="p-2 text-[#7E8CA5] hover:text-white">✕</button>
             </div>
             <!-- Document Action Header -->
-            <div class="px-6 py-3 border-b border-white/10 bg-white/5 flex flex-wrap items-center justify-between gap-3 shrink-0 text-xs">
+            <div
+                class="px-6 py-3 border-b border-white/10 bg-white/5 flex flex-wrap items-center justify-between gap-3 shrink-0 text-xs">
                 <div class="flex items-center space-x-2 flex-1 min-w-[200px]">
-                    <input type="text" id="doc-lib-search" placeholder="Filter documents by title or extension..." class="w-full glass-input px-3 py-1.5 text-xs">
+                    <input type="text" id="doc-lib-search" placeholder="Filter documents by title or extension..."
+                        class="w-full glass-input px-3 py-1.5 text-xs">
                 </div>
                 <div class="flex items-center space-x-2">
-                    <label class="py-1.5 px-3.5 btn-cyan font-bold text-xs cursor-pointer flex items-center space-x-1.5">
+                    <label
+                        class="py-1.5 px-3.5 btn-cyan font-bold text-xs cursor-pointer flex items-center space-x-1.5">
                         <span>⚡ Upload Document</span>
-                        <input type="file" id="doc-lib-upload-input" accept=".pdf,.docx,.txt,.csv,.json,.md,.pptx" class="hidden">
+                        <input type="file" id="doc-lib-upload-input" accept=".pdf,.docx,.txt,.csv,.json,.md,.pptx"
+                            class="hidden">
                     </label>
-                    <button type="button" id="btn-load-sample-docs" class="py-1.5 px-3.5 btn-secondary font-bold text-xs flex items-center space-x-1.5">
+                    <button type="button" id="btn-load-sample-docs"
+                        class="py-1.5 px-3.5 btn-secondary font-bold text-xs flex items-center space-x-1.5">
                         <span>📄 Load Sample Specs</span>
                     </button>
                 </div>
@@ -527,25 +899,33 @@
     <!-- =========================================================================
          8. MODAL: AUDIO LIBRARY
          ========================================================================= -->
-    <div id="modal-audio-library" class="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
+    <div id="modal-audio-library"
+        class="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
         <div class="glass-panel w-full max-w-4xl overflow-hidden shadow-2xl animate-fade-in flex flex-col h-[85vh]">
             <div class="h-14 px-6 border-b border-white/10 flex items-center justify-between shrink-0 bg-[#0F1220]">
                 <div class="flex items-center space-x-3">
-                    <svg class="w-5 h-5 text-[#EF4444]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+                    <svg class="w-5 h-5 text-[#EF4444]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                    </svg>
                     <h3 class="font-heading font-bold text-white text-base">Audio & Voice Studio</h3>
                 </div>
                 <button id="close-audio-lib-btn" class="p-2 text-[#7E8CA5] hover:text-white">✕</button>
             </div>
             <!-- Audio Action Header -->
-            <div class="px-6 py-3 border-b border-white/10 bg-white/5 flex flex-wrap items-center justify-between gap-3 shrink-0 text-xs">
+            <div
+                class="px-6 py-3 border-b border-white/10 bg-white/5 flex flex-wrap items-center justify-between gap-3 shrink-0 text-xs">
                 <div class="flex items-center space-x-2 flex-1 min-w-[200px]">
-                    <input type="text" id="audio-lib-search" placeholder="Search recordings & voice clips..." class="w-full glass-input px-3 py-1.5 text-xs">
+                    <input type="text" id="audio-lib-search" placeholder="Search recordings & voice clips..."
+                        class="w-full glass-input px-3 py-1.5 text-xs">
                 </div>
                 <div class="flex items-center space-x-2">
-                    <button type="button" id="btn-modal-record-voice" class="py-1.5 px-3.5 btn-danger font-bold text-xs flex items-center space-x-1.5">
+                    <button type="button" id="btn-modal-record-voice"
+                        class="py-1.5 px-3.5 btn-danger font-bold text-xs flex items-center space-x-1.5">
                         <span>🎙️ Record Voice</span>
                     </button>
-                    <label class="py-1.5 px-3.5 btn-secondary font-bold text-xs cursor-pointer flex items-center space-x-1.5">
+                    <label
+                        class="py-1.5 px-3.5 btn-secondary font-bold text-xs cursor-pointer flex items-center space-x-1.5">
                         <span>🎵 Upload Audio</span>
                         <input type="file" id="audio-lib-upload-input" accept="audio/*" class="hidden">
                     </label>
@@ -558,11 +938,15 @@
     <!-- =========================================================================
          9. MODAL: RECYCLE BIN
          ========================================================================= -->
-    <div id="modal-recycle-bin" class="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
+    <div id="modal-recycle-bin"
+        class="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
         <div class="glass-panel w-full max-w-3xl overflow-hidden shadow-2xl animate-fade-in flex flex-col h-[85vh]">
             <div class="h-14 px-6 border-b border-white/10 flex items-center justify-between shrink-0 bg-[#0F1220]">
                 <div class="flex items-center space-x-3">
-                    <svg class="w-5 h-5 text-[#EF4444]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    <svg class="w-5 h-5 text-[#EF4444]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
                     <h3 class="font-heading font-bold text-white text-base">Recycle Bin</h3>
                 </div>
                 <div class="flex items-center space-x-3">
@@ -577,18 +961,24 @@
     <!-- =========================================================================
          10. MODAL: GLOBAL SEARCH
          ========================================================================= -->
-    <div id="modal-global-search" class="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
+    <div id="modal-global-search"
+        class="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
         <div class="glass-panel w-full max-w-4xl overflow-hidden shadow-2xl animate-fade-in flex flex-col h-[85vh]">
             <div class="h-14 px-6 border-b border-white/10 flex items-center justify-between shrink-0 bg-[#0F1220]">
                 <div class="flex items-center space-x-3">
-                    <svg class="w-5 h-5 text-[#3ABEFF]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    <svg class="w-5 h-5 text-[#3ABEFF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
                     <h3 class="font-heading font-bold text-white text-base">Global Workspace Search</h3>
                 </div>
                 <button id="close-global-search-btn" class="p-2 text-[#7E8CA5] hover:text-white">✕</button>
             </div>
             <div class="p-6 overflow-y-auto space-y-4 flex-1 text-xs">
                 <form id="form-global-search" class="flex items-center space-x-3 glass-card p-3">
-                    <input type="text" id="global-search-input" required placeholder="Search everything across Chats, Files, Images, Documents, Audio, Projects, and Memory..." class="flex-1 glass-input p-2.5 text-white">
+                    <input type="text" id="global-search-input" required
+                        placeholder="Search everything across Chats, Files, Images, Documents, Audio, Projects, and Memory..."
+                        class="flex-1 glass-input p-2.5 text-white">
                     <button type="submit" class="py-2.5 px-5 btn-primary text-xs">Search All</button>
                 </form>
                 <div id="global-search-results" class="space-y-2"></div>
@@ -597,7 +987,8 @@
     </div>
 
     <!-- MODAL: KNOWLEDGE BASE -->
-    <div id="modal-knowledge-base" class="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
+    <div id="modal-knowledge-base"
+        class="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
         <div class="glass-panel w-full max-w-4xl overflow-hidden shadow-2xl flex flex-col h-[85vh]">
             <div class="h-14 px-6 border-b border-white/10 flex items-center justify-between bg-[#0F1220]">
                 <h3 class="font-heading font-bold text-white text-base">Knowledge Base & Qdrant Collections</h3>
@@ -606,14 +997,19 @@
             <div class="p-6 overflow-y-auto space-y-6 flex-1 text-xs">
                 <form id="form-create-collection" class="glass-card p-4 space-y-3">
                     <h4 class="font-heading font-bold text-sm text-white">Create Knowledge Collection</h4>
-                    <input type="text" id="col-name-input" required placeholder="Collection Name..." class="w-full glass-input p-2.5 text-white">
-                    <textarea id="col-desc-input" rows="2" placeholder="Description..." class="w-full glass-input p-2.5 text-white resize-none"></textarea>
+                    <input type="text" id="col-name-input" required placeholder="Collection Name..."
+                        class="w-full glass-input p-2.5 text-white">
+                    <textarea id="col-desc-input" rows="2" placeholder="Description..."
+                        class="w-full glass-input p-2.5 text-white resize-none"></textarea>
                     <button type="submit" class="py-2.5 px-5 btn-primary font-bold text-xs">✨ Create Collection</button>
                 </form>
                 <form id="form-ingest-doc" class="glass-card p-4 space-y-3">
                     <h4 class="font-heading font-bold text-sm text-white">Ingest Document</h4>
-                    <select id="ingest-col-select" class="w-full glass-input p-2.5 text-white"><option value="">Default Collection</option></select>
-                    <input type="file" id="ingest-file-input" required accept=".pdf,.docx,.md,.txt,.csv,.json" class="w-full glass-input p-2 text-white">
+                    <select id="ingest-col-select" class="w-full glass-input p-2.5 text-white">
+                        <option value="">Default Collection</option>
+                    </select>
+                    <input type="file" id="ingest-file-input" required accept=".pdf,.docx,.md,.txt,.csv,.json"
+                        class="w-full glass-input p-2 text-white">
                     <button type="submit" class="py-2.5 px-5 btn-cyan font-bold text-xs">⚡ Ingest Document</button>
                 </form>
                 <div id="knowledge-collections-list" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
@@ -622,7 +1018,8 @@
     </div>
 
     <!-- MODAL: LONG-TERM MEMORY -->
-    <div id="modal-memory-dashboard" class="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
+    <div id="modal-memory-dashboard"
+        class="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
         <div class="glass-panel w-full max-w-4xl overflow-hidden shadow-2xl flex flex-col h-[85vh]">
             <div class="h-14 px-6 border-b border-white/10 flex items-center justify-between bg-[#0F1220]">
                 <h3 class="font-heading font-bold text-white text-base">Long-Term Memory Dashboard</h3>
@@ -632,11 +1029,18 @@
                 <form id="form-add-memory" class="glass-card p-4 space-y-3">
                     <h4 class="font-heading font-bold text-sm text-white">Add Memory Point</h4>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <input type="text" id="mem-key-input" required placeholder="Memory Key" class="glass-input p-2.5 text-white">
-                        <select id="mem-type-select" class="glass-input p-2.5 text-white"><option value="persistent">Persistent Memory</option><option value="preference">User Preference</option><option value="pinned">Pinned Fact</option></select>
-                        <input type="text" id="mem-cat-input" placeholder="Category" class="glass-input p-2.5 text-white">
+                        <input type="text" id="mem-key-input" required placeholder="Memory Key"
+                            class="glass-input p-2.5 text-white">
+                        <select id="mem-type-select" class="glass-input p-2.5 text-white">
+                            <option value="persistent">Persistent Memory</option>
+                            <option value="preference">User Preference</option>
+                            <option value="pinned">Pinned Fact</option>
+                        </select>
+                        <input type="text" id="mem-cat-input" placeholder="Category"
+                            class="glass-input p-2.5 text-white">
                     </div>
-                    <textarea id="mem-val-input" rows="2" required placeholder="Memory Value..." class="w-full glass-input p-2.5 text-white resize-none"></textarea>
+                    <textarea id="mem-val-input" rows="2" required placeholder="Memory Value..."
+                        class="w-full glass-input p-2.5 text-white resize-none"></textarea>
                     <button type="submit" class="py-2 px-4 btn-primary text-xs">Store Memory</button>
                 </form>
                 <div id="memory-items-list" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
@@ -645,7 +1049,8 @@
     </div>
 
     <!-- MODAL: DOCUMENT VIEWER -->
-    <div id="modal-document-viewer" class="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
+    <div id="modal-document-viewer"
+        class="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
         <div class="glass-panel w-full max-w-4xl overflow-hidden shadow-2xl flex flex-col h-[85vh]">
             <div class="h-14 px-6 border-b border-white/10 flex items-center justify-between bg-[#0F1220]">
                 <h3 id="doc-viewer-title" class="font-heading font-bold text-white text-base">Document Viewer</h3>
@@ -658,12 +1063,15 @@
                     <button id="btn-doc-next-page" class="py-1 px-3 btn-secondary">Next</button>
                 </div>
             </div>
-            <div id="doc-viewer-content" class="flex-1 p-6 overflow-y-auto font-mono text-xs text-white bg-[#070913]/60 whitespace-pre-wrap"></div>
+            <div id="doc-viewer-content"
+                class="flex-1 p-6 overflow-y-auto font-mono text-xs text-white bg-[#070913]/60 whitespace-pre-wrap">
+            </div>
         </div>
     </div>
 
     <!-- MODAL: LIGHTBOX PREVIEW -->
-    <div id="modal-image-preview" class="fixed inset-0 bg-black/90 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
+    <div id="modal-image-preview"
+        class="fixed inset-0 bg-black/90 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
         <div class="glass-panel w-full max-w-5xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
             <div class="h-14 px-6 border-b border-white/10 flex items-center justify-between bg-[#0F1220]">
                 <h3 class="font-heading font-bold text-white text-base">Image Preview Lightbox</h3>
@@ -671,39 +1079,46 @@
             </div>
             <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
                 <div class="flex-1 relative flex items-center justify-center p-6 bg-black/60">
-                    <img id="lightbox-img" src="" class="max-h-[65vh] max-w-full object-contain rounded-xl" alt="Preview Image">
+                    <img id="lightbox-img" src="" class="max-h-[65vh] max-w-full object-contain rounded-xl"
+                        alt="Preview Image">
                 </div>
                 <div class="w-full md:w-80 p-5 border-l border-white/10 bg-[#0F1220]/90 text-xs space-y-4">
                     <div id="lightbox-metadata" class="space-y-1.5 text-[#B7C2D8]"></div>
-                    <a id="btn-download-img" href="#" download class="w-full py-2.5 px-4 btn-primary block text-center">Download Image</a>
+                    <a id="btn-download-img" href="#" download
+                        class="w-full py-2.5 px-4 btn-primary block text-center">Download Image</a>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- MODAL: IMAGE GENERATION -->
-    <div id="modal-image-gen" class="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
+    <div id="modal-image-gen"
+        class="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
         <div class="glass-panel w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col">
             <div class="h-14 px-6 border-b border-white/10 flex items-center justify-between bg-[#0F1220]">
                 <h3 class="font-heading font-bold text-white text-base">AI Text-to-Image Generation</h3>
                 <button id="close-image-gen-btn" class="p-2 text-[#7E8CA5] hover:text-white">✕</button>
             </div>
             <form id="form-generate-image" class="p-6 space-y-4 text-xs">
-                <textarea id="gen-prompt-input" rows="3" required placeholder="Describe the image you want to generate..." class="w-full glass-input p-3 text-white"></textarea>
+                <textarea id="gen-prompt-input" rows="3" required
+                    placeholder="Describe the image you want to generate..."
+                    class="w-full glass-input p-3 text-white"></textarea>
                 <button type="submit" class="py-2.5 px-5 btn-primary text-xs">Generate Image</button>
             </form>
         </div>
     </div>
 
     <!-- MODAL: CAMERA SNAPSHOT -->
-    <div id="modal-camera" class="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
+    <div id="modal-camera"
+        class="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
         <div class="glass-panel w-full max-w-xl overflow-hidden shadow-2xl flex flex-col">
             <div class="h-14 px-6 border-b border-white/10 flex items-center justify-between bg-[#0F1220]">
                 <h3 class="font-heading font-bold text-white text-base">Camera Snapshot</h3>
                 <button id="close-camera-btn" class="p-2 text-[#7E8CA5] hover:text-white">✕</button>
             </div>
             <div class="p-6 flex flex-col items-center space-y-4">
-                <video id="webcam-video" autoplay playsinline class="w-full h-64 object-cover rounded-xl bg-black border border-white/10"></video>
+                <video id="webcam-video" autoplay playsinline
+                    class="w-full h-64 object-cover rounded-xl bg-black border border-white/10"></video>
                 <canvas id="webcam-canvas" class="hidden"></canvas>
                 <button id="btn-capture-snapshot" class="py-2.5 px-5 btn-primary text-xs">Capture & Attach</button>
             </div>
@@ -711,15 +1126,20 @@
     </div>
 
     <!-- MODAL: VOICE RECORDER -->
-    <div id="modal-voice-recorder" class="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
+    <div id="modal-voice-recorder"
+        class="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
         <div class="glass-panel w-full max-w-lg overflow-hidden shadow-2xl flex flex-col">
             <div class="h-14 px-6 border-b border-white/10 flex items-center justify-between bg-[#0F1220]">
                 <h3 class="font-heading font-bold text-white text-base">Voice Recorder</h3>
                 <button id="close-voice-btn" class="p-2 text-[#7E8CA5] hover:text-white">✕</button>
             </div>
             <div class="p-6 flex flex-col items-center space-y-5">
-                <div class="w-20 h-20 rounded-full bg-[#EF4444]/20 border border-[#EF4444]/40 flex items-center justify-center text-[#EF4444] animate-pulse">
-                    <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+                <div
+                    class="w-20 h-20 rounded-full bg-[#EF4444]/20 border border-[#EF4444]/40 flex items-center justify-center text-[#EF4444] animate-pulse">
+                    <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                    </svg>
                 </div>
                 <div id="voice-timer" class="font-mono text-sm text-[#EF4444] font-bold">00:00</div>
                 <button id="btn-stop-voice" class="py-2.5 px-5 btn-danger text-xs">Stop & Transcribe</button>
@@ -728,11 +1148,15 @@
     </div>
 
     <!-- MODAL: FIREBASE AUTHENTICATION / LOGIN & SIGN UP PAGE -->
-    <div id="modal-auth" class="fixed inset-0 bg-black/85 backdrop-blur-2xl z-50 flex items-center justify-center p-4 hidden">
-        <div class="glass-panel w-full max-w-lg overflow-hidden shadow-2xl flex flex-col border border-white/20 rounded-3xl">
+    <div id="modal-auth"
+        class="fixed inset-0 bg-black/85 backdrop-blur-2xl z-50 flex items-center justify-center p-4 hidden">
+        <div
+            class="glass-panel w-full max-w-lg overflow-hidden shadow-2xl flex flex-col border border-white/20 rounded-3xl">
             <div class="h-16 px-6 border-b border-white/10 flex items-center justify-between bg-[#0B132B]">
                 <div class="flex items-center space-x-3">
-                    <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#38BDF8] to-[#8B5CF6] flex items-center justify-center text-white font-bold text-base shadow-lg">Æ</div>
+                    <div
+                        class="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#38BDF8] to-[#8B5CF6] flex items-center justify-center text-white font-bold text-base shadow-lg">
+                        Æ</div>
                     <div>
                         <h3 class="font-heading font-bold text-base text-white">Firebase Authentication</h3>
                         <p class="text-[10px] text-cyan-400 font-mono">AetherMind Enterprise Identity v10</p>
@@ -740,38 +1164,46 @@
                 </div>
                 <button id="close-auth-btn" class="p-2 text-[#7E8CA5] hover:text-white transition">✕</button>
             </div>
-            
+
             <div class="p-6 md:p-8 space-y-5">
                 <!-- Login Banner Error Alert -->
-                <div id="modal-auth-error-box" class="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs hidden"></div>
+                <div id="modal-auth-error-box"
+                    class="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs hidden"></div>
 
                 <form id="auth-form" class="space-y-4">
                     <div>
                         <label class="block text-xs font-semibold text-slate-300 mb-1">Email Address</label>
-                        <input type="email" id="auth-email" required placeholder="user@aethermind.ai" class="w-full glass-input px-4 py-2.5 text-sm text-white focus:outline-none rounded-xl">
+                        <input type="email" id="auth-email" required placeholder="user@aethermind.ai"
+                            class="w-full glass-input px-4 py-2.5 text-sm text-white focus:outline-none rounded-xl">
                     </div>
                     <div>
                         <div class="flex justify-between items-center mb-1">
                             <label class="text-xs font-semibold text-slate-300">Password</label>
-                            <button type="button" id="btn-auth-forgot" class="text-xs text-[#38BDF8] hover:underline">Forgot Password?</button>
+                            <button type="button" id="btn-auth-forgot"
+                                class="text-xs text-[#38BDF8] hover:underline">Forgot Password?</button>
                         </div>
-                        <input type="password" id="auth-password" required placeholder="••••••••••••" class="w-full glass-input px-4 py-2.5 text-sm text-white focus:outline-none rounded-xl">
+                        <input type="password" id="auth-password" required placeholder="••••••••••••"
+                            class="w-full glass-input px-4 py-2.5 text-sm text-white focus:outline-none rounded-xl">
                     </div>
-                    <button type="submit" id="btn-auth-submit" class="w-full py-3 btn-primary font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-[#38BDF8]/20 transition">
+                    <button type="submit" id="btn-auth-submit"
+                        class="w-full py-3 btn-primary font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-[#38BDF8]/20 transition">
                         Sign In with Firebase
                     </button>
-                    <button type="button" id="btn-modal-guest-login" class="w-full py-3 bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg text-white flex items-center justify-center space-x-2 transition">
+                    <button type="button" id="btn-modal-guest-login"
+                        class="w-full py-3 bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg text-white flex items-center justify-center space-x-2 transition">
                         <span>⚡ Instant Guest / Demo Workspace</span>
                     </button>
                 </form>
 
                 <div class="relative flex items-center justify-center my-2">
                     <div class="border-t border-white/10 w-full"></div>
-                    <span class="bg-[#0A0F1E] px-3 text-[10px] uppercase font-mono text-slate-400 absolute">Or continue with</span>
+                    <span class="bg-[#0A0F1E] px-3 text-[10px] uppercase font-mono text-slate-400 absolute">Or continue
+                        with</span>
                 </div>
 
                 <div class="grid grid-cols-1 gap-3">
-                    <button type="button" id="btn-modal-oauth-google" class="py-2.5 px-4 glass-card hover:bg-white/10 flex items-center justify-center space-x-2 text-xs font-medium text-white transition rounded-xl">
+                    <button type="button" id="btn-modal-oauth-google"
+                        class="py-2.5 px-4 glass-card hover:bg-white/10 flex items-center justify-center space-x-2 text-xs font-medium text-white transition rounded-xl">
                         <span>Sign in with Google</span>
                     </button>
                 </div>
@@ -784,7 +1216,8 @@
     </div>
 
     <!-- MODAL: SETTINGS -->
-    <div id="modal-settings" class="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
+    <div id="modal-settings"
+        class="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
         <div class="glass-panel w-full max-w-3xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]">
             <div class="h-14 px-6 border-b border-white/10 flex items-center justify-between bg-[#0F1220]">
                 <h3 class="font-heading font-bold text-lg text-white">AI Provider Settings & API Keys</h3>
@@ -793,17 +1226,21 @@
             <div class="p-6 overflow-y-auto space-y-4 text-xs">
                 <div class="glass-card p-4 space-y-3">
                     <div class="font-bold text-white text-sm">✨ Google Gemini API Key</div>
-                    <input type="password" placeholder="Enter Google Gemini API Key" class="w-full glass-input px-3 py-2 text-white">
+                    <input type="password" placeholder="Enter Google Gemini API Key"
+                        class="w-full glass-input px-3 py-2 text-white">
                 </div>
             </div>
         </div>
     </div>
     <!-- MODAL: DEDICATED LOGOUT / SIGNED-OUT SCREEN -->
-    <div id="modal-logout" class="fixed inset-0 bg-black/85 backdrop-blur-2xl z-50 flex items-center justify-center p-4 hidden">
+    <div id="modal-logout"
+        class="fixed inset-0 bg-black/85 backdrop-blur-2xl z-50 flex items-center justify-center p-4 hidden">
         <div class="glass-panel w-full max-w-lg overflow-hidden shadow-2xl flex flex-col border border-white/20">
             <div class="h-14 px-6 border-b border-white/10 flex items-center justify-between bg-[#0F1220]">
                 <div class="flex items-center space-x-2">
-                    <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-[#3ABEFF] to-[#EF4444] flex items-center justify-center text-white font-bold text-xs">Æ</div>
+                    <div
+                        class="w-7 h-7 rounded-lg bg-gradient-to-tr from-[#3ABEFF] to-[#EF4444] flex items-center justify-center text-white font-bold text-xs">
+                        Æ</div>
                     <h3 class="font-heading font-bold text-base text-white">Session Ended</h3>
                 </div>
                 <button id="close-logout-modal-btn" class="p-2 text-[#7E8CA5] hover:text-white" title="Close">✕</button>
@@ -811,19 +1248,25 @@
             <div class="p-8 flex flex-col items-center text-center space-y-6">
                 <!-- Glowing Shield / Exit Icon -->
                 <div class="relative w-20 h-20 flex items-center justify-center">
-                    <div class="absolute inset-0 rounded-2xl bg-gradient-to-tr from-[#EF4444] via-[#F59E0B] to-[#10B981] animate-pulse opacity-30 blur-lg"></div>
-                    <div class="w-16 h-16 rounded-2xl bg-[#0B132B] border border-white/20 flex items-center justify-center text-3xl shadow-2xl relative z-10 text-emerald-400">
+                    <div
+                        class="absolute inset-0 rounded-2xl bg-gradient-to-tr from-[#EF4444] via-[#F59E0B] to-[#10B981] animate-pulse opacity-30 blur-lg">
+                    </div>
+                    <div
+                        class="w-16 h-16 rounded-2xl bg-[#0B132B] border border-white/20 flex items-center justify-center text-3xl shadow-2xl relative z-10 text-emerald-400">
                         🛡️
                     </div>
                 </div>
 
                 <div>
-                    <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                    <span
+                        class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
                         ✓ Safely Signed Out
                     </span>
-                    <h2 class="text-2xl font-heading font-extrabold text-white tracking-tight mt-3">You Have Been Logged Out</h2>
+                    <h2 class="text-2xl font-heading font-extrabold text-white tracking-tight mt-3">You Have Been Logged
+                        Out</h2>
                     <p class="text-xs text-[#B7C2D8] mt-2 leading-relaxed">
-                        Your session has been terminated. Authentication tokens and local workspace memories have been cleared from this browser.
+                        Your session has been terminated. Authentication tokens and local workspace memories have been
+                        cleared from this browser.
                     </p>
                 </div>
 
@@ -847,15 +1290,18 @@
 
                 <!-- Action Buttons -->
                 <div class="w-full space-y-3 pt-1">
-                    <button type="button" id="btn-logout-relogin-modal" class="w-full py-3 btn-primary font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-[#38BDF8]/20 flex items-center justify-center space-x-2">
+                    <button type="button" id="btn-logout-relogin-modal"
+                        class="w-full py-3 btn-primary font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-[#38BDF8]/20 flex items-center justify-center space-x-2">
                         <span>⚡ Sign In Again</span>
                     </button>
 
-                    <button type="button" id="btn-logout-guest-modal" class="w-full py-3 bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg text-white flex items-center justify-center space-x-2 transition">
+                    <button type="button" id="btn-logout-guest-modal"
+                        class="w-full py-3 bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg text-white flex items-center justify-center space-x-2 transition">
                         <span>🚀 Launch Instant Guest Workspace</span>
                     </button>
 
-                    <a href="/logout" id="btn-logout-portal-modal" class="block w-full py-2.5 glass-card text-center text-xs text-slate-300 hover:text-white rounded-xl hover:bg-white/10 transition">
+                    <a href="/logout" id="btn-logout-portal-modal"
+                        class="block w-full py-2.5 glass-card text-center text-xs text-slate-300 hover:text-white rounded-xl hover:bg-white/10 transition">
                         <span>🔒 Open Dedicated Logout Page (/logout)</span>
                     </a>
                 </div>
@@ -864,11 +1310,15 @@
     </div>
 
     <!-- MODAL: ABOUT AETHERMIND -->
-    <div id="modal-about" class="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
-        <div class="glass-panel w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col border border-white/20 rounded-3xl">
+    <div id="modal-about"
+        class="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
+        <div
+            class="glass-panel w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col border border-white/20 rounded-3xl">
             <div class="h-16 px-6 border-b border-white/10 flex items-center justify-between bg-[#0F1220]">
                 <div class="flex items-center space-x-3">
-                    <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#3ABEFF] to-[#A855F7] flex items-center justify-center text-white font-bold text-base shadow-lg">Æ</div>
+                    <div
+                        class="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#3ABEFF] to-[#A855F7] flex items-center justify-center text-white font-bold text-base shadow-lg">
+                        Æ</div>
                     <div>
                         <h3 class="font-heading font-bold text-base text-white">About AetherMind AI OS</h3>
                         <p class="text-[10px] text-cyan-400 font-mono">Created by Kavati John Shreyan</p>
@@ -876,14 +1326,33 @@
                 </div>
                 <button id="close-about-btn" class="p-2 text-[#7E8CA5] hover:text-white transition">✕</button>
             </div>
-            
+
             <div class="p-6 md:p-8 overflow-y-auto space-y-6">
                 <div class="glass-card p-6 rounded-2xl border border-white/10 space-y-4">
-                    <div class="flex items-center space-x-2 text-xs font-mono text-cyan-300 uppercase tracking-widest font-bold">
+                    <div
+                        class="flex items-center space-x-2 text-xs font-mono text-cyan-300 uppercase tracking-widest font-bold">
                         <span>✨ Complete System Capabilities</span>
                     </div>
                     <p class="text-sm leading-relaxed text-slate-200 text-justify">
-                        AetherMind Multimodal AI is an enterprise-grade artificial intelligence operating system created by Kavati John Shreyan that seamlessly unifies text generation, document intelligence, vision OCR, AI image synthesis, voice recording and speech-to-text transcription, Qdrant vector memory, and workspace project management into a single responsive dark glassmorphic platform. Designed with zero API key dependencies, the system features a smart multimodal auto-routing engine that dynamically selects optimal free models while maintaining live Firebase Authentication supporting email credentials, Google OAuth popups or redirects, and instant guest demo access. Users can upload multi-format documents including PDF, DOCX, CSV, Excel, TXT, and PPTX to perform instant structural summaries, data extractions, and semantic vector similarity searches via Qdrant RAG, alongside real-time web search capabilities powered by DuckDuckGo and automatic multi-language understanding across fifty-plus languages including all twenty-two official Indian languages. The creative studio includes an enterprise AI image generation engine with automatic prompt enhancement, multi-model failover rotation across Flux, Turbo, Realism, Anime, 3D, and vector canvas renderers, complete with interactive download, lightbox preview, copy, regenerate, and HD upscale controls, while a ChatGPT-style speech-to-text voice pipeline converts user speech into active input text without file attachment leakage. AetherMind further empowers enterprise workflows through long-term memory compression, project workspace categorization, multi-device viewport toggling for desktop, laptop, tablet, and mobile, a global search modal, and a soft-deletion recycle bin for total control over workspace assets.
+                        AetherMind Multimodal AI is an enterprise-grade artificial intelligence operating system created
+                        by Kavati John Shreyan that seamlessly unifies text generation, document intelligence, vision
+                        OCR, AI image synthesis, voice recording and speech-to-text transcription, Qdrant vector memory,
+                        and workspace project management into a single responsive dark glassmorphic platform. Designed
+                        with zero API key dependencies, the system features a smart multimodal auto-routing engine that
+                        dynamically selects optimal free models while maintaining live Firebase Authentication
+                        supporting email credentials, Google OAuth popups or redirects, and instant guest demo access.
+                        Users can upload multi-format documents including PDF, DOCX, CSV, Excel, TXT, and PPTX to
+                        perform instant structural summaries, data extractions, and semantic vector similarity searches
+                        via Qdrant RAG, alongside real-time web search capabilities powered by DuckDuckGo and automatic
+                        multi-language understanding across fifty-plus languages including all twenty-two official
+                        Indian languages. The creative studio includes an enterprise AI image generation engine with
+                        automatic prompt enhancement, multi-model failover rotation across Flux, Turbo, Realism, Anime,
+                        3D, and vector canvas renderers, complete with interactive download, lightbox preview, copy,
+                        regenerate, and HD upscale controls, while a ChatGPT-style speech-to-text voice pipeline
+                        converts user speech into active input text without file attachment leakage. AetherMind further
+                        empowers enterprise workflows through long-term memory compression, project workspace
+                        categorization, multi-device viewport toggling for desktop, laptop, tablet, and mobile, a global
+                        search modal, and a soft-deletion recycle bin for total control over workspace assets.
                     </p>
                 </div>
 
@@ -897,4 +1366,5 @@
 
     <script src="/static/js/app.js"></script>
 </body>
+
 </html>

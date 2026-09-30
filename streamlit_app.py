@@ -507,19 +507,25 @@ def build_standalone_aethermind_html(_cache_key=None):
                     recent_uploads: allFiles.slice(0, 5),
                     timeline: [
                         { action: "Document Indexed", entity_type: "Qdrant RAG", target_name: "Enterprise Specs", timestamp: new Date().toISOString() },
-                        { action: "Workspace Initialized", entity_type: "System", target_name: "Cortex OS v4.0", timestamp: new Date().toISOString() }
+                        { action: "Workspace Initialized", entity_type: "System", target_name: "AetherMind Multimodal AI", timestamp: new Date().toISOString() }
                     ]
                 }
             }), { status: 200, headers: { 'Content-Type': 'application/json' } });
         }
 
-        // Conversation History Persistence Helper
+        // Conversation History Persistence Helper — uses Supabase if authenticated, localStorage for guest
         function saveConversationMessage(chatId, userMsgObj, assistantMsgObj, modelName) {
+            const rawTxt = (userMsgObj && userMsgObj.content) ? userMsgObj.content : "New Conversation";
+            const titleSnippet = rawTxt.slice(0, 35) + (rawTxt.length > 35 ? "..." : "");
+            // Use Supabase-aware save if available
+            if (typeof window._aetherSaveMessage === 'function') {
+                window._aetherSaveMessage(chatId, titleSnippet, userMsgObj, assistantMsgObj, modelName);
+                return;
+            }
+            // Fallback: localStorage
             let chats = getStoredItems('aethermind_saved_chats');
             let targetChat = chats.find(c => c.id === chatId);
             if (!targetChat) {
-                const rawTxt = (userMsgObj && userMsgObj.content) ? userMsgObj.content : "New Conversation";
-                const titleSnippet = rawTxt.slice(0, 35) + (rawTxt.length > 35 ? "..." : "");
                 targetChat = {
                     id: chatId,
                     title: titleSnippet,
@@ -537,22 +543,24 @@ def build_standalone_aethermind_html(_cache_key=None):
             if (assistantMsgObj && !targetChat.messages.some(m => m.created_at === assistantMsgObj.created_at && m.content === assistantMsgObj.content)) {
                 targetChat.messages.push(assistantMsgObj);
             }
-
-            // Move updated chat to top of list
             chats = chats.filter(c => c.id !== chatId);
             chats.unshift(targetChat);
-
             try { localStorage.setItem('aethermind_saved_chats', JSON.stringify(chats)); } catch(e) {}
         }
 
-        // Conversation API Routes (/api/v1/chat/conversations)
+        // Conversation API Routes (/api/v1/chat/conversations) — Supabase-aware
         if (urlStr.includes('/api/v1/chat/conversations')) {
             if (options.method === 'DELETE') {
                 const parts = urlStr.split('/conversations/');
                 const delId = parts[1] ? parts[1].split('?')[0] : '';
-                let chats = getStoredItems('aethermind_saved_chats');
-                chats = chats.filter(c => c.id !== delId);
-                try { localStorage.setItem('aethermind_saved_chats', JSON.stringify(chats)); } catch(e) {}
+                // Use Supabase delete if available
+                if (typeof window._aetherDeleteConversation === 'function') {
+                    window._aetherDeleteConversation(delId);
+                } else {
+                    let chats = getStoredItems('aethermind_saved_chats');
+                    chats = chats.filter(c => c.id !== delId);
+                    try { localStorage.setItem('aethermind_saved_chats', JSON.stringify(chats)); } catch(e) {}
+                }
                 return new Response(JSON.stringify({ success: true, message: "Deleted conversation", data: { id: delId } }), { status: 200, headers: { 'Content-Type': 'application/json' } });
             }
             
@@ -564,6 +572,20 @@ def build_standalone_aethermind_html(_cache_key=None):
                 if (found) {
                     return new Response(JSON.stringify({ success: true, data: found }), { status: 200, headers: { 'Content-Type': 'application/json' } });
                 }
+            }
+
+            // Use Supabase-aware loader if available (returns cloud chats for authenticated users)
+            if (typeof window._aetherLoadConversations === 'function') {
+                const cloudChats = await window._aetherLoadConversations();
+                return new Response(JSON.stringify({
+                    success: true,
+                    data: cloudChats.map(c => ({
+                        id: c.id,
+                        title: c.title || 'Conversation',
+                        selected_model: c.selected_model || 'auto',
+                        updated_at: c.updated_at
+                    }))
+                }), { status: 200, headers: { 'Content-Type': 'application/json' } });
             }
 
             const chats = getStoredItems('aethermind_saved_chats');

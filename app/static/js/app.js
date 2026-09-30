@@ -2346,44 +2346,501 @@ AetherMind Multimodal AI OS is an enterprise-grade artificial intelligence opera
         });
     }
 
-    // Initialize User Session & Sync Auth State
-    async function initUserSession() {
-        // Firebase Auth Guard & Token Sync
-        if (window.firebase && window.firebase.auth) {
+    // =========================================================================
+    // FIREBASE AUTH GATE ENGINE — Production-Ready Auth with Supabase Storage
+    // =========================================================================
+
+    // --- Supabase Storage Helpers (for authenticated users) ---
+    const AETHER_SUPABASE = () => window._aetherSupabase || null;
+    let _currentFirebaseUID = null;
+    let _isGuestMode = false;
+
+    // Get the current Firebase UID (null if guest)
+    function getFirebaseUID() { return _currentFirebaseUID; }
+    function isGuestMode() { return _isGuestMode; }
+
+    // Supabase: Save a message pair to conversations table
+    async function supabaseSaveMessage(chatId, chatTitle, userMsg, asstMsg, modelName) {
+        const db = AETHER_SUPABASE();
+        const uid = getFirebaseUID();
+        if (!db || !uid || isGuestMode()) {
+            // Fall back to localStorage for guest
+            saveConversationToLocalStorage(chatId, chatTitle, userMsg, asstMsg, modelName);
+            return;
+        }
+        try {
+            // Upsert conversation record
+            await db.from('conversations').upsert({
+                id: chatId,
+                firebase_uid: uid,
+                title: chatTitle || 'New Chat',
+                selected_model: modelName || 'auto',
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'id' });
+
+            // Insert user message
+            if (userMsg) {
+                await db.from('messages').upsert({
+                    id: userMsg.id || ('msg_' + Date.now() + '_u'),
+                    conversation_id: chatId,
+                    firebase_uid: uid,
+                    role: 'user',
+                    content: userMsg.content || '',
+                    attachments: JSON.stringify(userMsg.attachments || []),
+                    created_at: userMsg.created_at || new Date().toISOString()
+                }, { onConflict: 'id' });
+            }
+            // Insert assistant message
+            if (asstMsg) {
+                await db.from('messages').upsert({
+                    id: asstMsg.id || ('msg_' + Date.now() + '_a'),
+                    conversation_id: chatId,
+                    firebase_uid: uid,
+                    role: 'assistant',
+                    content: asstMsg.content || '',
+                    model_name: asstMsg.model_name || modelName || '',
+                    created_at: asstMsg.created_at || new Date().toISOString()
+                }, { onConflict: 'id' });
+            }
+        } catch (err) {
+            console.warn('[Supabase] Save message error, falling back to localStorage:', err);
+            saveConversationToLocalStorage(chatId, chatTitle, userMsg, asstMsg, modelName);
+        }
+    }
+
+    // Supabase: Load conversations for current user
+    async function supabaseLoadConversations() {
+        const db = AETHER_SUPABASE();
+        const uid = getFirebaseUID();
+        if (!db || !uid || isGuestMode()) {
+            return loadConversationsFromLocalStorage();
+        }
+        try {
+            const { data, error } = await db
+                .from('conversations')
+                .select('id, title, selected_model, updated_at')
+                .eq('firebase_uid', uid)
+                .order('updated_at', { ascending: false })
+                .limit(50);
+            if (error) throw error;
+            return data || [];
+        } catch (err) {
+            console.warn('[Supabase] Load conversations error, falling back:', err);
+            return loadConversationsFromLocalStorage();
+        }
+    }
+
+    // Supabase: Delete a conversation
+    async function supabaseDeleteConversation(chatId) {
+        const db = AETHER_SUPABASE();
+        const uid = getFirebaseUID();
+        if (!db || !uid || isGuestMode()) {
+            let chats = getStoredChats();
+            chats = chats.filter(c => c.id !== chatId);
+            saveChatsToLocal(chats);
+            return;
+        }
+        try {
+            await db.from('messages').delete().eq('conversation_id', chatId).eq('firebase_uid', uid);
+            await db.from('conversations').delete().eq('id', chatId).eq('firebase_uid', uid);
+        } catch (err) {
+            console.warn('[Supabase] Delete conversation error:', err);
+        }
+    }
+
+    // Supabase: Rename conversation
+    async function supabaseRenameConversation(chatId, newTitle) {
+        const db = AETHER_SUPABASE();
+        const uid = getFirebaseUID();
+        if (!db || !uid || isGuestMode()) {
+            let chats = getStoredChats();
+            const c = chats.find(x => x.id === chatId);
+            if (c) { c.title = newTitle; saveChatsToLocal(chats); }
+            return;
+        }
+        try {
+            await db.from('conversations').update({ title: newTitle, updated_at: new Date().toISOString() })
+                .eq('id', chatId).eq('firebase_uid', uid);
+        } catch (err) {
+            console.warn('[Supabase] Rename conversation error:', err);
+        }
+    }
+
+    // localStorage helpers (used by guest mode and Supabase fallback)
+    function getStoredChats() {
+        try { return JSON.parse(localStorage.getItem('aethermind_saved_chats') || '[]'); } catch(e) { return []; }
+    }
+    function saveChatsToLocal(chats) {
+        try { localStorage.setItem('aethermind_saved_chats', JSON.stringify(chats)); } catch(e) {}
+    }
+    function loadConversationsFromLocalStorage() {
+        return getStoredChats().map(c => ({ id: c.id, title: c.title, selected_model: c.selected_model, updated_at: c.updated_at }));
+    }
+    function saveConversationToLocalStorage(chatId, chatTitle, userMsg, asstMsg, modelName) {
+        let chats = getStoredChats();
+        let target = chats.find(c => c.id === chatId);
+        if (!target) {
+            target = { id: chatId, title: chatTitle || 'New Chat', selected_model: modelName, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), messages: [] };
+        }
+        target.selected_model = modelName || target.selected_model;
+        target.updated_at = new Date().toISOString();
+        if (userMsg && !target.messages?.some(m => m.id === userMsg.id)) (target.messages = target.messages || []).push(userMsg);
+        if (asstMsg && !target.messages?.some(m => m.id === asstMsg.id)) (target.messages = target.messages || []).push(asstMsg);
+        chats = chats.filter(c => c.id !== chatId);
+        chats.unshift(target);
+        saveChatsToLocal(chats);
+    }
+
+    // Expose Supabase save to the streamlit bridge override (window.fetch intercept uses it)
+    window._aetherSaveMessage = supabaseSaveMessage;
+    window._aetherLoadConversations = supabaseLoadConversations;
+    window._aetherDeleteConversation = supabaseDeleteConversation;
+    window._aetherRenameConversation = supabaseRenameConversation;
+
+    // --- Auth Gate UI Logic ---
+    const authGate = document.getElementById('auth-gate');
+    const authGateChecking = document.getElementById('auth-gate-checking');
+    const authGatePanel = document.getElementById('auth-gate-panel');
+    const gateErrorBox = document.getElementById('gate-error-box');
+
+    function showGateError(msg) {
+        if (gateErrorBox) { gateErrorBox.textContent = msg; gateErrorBox.classList.remove('hidden'); }
+    }
+    function hideGateError() {
+        if (gateErrorBox) gateErrorBox.classList.add('hidden');
+    }
+
+    function dismissAuthGate(user, isGuest) {
+        _isGuestMode = !!isGuest;
+        if (!isGuest && user) {
+            _currentFirebaseUID = user.uid;
+            localStorage.setItem('aethermind_user_email', user.email || '');
+            localStorage.setItem('aethermind_user_name', user.displayName || (user.email ? user.email.split('@')[0] : 'User'));
+            localStorage.setItem('aethermind_firebase_uid', user.uid);
+        } else {
+            _currentFirebaseUID = null;
+            localStorage.setItem('aethermind_user_name', 'Guest User');
+            localStorage.setItem('aethermind_user_email', 'guest@demo.local');
+            localStorage.setItem('aethermind_firebase_uid', '');
+        }
+        // Update sidebar display
+        const dName = document.getElementById('user-display-name');
+        const dRole = document.getElementById('user-display-role');
+        const dAvatar = document.querySelector('#user-profile-badge .w-9');
+        const displayName = localStorage.getItem('aethermind_user_name') || 'User';
+        const displayEmail = localStorage.getItem('aethermind_user_email') || '';
+        if (dName) dName.innerHTML = `<span>${displayName}</span><svg class="w-3 h-3 text-[#7E8CA5] group-hover:text-white transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>`;
+        if (dRole) dRole.textContent = isGuest ? 'Guest / Demo Mode' : 'Authenticated User';
+        if (dAvatar) {
+            const initials = displayName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || 'U';
+            dAvatar.textContent = initials;
+        }
+        // Animate gate out
+        if (authGate) {
+            authGate.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+            authGate.style.opacity = '0';
+            authGate.style.transform = 'scale(1.02)';
+            setTimeout(() => {
+                authGate.style.display = 'none';
+            }, 420);
+        }
+        // Load workspace
+        setTimeout(async () => {
+            await loadConversationsHistory();
+        }, 450);
+    }
+
+    // Firebase initialized?
+    let firebaseAuth = null;
+    let googleProvider = null;
+    if (window.firebase && window.firebase.auth) {
+        try {
+            firebaseAuth = window.firebase.auth();
+            googleProvider = new window.firebase.auth.GoogleAuthProvider();
+            googleProvider.addScope('email');
+            googleProvider.addScope('profile');
+        } catch(e) { console.warn('Firebase auth init:', e); }
+    }
+
+    // Check for existing Firebase session on load
+    if (firebaseAuth) {
+        // Check redirect result first (popup→redirect fallback handling)
+        firebaseAuth.getRedirectResult().then(result => {
+            if (result && result.user) {
+                dismissAuthGate(result.user, false);
+            }
+        }).catch(() => {});
+
+        firebaseAuth.onAuthStateChanged(user => {
+            if (authGateChecking) authGateChecking.classList.add('hidden');
+            if (user) {
+                // Already authenticated — dismiss gate immediately
+                dismissAuthGate(user, false);
+            } else {
+                // No session — show login panel
+                if (authGatePanel) authGatePanel.classList.remove('hidden');
+            }
+        });
+    } else {
+        // Firebase unavailable — show login panel anyway (fallback)
+        if (authGateChecking) authGateChecking.classList.add('hidden');
+        if (authGatePanel) authGatePanel.classList.remove('hidden');
+    }
+
+    // --- Tab switching: Login / Register ---
+    const gateTabLogin = document.getElementById('gate-tab-login');
+    const gateTabRegister = document.getElementById('gate-tab-register');
+    const gateLoginForm = document.getElementById('gate-login-form');
+    const gateRegisterForm = document.getElementById('gate-register-form');
+    const gateForgotForm = document.getElementById('gate-forgot-form');
+
+    function showGateView(view) {
+        hideGateError();
+        [gateLoginForm, gateRegisterForm, gateForgotForm].forEach(f => f && f.classList.add('hidden'));
+        if (gateTabLogin) gateTabLogin.className = 'flex-1 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition';
+        if (gateTabRegister) gateTabRegister.className = 'flex-1 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition';
+        if (view === 'login') {
+            if (gateLoginForm) gateLoginForm.classList.remove('hidden');
+            if (gateTabLogin) gateTabLogin.className = 'flex-1 py-2 text-xs font-semibold rounded-lg bg-[#3ABEFF]/20 text-[#3ABEFF] border border-[#3ABEFF]/30 transition';
+        } else if (view === 'register') {
+            if (gateRegisterForm) gateRegisterForm.classList.remove('hidden');
+            if (gateTabRegister) gateTabRegister.className = 'flex-1 py-2 text-xs font-semibold rounded-lg bg-[#22C55E]/20 text-[#22C55E] border border-[#22C55E]/30 transition';
+        } else if (view === 'forgot') {
+            if (gateForgotForm) gateForgotForm.classList.remove('hidden');
+        }
+    }
+
+    gateTabLogin?.addEventListener('click', () => showGateView('login'));
+    gateTabRegister?.addEventListener('click', () => showGateView('register'));
+    document.getElementById('gate-forgot-btn')?.addEventListener('click', () => showGateView('forgot'));
+    document.getElementById('gate-forgot-back')?.addEventListener('click', () => showGateView('login'));
+
+    // Show/Hide Password
+    const gateTogglePass = document.getElementById('gate-toggle-password');
+    const gateLoginPass = document.getElementById('gate-login-password');
+    if (gateTogglePass && gateLoginPass) {
+        gateTogglePass.addEventListener('click', () => {
+            const isPass = gateLoginPass.type === 'password';
+            gateLoginPass.type = isPass ? 'text' : 'password';
+            gateTogglePass.textContent = isPass ? 'Hide' : 'Show';
+        });
+    }
+
+    // Password strength meter for register form
+    const gateRegPass = document.getElementById('gate-reg-password');
+    const gateStrengthBar = document.getElementById('gate-pass-strength-bar');
+    const gateStrengthLabel = document.getElementById('gate-pass-strength-label');
+    if (gateRegPass) {
+        gateRegPass.addEventListener('input', () => {
+            const v = gateRegPass.value;
+            let score = 0;
+            if (v.length >= 8) score++;
+            if (/[A-Z]/.test(v)) score++;
+            if (/[0-9]/.test(v)) score++;
+            if (/[^A-Za-z0-9]/.test(v)) score++;
+            if (gateStrengthBar) {
+                const classes = { 1: 'bg-red-500 w-1/4', 2: 'bg-yellow-500 w-2/4', 3: 'bg-yellow-400 w-3/4', 4: 'bg-emerald-500 w-full' };
+                gateStrengthBar.className = `h-full transition-all duration-300 ${classes[score] || 'bg-red-500 w-0'}`;
+            }
+            if (gateStrengthLabel) {
+                const labels = { 1: ['Weak', 'text-red-400'], 2: ['Medium', 'text-yellow-400'], 3: ['Good', 'text-yellow-300'], 4: ['Strong', 'text-emerald-400'] };
+                const [txt, cls] = labels[score] || ['Weak', 'text-red-400'];
+                gateStrengthLabel.textContent = txt;
+                gateStrengthLabel.className = `text-xs font-semibold w-14 text-right ${cls}`;
+            }
+        });
+    }
+
+    function gateFirebaseErrMsg(code) {
+        const map = {
+            'auth/user-not-found': 'No account found with this email.',
+            'auth/wrong-password': 'Incorrect password. Please try again.',
+            'auth/invalid-credential': 'Invalid email or password.',
+            'auth/email-already-in-use': 'This email is already registered.',
+            'auth/weak-password': 'Password must be at least 6 characters.',
+            'auth/invalid-email': 'Please enter a valid email address.',
+            'auth/too-many-requests': 'Too many attempts. Please wait and try again.',
+            'auth/network-request-failed': 'Network error. Check your connection.',
+            'auth/popup-blocked': 'Popup was blocked. Trying redirect...',
+            'auth/popup-closed-by-user': 'Sign-in cancelled.',
+        };
+        return map[code] || 'Authentication failed. Please try again.';
+    }
+
+    // --- Login Form Submission ---
+    if (gateLoginForm) {
+        gateLoginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideGateError();
+            const email = document.getElementById('gate-login-email')?.value.trim();
+            const pass = document.getElementById('gate-login-password')?.value;
+            if (!email || !pass) return;
+            const btn = document.getElementById('gate-login-submit');
+            if (btn) { btn.disabled = true; btn.textContent = 'Signing in…'; }
             try {
-                window.firebase.auth().onAuthStateChanged((user) => {
-                    if (user) {
-                        user.getIdToken().then((token) => {
-                            document.cookie = `aethermind_token=${token}; path=/; max-age=604800; SameSite=Lax`;
-                            if (user.email) {
-                                localStorage.setItem("aethermind_user_email", user.email);
-                                const userDispEmail = document.getElementById("user-display-email");
-                                if (userDispEmail) userDispEmail.textContent = user.email;
-                            }
-                            if (user.displayName) {
-                                localStorage.setItem("aethermind_user_name", user.displayName);
-                                const userDispName = document.getElementById("user-display-name");
-                                if (userDispName) userDispName.textContent = user.displayName;
-                            }
-                        });
-                    } else {
-                        const hasToken = document.cookie.split(';').some(c => c.trim().startsWith('aethermind_token='));
-                        if (!hasToken && window.location.pathname !== "/login" && window.location.pathname !== "/auth") {
-                            window.location.href = "/login";
-                        }
-                    }
-                });
-            } catch (e) {
-                console.warn("Firebase Auth route guard warning:", e);
+                if (!firebaseAuth) throw new Error('Firebase not available.');
+                const cred = await firebaseAuth.signInWithEmailAndPassword(email, pass);
+                if (cred && cred.user) {
+                    const token = await cred.user.getIdToken();
+                    document.cookie = `aethermind_token=${token}; path=/; max-age=604800; SameSite=Lax`;
+                    showToast('✅ Signed in successfully!', 'success');
+                    dismissAuthGate(cred.user, false);
+                }
+            } catch (err) {
+                showGateError(gateFirebaseErrMsg(err.code));
+                showToast(gateFirebaseErrMsg(err.code), 'error');
+            } finally {
+                if (btn) { btn.disabled = false; btn.textContent = 'Sign In'; }
+            }
+        });
+    }
+
+    // --- Register Form Submission ---
+    if (gateRegisterForm) {
+        gateRegisterForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideGateError();
+            const fname = document.getElementById('gate-reg-fname')?.value.trim();
+            const lname = document.getElementById('gate-reg-lname')?.value.trim();
+            const email = document.getElementById('gate-reg-email')?.value.trim();
+            const pass = document.getElementById('gate-reg-password')?.value;
+            const confirm = document.getElementById('gate-reg-confirm')?.value;
+            if (pass !== confirm) { showGateError('Passwords do not match.'); return; }
+            const btn = document.getElementById('gate-register-submit');
+            if (btn) { btn.disabled = true; btn.textContent = 'Creating account…'; }
+            try {
+                if (!firebaseAuth) throw new Error('Firebase not available.');
+                const cred = await firebaseAuth.createUserWithEmailAndPassword(email, pass);
+                if (cred && cred.user) {
+                    await cred.user.updateProfile({ displayName: `${fname} ${lname}`.trim() });
+                    const token = await cred.user.getIdToken();
+                    document.cookie = `aethermind_token=${token}; path=/; max-age=604800; SameSite=Lax`;
+                    showToast('🎉 Account created! Welcome to AetherMind!', 'success');
+                    dismissAuthGate(cred.user, false);
+                }
+            } catch (err) {
+                showGateError(gateFirebaseErrMsg(err.code));
+                showToast(gateFirebaseErrMsg(err.code), 'error');
+            } finally {
+                if (btn) { btn.disabled = false; btn.textContent = 'Create Account'; }
+            }
+        });
+    }
+
+    // --- Forgot Password Form ---
+    if (gateForgotForm) {
+        gateForgotForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideGateError();
+            const email = document.getElementById('gate-forgot-email')?.value.trim();
+            if (!email) return;
+            const btn = document.getElementById('gate-forgot-submit');
+            if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+            try {
+                if (!firebaseAuth) throw new Error('Firebase not available.');
+                await firebaseAuth.sendPasswordResetEmail(email);
+                showToast('📧 Password reset email sent! Check your inbox.', 'success');
+                showGateView('login');
+            } catch (err) {
+                showGateError(gateFirebaseErrMsg(err.code));
+            } finally {
+                if (btn) { btn.disabled = false; btn.textContent = 'Send Reset Email'; }
+            }
+        });
+    }
+
+    // --- Google Sign-In ---
+    document.getElementById('gate-btn-google')?.addEventListener('click', async () => {
+        hideGateError();
+        if (!firebaseAuth || !googleProvider) { showGateError('Firebase not available.'); return; }
+        showToast('🔐 Connecting to Google…', 'info');
+        try {
+            const result = await firebaseAuth.signInWithPopup(googleProvider);
+            if (result && result.user) {
+                const token = await result.user.getIdToken();
+                document.cookie = `aethermind_token=${token}; path=/; max-age=604800; SameSite=Lax`;
+                showToast('✅ Google Sign-In successful!', 'success');
+                dismissAuthGate(result.user, false);
+            }
+        } catch (err) {
+            if (err.code === 'auth/popup-blocked' || err.code === 'auth/popup-closed-by-user' ||
+                err.code === 'auth/operation-not-supported-in-this-environment' || err.code === 'auth/cancelled-popup-request') {
+                try {
+                    showToast('Opening Google sign-in…', 'info');
+                    await firebaseAuth.signInWithRedirect(googleProvider);
+                } catch (redirectErr) {
+                    showGateError(gateFirebaseErrMsg(redirectErr.code));
+                }
+            } else {
+                showGateError(gateFirebaseErrMsg(err.code));
+                showToast(gateFirebaseErrMsg(err.code), 'error');
             }
         }
+    });
 
+    // --- Guest Mode ---
+    document.getElementById('gate-btn-guest')?.addEventListener('click', () => {
+        _isGuestMode = true;
+        _currentFirebaseUID = null;
+        showToast('⚡ Guest Workspace activated. Data is temporary.', 'info');
+        dismissAuthGate(null, true);
+    });
+
+    // --- Logout (wire up existing logout buttons to new logout flow) ---
+    function performLogout() {
+        if (_isGuestMode) {
+            // Wipe all guest data
+            ['aethermind_saved_chats','aethermind_stored_files','aethermind_stored_projects',
+             'aethermind_stored_memories','aethermind_last_doc_name','aethermind_last_doc_text',
+             'aethermind_active_chat','aethermind_session'].forEach(k => {
+                try { localStorage.removeItem(k); } catch(e) {}
+            });
+            showToast('👋 Guest session cleared.', 'info');
+        }
+        // Clear auth cookies
+        document.cookie = 'aethermind_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;';
+        document.cookie = 'aethermind_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;';
+        localStorage.removeItem('aethermind_user_email');
+        localStorage.removeItem('aethermind_user_name');
+        localStorage.removeItem('aethermind_firebase_uid');
+        _currentFirebaseUID = null;
+        _isGuestMode = false;
+
+        if (firebaseAuth) {
+            firebaseAuth.signOut().catch(() => {});
+        }
+
+        // Show auth gate again
+        if (authGate) {
+            authGate.style.display = '';
+            authGate.style.opacity = '0';
+            authGate.style.transform = 'scale(0.98)';
+            setTimeout(() => {
+                authGate.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+                authGate.style.opacity = '1';
+                authGate.style.transform = 'scale(1)';
+            }, 50);
+            if (authGateChecking) authGateChecking.classList.add('hidden');
+            if (authGatePanel) authGatePanel.classList.remove('hidden');
+            showGateView('login');
+        }
+        // Clear conversation list
+        if (conversationList) conversationList.innerHTML = '';
+    }
+
+    // Override triggerLogoutFlow
+    window.triggerLogoutFlow = performLogout;
+
+    // =========================================================================
+    // Initialize User Session & Sync Auth State
+    // =========================================================================
+    async function initUserSession() {
         const savedEmail = localStorage.getItem("aethermind_user_email");
         const savedName = localStorage.getItem("aethermind_user_name");
-        
+
         const userDispName = document.getElementById("user-display-name");
         const userDispEmail = document.getElementById("user-display-email");
-        if (savedName && userDispName) userDispName.textContent = savedName;
+        if (savedName && userDispName) userDispName.innerHTML = `<span>${savedName}</span><svg class="w-3 h-3 text-[#7E8CA5]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>`;
         if (savedEmail && userDispEmail) userDispEmail.textContent = savedEmail;
 
         const savedModel = localStorage.getItem("aethermind_active_model") || sessionStorage.getItem("aethermind_active_model");
