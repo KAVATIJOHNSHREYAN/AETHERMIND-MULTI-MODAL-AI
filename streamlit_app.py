@@ -342,7 +342,26 @@ def build_standalone_aethermind_html(_cache_key=None):
             return new Response(JSON.stringify({ success: true, data: images }), { status: 200, headers: { 'Content-Type': 'application/json' } });
         }
 
-        // Audio & Voice Lab Endpoints
+        // Audio & Voice Lab Endpoints (/api/v1/audio/transcribe & /api/v1/audio)
+        if (urlStr.includes('/api/v1/audio/transcribe') && options.method === 'POST') {
+            let transcribedText = "pic of panda";
+            try {
+                const lastDocText = localStorage.getItem('aethermind_last_doc_text') || '';
+                if (lastDocText && !lastDocText.includes('voice_record')) {
+                    transcribedText = lastDocText;
+                }
+            } catch(e) {}
+            return new Response(JSON.stringify({
+                success: true,
+                data: {
+                    filename: "voice_recording.webm",
+                    transcript: transcribedText,
+                    duration_seconds: 3.5
+                },
+                message: "Audio transcribed successfully"
+            }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+        }
+
         if (urlStr.includes('/api/v1/audio')) {
             const allFiles = getStoredItems('aethermind_stored_files');
             let audios = allFiles.filter(f => f.file_type === 'audio');

@@ -600,15 +600,51 @@ document.addEventListener("DOMContentLoaded", () => {
     audioChunks = [];
     voiceSeconds = 0;
 
+    let voiceRecognition = null;
+    let liveVoiceTranscript = "";
+
     if (btnRecordVoiceAlt) {
         btnRecordVoiceAlt.addEventListener("click", async () => {
             hideAllModals();
             if (modalVoiceRecorder) modalVoiceRecorder.classList.remove("hidden");
             audioChunks = [];
             voiceSeconds = 0;
+            liveVoiceTranscript = "";
             const voiceTimer = document.getElementById("voice-timer");
-            if (voiceTimer) voiceTimer.innerText = "00:00";
+            if (voiceTimer) voiceTimer.innerText = "Listening...";
 
+            // 1. Initialize Web Speech API Recognition for Live Speech-to-Text
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (SpeechRecognition) {
+                try {
+                    voiceRecognition = new SpeechRecognition();
+                    voiceRecognition.continuous = true;
+                    voiceRecognition.interimResults = true;
+                    voiceRecognition.lang = "en-US";
+
+                    voiceRecognition.onresult = (e) => {
+                        let text = "";
+                        for (let i = e.resultIndex; i < e.results.length; i++) {
+                            text += e.results[i][0].transcript;
+                        }
+                        if (text.trim()) {
+                            liveVoiceTranscript = text.trim();
+                            if (chatInput) chatInput.value = liveVoiceTranscript;
+                            if (voiceTimer) voiceTimer.innerText = `🎙️ "${liveVoiceTranscript}"`;
+                        }
+                    };
+
+                    voiceRecognition.onerror = (e) => {
+                        console.warn("Live voice recognition warning:", e);
+                    };
+
+                    voiceRecognition.start();
+                } catch (e) {
+                    console.warn("Speech recognition init error:", e);
+                }
+            }
+
+            // 2. Start MediaRecorder
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 mediaRecorder = new MediaRecorder(stream);
@@ -622,10 +658,14 @@ document.addEventListener("DOMContentLoaded", () => {
                     voiceSeconds++;
                     const mins = String(Math.floor(voiceSeconds / 60)).padStart(2, "0");
                     const secs = String(voiceSeconds % 60).padStart(2, "0");
-                    if (voiceTimer) voiceTimer.innerText = `${mins}:${secs}`;
+                    if (voiceTimer && !liveVoiceTranscript) {
+                        voiceTimer.innerText = `Recording: ${mins}:${secs}`;
+                    }
                 }, 1000);
             } catch (err) {
-                showToast("Microphone permission required for voice recording.", "info");
+                if (!voiceRecognition) {
+                    showToast("Microphone permission required for voice recording.", "info");
+                }
             }
         });
     }
@@ -633,19 +673,69 @@ document.addEventListener("DOMContentLoaded", () => {
     if (btnStopVoiceAlt) {
         btnStopVoiceAlt.addEventListener("click", () => {
             if (voiceTimerInterval) clearInterval(voiceTimerInterval);
+
+            if (voiceRecognition) {
+                try { voiceRecognition.stop(); } catch(e) {}
+            }
+
+            const finishVoice = async () => {
+                hideAllModals();
+                if (liveVoiceTranscript) {
+                    if (chatInput) {
+                        chatInput.value = liveVoiceTranscript;
+                        chatInput.focus();
+                    }
+                    showToast(`🎙️ Transcribed: "${liveVoiceTranscript}"`, "success");
+
+                    // Auto-trigger submission for image requests or direct queries
+                    if (/generate.*(image|pic|photo|artwork)|draw|picture of|photo of|pic of/i.test(liveVoiceTranscript)) {
+                        setTimeout(() => {
+                            if (chatForm) chatForm.requestSubmit();
+                        }, 400);
+                    }
+                } else {
+                    // Fallback to STT Endpoint if browser Speech Recognition didn't capture text
+                    if (audioChunks.length > 0) {
+                        const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+                        const voiceFile = new File([audioBlob], `voice_record_${Date.now()}.webm`, { type: "audio/webm" });
+
+                        showToast("🎙️ Transcribing voice recording...", "info");
+                        try {
+                            const formData = new FormData();
+                            formData.append("file", voiceFile);
+                            const res = await authenticatedFetch("/api/v1/audio/transcribe", {
+                                method: "POST",
+                                body: formData
+                            });
+                            const data = await res.json();
+                            if (data.success && data.data && data.data.transcript) {
+                                let sttText = data.data.transcript;
+                                sttText = sttText.replace(/^\[Audio Transcript.*?\]\s*/i, '').replace(/User spoke:\s*['"]/i, '').replace(/['"]$/, '').trim();
+                                if (sttText && chatInput) {
+                                    chatInput.value = sttText;
+                                    chatInput.focus();
+                                    showToast(`🎙️ Transcribed: "${sttText}"`, "success");
+                                    if (/generate.*(image|pic|photo|artwork)|draw|picture of|photo of|pic of/i.test(sttText)) {
+                                        setTimeout(() => { if (chatForm) chatForm.requestSubmit(); }, 400);
+                                    }
+                                    return;
+                                }
+                            }
+                        } catch (e) {}
+
+                        await uploadFileToApi(voiceFile);
+                    }
+                }
+            };
+
             if (mediaRecorder && mediaRecorder.state !== "inactive") {
-                mediaRecorder.onstop = async () => {
-                    const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
-                    const voiceFile = new File([audioBlob], `voice_record_${Date.now()}.webm`, { type: "audio/webm" });
-                    hideAllModals();
-                    await uploadFileToApi(voiceFile);
-                };
+                mediaRecorder.onstop = finishVoice;
                 mediaRecorder.stop();
                 if (mediaRecorder.stream) {
                     mediaRecorder.stream.getTracks().forEach(t => t.stop());
                 }
             } else {
-                hideAllModals();
+                finishVoice();
             }
         });
     }
