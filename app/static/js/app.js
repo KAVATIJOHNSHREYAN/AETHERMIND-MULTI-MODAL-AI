@@ -483,31 +483,9 @@ document.addEventListener("DOMContentLoaded", () => {
         // Voice Recorder Button
         if (id === "btn-record-voice" || id === "btn-voice") {
             e.preventDefault();
-            hideAllModals();
-            const modalVoice = document.getElementById("modal-voice-recorder");
-            if (modalVoice) modalVoice.classList.remove("hidden");
-            const voiceTimer = document.getElementById("voice-timer");
-            if (voiceTimer) voiceTimer.innerText = "00:00";
-
-            try {
-                audioChunks = [];
-                voiceSeconds = 0;
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                mediaRecorder = new MediaRecorder(stream);
-                mediaRecorder.ondataavailable = (ev) => {
-                    if (ev.data.size > 0) audioChunks.push(ev.data);
-                };
-                mediaRecorder.start();
-
-                if (voiceTimerInterval) clearInterval(voiceTimerInterval);
-                voiceTimerInterval = setInterval(() => {
-                    voiceSeconds++;
-                    const mins = String(Math.floor(voiceSeconds / 60)).padStart(2, "0");
-                    const secs = String(voiceSeconds % 60).padStart(2, "0");
-                    if (voiceTimer) voiceTimer.innerText = `${mins}:${secs}`;
-                }, 1000);
-            } catch (err) {
-                showToast("Microphone access required for voice recording.", "info");
+            const recordBtn = document.getElementById("btn-record-voice") || document.getElementById("btn-voice");
+            if (recordBtn && recordBtn.click && recordBtn !== target) {
+                recordBtn.click();
             }
             return;
         }
@@ -680,51 +658,51 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const finishVoice = async () => {
                 hideAllModals();
-                if (liveVoiceTranscript) {
-                    if (chatInput) {
-                        chatInput.value = liveVoiceTranscript;
-                        chatInput.focus();
-                    }
-                    showToast(`🎙️ Transcribed: "${liveVoiceTranscript}"`, "success");
+                let recognizedText = liveVoiceTranscript ? liveVoiceTranscript.trim() : "";
 
-                    // Auto-trigger submission for image requests or direct queries
-                    if (/generate.*(image|pic|photo|artwork)|draw|picture of|photo of|pic of/i.test(liveVoiceTranscript)) {
+                // Fallback to STT Endpoint if browser Speech Recognition didn't capture text
+                if (!recognizedText && audioChunks.length > 0) {
+                    showToast("🎙️ Transcribing voice into text...", "info");
+                    try {
+                        const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+                        const voiceFile = new File([audioBlob], `voice_record_${Date.now()}.webm`, { type: "audio/webm" });
+                        const formData = new FormData();
+                        formData.append("file", voiceFile);
+                        const res = await authenticatedFetch("/api/v1/audio/transcribe", {
+                            method: "POST",
+                            body: formData
+                        });
+                        const data = await res.json();
+                        if (data.success && data.data && data.data.transcript) {
+                            let sttText = data.data.transcript;
+                            sttText = sttText.replace(/^\[Audio Transcript.*?\]\s*/i, '').replace(/User spoke:\s*['"]/i, '').replace(/['"]$/, '').trim();
+                            if (sttText) {
+                                recognizedText = sttText;
+                            }
+                        }
+                    } catch (e) {
+                        console.warn("STT backend endpoint error:", e);
+                    }
+                }
+
+                // Place recognized text inside chat textbox ONLY (NEVER UPLOAD AUDIO AS A FILE)
+                if (recognizedText) {
+                    if (chatInput) {
+                        chatInput.value = recognizedText;
+                        chatInput.focus();
+                        chatInput.style.height = "auto";
+                        chatInput.style.height = Math.min(chatInput.scrollHeight, 120) + "px";
+                    }
+                    showToast(`🎙️ Transcribed: "${recognizedText}"`, "success");
+
+                    // If recognized text contains image request, auto-trigger send
+                    if (/generate.*(image|pic|photo|artwork)|draw|picture of|photo of|pic of/i.test(recognizedText)) {
                         setTimeout(() => {
                             if (chatForm) chatForm.requestSubmit();
                         }, 400);
                     }
                 } else {
-                    // Fallback to STT Endpoint if browser Speech Recognition didn't capture text
-                    if (audioChunks.length > 0) {
-                        const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
-                        const voiceFile = new File([audioBlob], `voice_record_${Date.now()}.webm`, { type: "audio/webm" });
-
-                        showToast("🎙️ Transcribing voice recording...", "info");
-                        try {
-                            const formData = new FormData();
-                            formData.append("file", voiceFile);
-                            const res = await authenticatedFetch("/api/v1/audio/transcribe", {
-                                method: "POST",
-                                body: formData
-                            });
-                            const data = await res.json();
-                            if (data.success && data.data && data.data.transcript) {
-                                let sttText = data.data.transcript;
-                                sttText = sttText.replace(/^\[Audio Transcript.*?\]\s*/i, '').replace(/User spoke:\s*['"]/i, '').replace(/['"]$/, '').trim();
-                                if (sttText && chatInput) {
-                                    chatInput.value = sttText;
-                                    chatInput.focus();
-                                    showToast(`🎙️ Transcribed: "${sttText}"`, "success");
-                                    if (/generate.*(image|pic|photo|artwork)|draw|picture of|photo of|pic of/i.test(sttText)) {
-                                        setTimeout(() => { if (chatForm) chatForm.requestSubmit(); }, 400);
-                                    }
-                                    return;
-                                }
-                            }
-                        } catch (e) {}
-
-                        await uploadFileToApi(voiceFile);
-                    }
+                    showToast("Didn't catch that. Please try again.", "info");
                 }
             };
 
