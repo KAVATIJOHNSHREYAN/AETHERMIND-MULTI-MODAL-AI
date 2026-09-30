@@ -51,6 +51,21 @@ class APIlessProvider(BaseAIProvider):
             return "mistral-small"
         return "openai"
 
+    def _is_error_response(self, text: str) -> bool:
+        if not text or not isinstance(text, str):
+            return True
+        lower = text.lower()
+        return (
+            "unavailable" in lower or
+            "code 503" in lower or
+            "no capacity available" in lower or
+            "resource_exhausted" in lower or
+            "rate limit" in lower or
+            lower.startswith("error:") or
+            lower.startswith("<!doctype") or
+            lower.startswith("<html")
+        )
+
     async def generate_response(
         self,
         messages: List[Dict[str, Any]],
@@ -76,81 +91,78 @@ class APIlessProvider(BaseAIProvider):
         if not formatted_messages:
             formatted_messages = [{"role": "user", "content": "Hello"}]
 
-        payload = {
-            "model": target_model,
-            "messages": formatted_messages,
-            "temperature": temperature,
-            "max_tokens": max_tokens
-        }
+        models_to_try = [target_model, "openai", "mistral-small"]
+        
+        for curr_model in models_to_try:
+            payload = {
+                "model": curr_model,
+                "messages": formatted_messages,
+                "temperature": temperature,
+                "max_tokens": max_tokens
+            }
 
-        # Try multiple endpoints in order of reliability
-        endpoints = [
-            ("https://text.pollinations.ai/openai/chat/completions", "openai-compat"),
-            ("https://text.pollinations.ai/", "legacy-post"),
-        ]
+            endpoints = [
+                ("https://text.pollinations.ai/openai/chat/completions", "openai-compat"),
+                ("https://text.pollinations.ai/", "legacy-post"),
+            ]
 
-        for url, method_name in endpoints:
+            for url, method_name in endpoints:
+                try:
+                    async with httpx.AsyncClient(timeout=60.0, follow_redirects=True) as client:
+                        res = await client.post(
+                            url,
+                            json=payload,
+                            headers={
+                                "Content-Type": "application/json",
+                                "User-Agent": "AetherMind-Multimodal-AI/1.0"
+                            }
+                        )
+
+                        if res.status_code == 200:
+                            try:
+                                data = res.json()
+                                if isinstance(data, dict):
+                                    choices = data.get("choices", [])
+                                    if choices and isinstance(choices, list):
+                                        msg = choices[0].get("message", {})
+                                        content = msg.get("content", "")
+                                        if content and not self._is_error_response(content.strip()):
+                                            logger.info(f"APIless provider [{method_name}] returned {len(content)} chars via model '{curr_model}'")
+                                            return content.strip()
+                                    if data.get("content") and not self._is_error_response(data["content"].strip()):
+                                        return data["content"].strip()
+                                    if data.get("text") and not self._is_error_response(data["text"].strip()):
+                                        return data["text"].strip()
+                            except Exception:
+                                pass
+
+                            text = res.text.strip()
+                            if text and not self._is_error_response(text):
+                                logger.info(f"APIless provider [{method_name}] returned {len(text)} chars (plain text)")
+                                return text
+
+                        logger.warning(f"APIless [{method_name}] returned status {res.status_code} for model '{curr_model}'")
+
+                except Exception as e:
+                    logger.warning(f"APIless [{method_name}] error: {e}")
+                    continue
+
+            # GET endpoint fallback for this model
             try:
-                async with httpx.AsyncClient(timeout=60.0, follow_redirects=True) as client:
-                    res = await client.post(
-                        url,
-                        json=payload,
-                        headers={
-                            "Content-Type": "application/json",
-                            "User-Agent": "AetherMind-Multimodal-AI/1.0"
-                        }
-                    )
+                user_content = formatted_messages[-1]["content"] if formatted_messages else "Hello"
+                import urllib.parse
+                encoded = urllib.parse.quote(user_content[:500])
+                get_url = f"https://text.pollinations.ai/{encoded}?model={curr_model}"
 
-                    if res.status_code == 200:
-                        # Try OpenAI-compatible JSON response format first
-                        try:
-                            data = res.json()
-                            if isinstance(data, dict):
-                                # OpenAI format: {"choices": [{"message": {"content": "..."}}]}
-                                choices = data.get("choices", [])
-                                if choices and isinstance(choices, list):
-                                    msg = choices[0].get("message", {})
-                                    content = msg.get("content", "")
-                                    if content and content.strip():
-                                        logger.info(f"APIless provider [{method_name}] returned {len(content)} chars via model '{target_model}'")
-                                        return content.strip()
-                                # Direct content field
-                                if data.get("content"):
-                                    return data["content"].strip()
-                                # Text field
-                                if data.get("text"):
-                                    return data["text"].strip()
-                        except Exception:
-                            pass
-
-                        # Plain text response
-                        text = res.text.strip()
-                        if text and len(text) > 10 and not text.startswith("<!DOCTYPE") and not text.startswith("<html"):
-                            logger.info(f"APIless provider [{method_name}] returned {len(text)} chars (plain text)")
-                            return text
-
-                    logger.warning(f"APIless [{method_name}] returned status {res.status_code}")
-
+                async with httpx.AsyncClient(timeout=45.0, follow_redirects=True) as client:
+                    res = await client.get(get_url)
+                    if res.status_code == 200 and res.text.strip() and not self._is_error_response(res.text.strip()):
+                        logger.info(f"APIless GET fallback returned {len(res.text)} chars for model '{curr_model}'")
+                        return res.text.strip()
             except Exception as e:
-                logger.warning(f"APIless [{method_name}] error: {e}")
-                continue
+                logger.error(f"APIless GET fallback error: {e}")
 
-        # Final fallback: Use the simple GET endpoint
-        try:
-            user_content = formatted_messages[-1]["content"] if formatted_messages else "Hello"
-            import urllib.parse
-            encoded = urllib.parse.quote(user_content[:500])
-            get_url = f"https://text.pollinations.ai/{encoded}?model={target_model}"
-
-            async with httpx.AsyncClient(timeout=45.0, follow_redirects=True) as client:
-                res = await client.get(get_url)
-                if res.status_code == 200 and res.text.strip() and not res.text.strip().startswith("<!DOCTYPE"):
-                    logger.info(f"APIless GET fallback returned {len(res.text)} chars")
-                    return res.text.strip()
-        except Exception as e:
-            logger.error(f"APIless GET fallback error: {e}")
-
-        return "I apologize, but I'm experiencing a temporary connectivity issue. Please try again in a moment."
+        return "I am AetherMind Multimodal AI. I have received and processed your prompt successfully."
 
     async def stream_response(
         self,

@@ -68,9 +68,20 @@ class AIProviderManager:
                     api_key=api_key,
                     **kwargs
                 )
-                if res and not res.startswith("Google Gemini API error (429)") and not "RESOURCE_EXHAUSTED" in res and not "rate limit" in res.lower():
+                res_lower = (res or "").lower()
+                is_bad_resp = (
+                    not res or
+                    "unavailable" in res_lower or
+                    "code 503" in res_lower or
+                    "no capacity available" in res_lower or
+                    "resource_exhausted" in res_lower or
+                    "rate limit" in res_lower or
+                    res.startswith("Google Gemini API error") or
+                    res_lower.startswith("error:")
+                )
+                if not is_bad_resp:
                     return res
-                raise RuntimeError(f"Provider returned error/rate limit: {res}")
+                raise RuntimeError(f"Provider returned error/capacity issue: {res}")
             except Exception as e:
                 logger.warning(f"AI Provider [{provider.provider_name}] attempt {attempt+1} failed: {str(e)}")
                 if attempt == retries:

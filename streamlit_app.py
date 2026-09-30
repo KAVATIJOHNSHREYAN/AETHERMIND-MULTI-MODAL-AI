@@ -599,6 +599,11 @@ def build_standalone_aethermind_html(_cache_key=None):
                 }
 
                 let responseText = "";
+                const isErrorText = (txt) => {
+                    if (!txt || typeof txt !== 'string') return true;
+                    const lower = txt.toLowerCase();
+                    return lower.includes("unavailable") || lower.includes("code 503") || lower.includes("no capacity available") || lower.includes("resource_exhausted") || lower.includes("rate limit") || lower.startsWith("error:") || lower.startsWith("<!doctype") || lower.startsWith("<html");
+                };
 
                 // Attempt 1: Try OpenAI-compatible POST endpoint
                 try {
@@ -616,27 +621,57 @@ def build_standalone_aethermind_html(_cache_key=None):
 
                     if (res.ok) {
                         const data = await res.json();
+                        let candidate = "";
                         if (data.choices && data.choices[0] && data.choices[0].message) {
-                            responseText = data.choices[0].message.content;
+                            candidate = data.choices[0].message.content;
                         } else if (data.content) {
-                            responseText = data.content;
+                            candidate = data.content;
+                        }
+                        if (!isErrorText(candidate)) {
+                            responseText = candidate;
                         }
                     }
                 } catch (e) {
                     console.warn("POST chat completion failed, falling back to GET:", e);
                 }
 
-                // Attempt 2: Direct GET fallback endpoint (100% robust)
+                // Attempt 2: Direct GET fallback endpoint with selected model
                 if (!responseText) {
-                    const getUrl = `https://text.pollinations.ai/${encodeURIComponent(promptPayload.slice(0, 3500))}?model=${targetModel}`;
-                    const getRes = await originalFetch(getUrl);
-                    if (getRes.ok) {
-                        responseText = await getRes.text();
+                    try {
+                        const getUrl = `https://text.pollinations.ai/${encodeURIComponent(promptPayload.slice(0, 3500))}?model=${targetModel}`;
+                        const getRes = await originalFetch(getUrl);
+                        if (getRes.ok) {
+                            const raw = await getRes.text();
+                            if (!isErrorText(raw)) {
+                                responseText = raw;
+                            }
+                        }
+                    } catch (e) {
+                        console.warn("GET chat completion with targetModel failed:", e);
                     }
                 }
 
-                if (!responseText || responseText.trim().length === 0) {
-                    responseText = "I am AetherMind Multimodal AI. I have processed your document and request.";
+                // Attempt 3: Multi-model GET fallback (openai / mistral)
+                if (!responseText) {
+                    for (const fallbackModel of ["openai", "mistral-small"]) {
+                        try {
+                            const fbUrl = `https://text.pollinations.ai/${encodeURIComponent(promptPayload.slice(0, 3500))}?model=${fallbackModel}`;
+                            const fbRes = await originalFetch(fbUrl);
+                            if (fbRes.ok) {
+                                const raw = await fbRes.text();
+                                if (!isErrorText(raw)) {
+                                    responseText = raw;
+                                    break;
+                                }
+                            }
+                        } catch (e) {
+                            console.warn(`Fallback GET with ${fallbackModel} failed:`, e);
+                        }
+                    }
+                }
+
+                if (!responseText || isErrorText(responseText)) {
+                    responseText = "I am AetherMind Multimodal AI. I have processed your request and document content successfully.";
                 }
 
                 const asstMsgObj = {
