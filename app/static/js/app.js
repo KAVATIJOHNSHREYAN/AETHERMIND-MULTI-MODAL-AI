@@ -1869,10 +1869,16 @@ document.addEventListener("DOMContentLoaded", () => {
             `;
         });
 
-        const parts = formatted.split(/(<figure class="my-4 rounded-2xl[\s\S]*?<\/figure>)/g);
+        const parts = formatted.split(/(<figure class="my-4 rounded-2xl[\s\S]*?<\/figure>|```xml\s*<svg[\s\S]*?<\/svg>\s*```)/g);
         return parts.map(part => {
             if (part.startsWith('<figure class="my-4 rounded-2xl')) {
                 return part;
+            }
+            if (part.startsWith('```xml') && part.includes('<svg')) {
+                const svgMatch = part.match(/<svg[\s\S]*?<\/svg>/);
+                if (svgMatch) {
+                    return `<div class="my-4 p-4 rounded-2xl bg-[#090d16] border border-cyan-500/30 shadow-2xl flex flex-col items-center justify-center overflow-hidden max-w-full">${svgMatch[0]}</div>`;
+                }
             }
             return escapeHtml(part);
         }).join("");
