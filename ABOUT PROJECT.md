@@ -152,11 +152,21 @@ AetherMind is optimized for speed and responsiveness. The FastAPI backend utiliz
 
 The primary cloud deployment target for AetherMind Multimodal AI is Streamlit Cloud. The application's entry runner embeds the complete single-page HTML interface, styles, and client scripts into a standalone runner that communicates with external microservices over secure HTTP and WebSocket connections. This deployment setup enables instant one-click cloud hosting directly from the main GitHub repository branch.
 
-### Local AI WebGPU Execution & Session Resilience Architecture
+### Offline GPU Systems (Browser WebGPU Pipeline)
 
-AetherMind integrates in-browser **Local AI (WebGPU)** model execution, allowing privacy-first LLM inference (Llama 3.2 1B, DeepSeek R1 1.5B, Gemma 2 2B) completely offline without sending prompt payloads to external servers. The Local AI Engine includes **Smart Image Intent Detection**—automatically routing visual prompt requests (`generate pic`, `picture of`, `draw`) to Pollinations AI when connected, or rendering a dynamic SVG vector graphic canvas directly inside the chat UI when offline. 
+AetherMind incorporates a client-side **Offline GPU System** powered by standard WebGPU APIs (`navigator.gpu`). This architecture compiles WGSL shaders and executes quantized open-weights models (Llama 3.2 1B/3B, DeepSeek R1 1.5B, Gemma 2 2B) directly on the user's dedicated or integrated graphics processing hardware. By operating entirely within browser memory space (`100% On-Device`), user chat conversations, code snippets, and document queries remain strictly private and completely inaccessible to external servers or telemetry services.
 
-Session resilience logic preserves both authenticated Firebase user identity and Guest mode sessions across page refreshes, preventing unexpected authentication dialog popups. Image asset management includes multi-format MIME detection (`.png`, `.jpg`, `.webp`, `.svg`) ensuring clean image download filenames across desktop and mobile devices.
+The Local AI Engine includes **Smart Image Intent Auto-Routing**: visual prompt requests (`generate pic`, `picture of`, `draw`) entered in Local AI mode automatically dispatch to Pollinations AI when connected to the web, or render a responsive SVG vector graphic canvas directly inside the chat UI when operating in completely offline environments.
+
+### Asset & Multi-Format Data Download Architecture
+
+Data export and asset acquisition in AetherMind are engineered to provide complete user data ownership. The platform includes a dedicated **MIME-Type Asset Downloader** that automatically detects image blob header formats, ensuring generated artwork and camera captures are downloaded with prompt-derived filenames and valid file extensions (`.png`, `.jpg`, `.webp`, `.svg`) across Windows, macOS, Android, and iOS.
+
+Additionally, AetherMind provides multi-tiered data export capabilities:
+1. **Workspace Project ZIP Archives**: Consolidates documents, conversation histories, image galleries, and voice transcripts into downloadable `.zip` bundles.
+2. **Account & Profile Exports**: Exports user settings, preferences, and security state as portable `.json` backup files (`AetherMind_Profile_Export.json`).
+3. **Workspace Configuration Backups**: Exports custom workspace layouts, active model presets, and encrypted API key configurations (`AetherMind_Workspace_Backup.json`).
+4. **Document & Voice Transcript Downloads**: Provides clean export options (`.md`, `.json`, `.txt`) for processed document intelligence summaries and voice audio transcriptions.
 
 ---
 

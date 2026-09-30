@@ -97,21 +97,26 @@ Engineered with zero mandatory API key requirements, AetherMind provides an imme
   - `💻 Local AI (Browser WebGPU Offline)`
 - **Automatic Multi-Model Failover**: Sequential failover handling ensures 100% uptime even during upstream provider capacity shortages.
 
-### 💻 5. Local AI (Browser WebGPU Offline Engine)
-- **100% In-Browser Execution**: Runs lightweight open-weights models locally via WebGPU hardware acceleration (`navigator.gpu`).
-- **Supported Local Models**:
-  - `Llama 3.2 1B` (~700 MB, RAM: ~2.0 GB, VRAM: ~1.5 GB) — Ultra fast lightweight Llama variant.
-  - `Llama 3.2 3B` (~1.8 GB, RAM: ~4.0 GB, VRAM: ~3.0 GB) — High-capability reasoning model.
-  - `DeepSeek R1 Distill 1.5B` (~1.1 GB, RAM: ~3.0 GB, VRAM: ~2.0 GB) — Distilled reasoning model.
-  - `Phi-4 Mini 3.8B` (~2.2 GB, RAM: ~4.0 GB, VRAM: ~3.5 GB) — Synthetic reasoning and coding model.
-  - `Gemma 2 2B` (~1.4 GB, RAM: ~3.0 GB, VRAM: ~2.5 GB) — Open model built from Gemini technology.
-  - `Qwen 2.5 1.5B` (~950 MB, RAM: ~2.5 GB, VRAM: ~1.8 GB) — Multilingual instruction model.
-- **Hardware & Capability Detection**: Startup detection of WebGPU support, GPU Adapter info, System RAM, and Storage availability. Displays `Ready for Local AI` badge.
-- **Offline Privacy Mode**: 1-click toggle (`🔒 Offline Privacy Mode`) disabling external cloud API requests, keeping user data 100% local inside browser memory.
-- **Smart Image Intent Auto-Routing**: Detects image generation requests (`generate pic`, `draw`, `picture of`) in Local AI mode and dispatches to Pollinations AI when connected to the internet, or renders a responsive SVG vector graphic canvas when offline.
-- **Session State Persistence**: Automatically maintains authenticated user or guest sessions across page refreshes without unexpected lockouts.
-- **Local AI Storage Manager**: Download progress tracking with real-time speed calculation (MB/s), model activation, deletion, and IndexedDB cache purging.
-- **Initialization Overlay & Fallback**: Step-by-step progress feedback (`Loading Model` -> `Initializing WebGPU` -> `Compiling Shaders` -> `Loading Weights` -> `Ready`) with a non-blocking `⚡ Switch to Cloud AI` failover option.
+### 💻 5. Offline GPU Systems (Browser WebGPU Execution)
+- **100% On-Device WebGPU Hardware Acceleration**: Executes open-weights AI models directly on the client's GPU via standard `navigator.gpu` APIs, requiring zero server processing, cloud tokens, or API keys.
+- **Supported Offline Open-Weights Models**:
+  - `Llama 3.2 1B` (~700 MB, RAM: ~2.0 GB, VRAM: ~1.5 GB) — Ultra-fast lightweight Llama model.
+  - `Llama 3.2 3B` (~1.8 GB, RAM: ~4.0 GB, VRAM: ~3.0 GB) — High-capability reasoning variant.
+  - `DeepSeek R1 Distill 1.5B` (~1.1 GB, RAM: ~3.0 GB, VRAM: ~2.0 GB) — Distilled reasoning & logic model.
+  - `Phi-4 Mini 3.8B` (~2.2 GB, RAM: ~4.0 GB, VRAM: ~3.5 GB) — Synthetic coding and math engine.
+  - `Gemma 2 2B` (~1.4 GB, RAM: ~3.0 GB, VRAM: ~2.5 GB) — Google open model architecture.
+  - `Qwen 2.5 1.5B` (~950 MB, RAM: ~2.5 GB, VRAM: ~1.8 GB) — Multilingual instruction follower.
+- **Hardware Shader Pipeline & Capability Audit**: Real-time browser detection of WebGPU adapter features, dedicated VRAM limits, system RAM, and device capability badges (`Ready for Local AI`).
+- **Offline Privacy Mode**: 1-click toggle (`🔒 Offline Privacy Mode`) blocking all external network requests to guarantee 100% local privacy.
+- **Smart Image Intent Auto-Routing**: Automatically detects image generation prompts (`generate pic`, `draw`, `picture of`) in Local AI mode. Dispatches to Pollinations AI when connected, or renders a responsive SVG vector graphic canvas when offline.
+- **Local AI Storage Manager**: Download progress tracking with real-time transfer rate calculation (MB/s), model activation, deletion, and IndexedDB weight cache management.
+
+### 📥 6. Comprehensive Asset & Data Download Options
+- **Multi-Format Image Download**: Downloads generated artwork and OCR captures directly with clean prompt-based filenames and correct MIME extensions (`.png`, `.jpg`, `.webp`, `.svg`).
+- **Workspace Project ZIP Export**: 1-click consolidation downloading entire project folders, chats, document analyses, and assets as organized ZIP archives.
+- **Account & Profile Data Export**: Exports user profiles, enterprise preferences, and settings as formatted `.json` backup files (`AetherMind_Profile_Export.json`).
+- **Workspace Backup Export**: Saves full workspace state, system settings, and custom API key configurations as portable JSON files (`AetherMind_Workspace_Backup.json`).
+- **Document & Transcript Downloads**: Direct export of processed document intelligence summaries and voice audio transcripts (`.txt`, `.json`, `.md`).
 
 ### 🎨 5. Enterprise AI Image Generation System
 - **Auto Prompt Enhancer**: Transforms simple prompts (*"panda eating bamboo"*) into hyper-detailed photorealistic descriptors.
