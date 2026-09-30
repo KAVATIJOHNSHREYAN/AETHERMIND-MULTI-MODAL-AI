@@ -22,6 +22,18 @@ document.addEventListener("DOMContentLoaded", () => {
     let currentDocumentId = null;
     let currentMemoryFilter = "all";
 
+    // Global Modal Helpers
+    window.openModal = (modalId) => {
+        document.querySelectorAll('[id^="modal-"]').forEach(m => m.classList.add("hidden"));
+        const target = document.getElementById(modalId);
+        if (target) target.classList.remove("hidden");
+    };
+
+    window.closeModal = (modalId) => {
+        const target = document.getElementById(modalId);
+        if (target) target.classList.add("hidden");
+    };
+
     // Global Window Helpers for Inline onclick Handlers
     window.openImagePreview = (url, name) => {
         const modalImagePreview = document.getElementById("modal-image-preview");
@@ -2314,6 +2326,7 @@ AetherMind Multimodal AI OS is an enterprise-grade artificial intelligence opera
     }
 
     const setDeviceViewport = (mode, customW, customH, customZoom) => {
+        const mainCanvas = document.getElementById("main-canvas") || document.body;
         if (!mainCanvas) return;
 
         let width = customW || 1920;
