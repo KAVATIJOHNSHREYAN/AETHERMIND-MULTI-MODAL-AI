@@ -3967,6 +3967,7 @@ AetherMind Multimodal AI OS is an enterprise-grade artificial intelligence opera
         _isGuestMode = !!isGuest;
         if (!isGuest && user) {
             _currentFirebaseUID = user.uid;
+            localStorage.setItem('aethermind_guest_mode', 'false');
             localStorage.setItem('aethermind_user_email', user.email || '');
             localStorage.setItem('aethermind_user_name', user.displayName || (user.email ? user.email.split('@')[0] : 'User'));
             localStorage.setItem('aethermind_firebase_uid', user.uid);
@@ -3988,6 +3989,7 @@ AetherMind Multimodal AI OS is an enterprise-grade artificial intelligence opera
             }
         } else {
             _currentFirebaseUID = null;
+            localStorage.setItem('aethermind_guest_mode', 'true');
             localStorage.setItem('aethermind_user_name', 'Guest User');
             localStorage.setItem('aethermind_user_email', 'guest@demo.local');
             localStorage.setItem('aethermind_firebase_uid', '');
@@ -4031,7 +4033,17 @@ AetherMind Multimodal AI OS is an enterprise-grade artificial intelligence opera
         } catch(e) { console.warn('Firebase auth init:', e); }
     }
 
-    // Check for existing Firebase session on load
+    // Check for existing session or guest mode on load
+    const savedGuestMode = localStorage.getItem('aethermind_guest_mode') === 'true';
+    const savedUserEmail = localStorage.getItem('aethermind_user_email');
+    const savedUserName = localStorage.getItem('aethermind_user_name');
+
+    if (savedGuestMode) {
+        _isGuestMode = true;
+        if (authGateChecking) authGateChecking.classList.add('hidden');
+        dismissAuthGate(null, true);
+    }
+
     if (firebaseAuth) {
         // Check redirect result first (popup→redirect fallback handling)
         firebaseAuth.getRedirectResult().then(result => {
@@ -4045,15 +4057,22 @@ AetherMind Multimodal AI OS is an enterprise-grade artificial intelligence opera
             if (user) {
                 // Already authenticated — dismiss gate immediately
                 dismissAuthGate(user, false);
-            } else {
+            } else if (!savedGuestMode && savedUserEmail && savedUserEmail !== 'guest@demo.local') {
+                // Restore cached session details while waiting or if offline
+                dismissAuthGate({ email: savedUserEmail, displayName: savedUserName, uid: localStorage.getItem('aethermind_firebase_uid') }, false);
+            } else if (!savedGuestMode) {
                 // No session — show login panel
                 if (authGatePanel) authGatePanel.classList.remove('hidden');
             }
         });
     } else {
-        // Firebase unavailable — show login panel anyway (fallback)
-        if (authGateChecking) authGateChecking.classList.add('hidden');
-        if (authGatePanel) authGatePanel.classList.remove('hidden');
+        if (savedUserEmail) {
+            dismissAuthGate({ email: savedUserEmail, displayName: savedUserName, uid: localStorage.getItem('aethermind_firebase_uid') }, savedGuestMode);
+        } else {
+            // Firebase unavailable — show login panel anyway (fallback)
+            if (authGateChecking) authGateChecking.classList.add('hidden');
+            if (authGatePanel) authGatePanel.classList.remove('hidden');
+        }
     }
 
     // --- Tab switching: Login / Register ---
@@ -4304,6 +4323,7 @@ AetherMind Multimodal AI OS is an enterprise-grade artificial intelligence opera
         localStorage.removeItem('aethermind_user_email');
         localStorage.removeItem('aethermind_user_name');
         localStorage.removeItem('aethermind_firebase_uid');
+        localStorage.removeItem('aethermind_guest_mode');
         _currentFirebaseUID = null;
         _isGuestMode = false;
 
